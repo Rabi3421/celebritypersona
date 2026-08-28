@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { occasions } from "@/lib/home-content";
@@ -20,6 +21,13 @@ export function Occasions() {
             className={`otile ${revealClass(i, 4)}`}
             key={occasion.name}
           >
+            <Image
+              className="home-cover"
+              src={`https://picsum.photos/seed/cp-occasion-${i + 1}/600/800`}
+              alt={`Sample ${occasion.name} outfit inspiration`}
+              fill
+              sizes="(max-width: 620px) 50vw, 25vw"
+            />
             <div className="lab">
               <strong>{occasion.name}</strong>
               <span>{occasion.looks} looks</span>

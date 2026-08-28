@@ -1,3 +1,5 @@
+import { social } from "@/lib/site-config";
+
 /**
  * Homepage content.
  *
@@ -87,7 +89,7 @@ export const navLinks = [
   { label: "Celebrities", href: "/celebrities" },
   { label: "Occasions", href: "/occasions" },
   { label: "Budget", href: "/budget" },
-  { label: "Trending", href: "#" },
+  { label: "Trending", href: "/trending" },
 ];
 
 export const tickerEntries: TickerEntry[] = [
@@ -218,19 +220,6 @@ export const occasions = [
   { name: "Casual", looks: 103 },
 ];
 
-export const trendingSearches = [
-  { term: "alia bhatt airport", count: "1.2k" },
-  { term: "sangeet lehenga under 5000", count: "940" },
-  { term: "deepika saree", count: "870" },
-  { term: "ananya panday co-ord", count: "610" },
-  { term: "diwali kurta set", count: "580" },
-  { term: "bollywood dupe myntra", count: "520" },
-  { term: "kiara red carpet", count: "440" },
-  { term: "mehendi outfit ideas", count: "390" },
-  { term: "sara ali khan jutti", count: "310" },
-  { term: "janhvi casual look", count: "270" },
-];
-
 export const celebrities = [
   { name: "Alia Bhatt", looks: 47 },
   { name: "Deepika Padukone", looks: 39 },
@@ -290,41 +279,46 @@ export const reels = [
   { views: "89k", caption: "Red carpet vs Myntra" },
 ];
 
-export const footerColumns = [
+export const footerColumns: { heading: string; links: { label: string; href: string }[] }[] = [
   {
     heading: "Browse",
     links: [
-      "All outfits",
-      "Celebrities",
-      "Occasions",
-      "By budget",
-      "Trending",
-      "Wedding edit",
+      { label: "All outfits", href: "/outfits" },
+      { label: "Celebrities", href: "/celebrities" },
+      { label: "Occasions", href: "/occasions" },
+      { label: "By budget", href: "/budget" },
+      { label: "Trending", href: "/trending" },
+      { label: "Wedding edit", href: "#" },
     ],
   },
   {
     heading: "About",
     links: [
-      "Who we are",
-      "How we work",
-      "Corrections",
-      "Contact",
-      "Report a price",
+      { label: "Who we are", href: "/about" },
+      { label: "How we work", href: "/how-we-work" },
+      { label: "Corrections", href: "/corrections" },
+      { label: "Contact", href: "/contact" },
+      { label: "Report a price", href: "/report-a-price" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      "Privacy",
-      "Terms",
-      "Affiliate disclosure",
-      "Cookies",
-      "DMCA",
-      "Photo credits",
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Affiliate disclosure", href: "/affiliate-disclosure" },
+      { label: "Cookies", href: "/cookies" },
+      { label: "DMCA", href: "/dmca" },
+      { label: "Photo credits", href: "/photo-credits" },
     ],
   },
   {
     heading: "Follow",
-    links: ["Instagram", "YouTube", "Pinterest", "WhatsApp updates"],
+    links: [
+      { label: "Instagram", href: social.instagram },
+      { label: "YouTube", href: social.youtube },
+      { label: "Pinterest", href: social.pinterest },
+      { label: "WhatsApp updates", href: "#" },
+    ],
   },
 ];

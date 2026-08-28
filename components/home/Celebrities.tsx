@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { celebrities } from "@/lib/home-content";
@@ -20,7 +21,15 @@ export function Celebrities() {
             className={`ctile ${revealClass(i)}`}
             key={celebrity.name}
           >
-            <div className="av" />
+            <div className="av">
+              <Image
+                className="home-cover"
+                src={`https://picsum.photos/seed/cp-celebrity-${i + 1}/320/320`}
+                alt={`Sample portrait for ${celebrity.name}'s style archive`}
+                fill
+                sizes="(max-width: 620px) 28vw, 15vw"
+              />
+            </div>
             <strong>{celebrity.name}</strong>
             <span>{celebrity.looks} looks</span>
           </Link>

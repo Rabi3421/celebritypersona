@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Brand } from "./Brand";
 import { footerColumns } from "@/lib/home-content";
 
@@ -16,11 +17,26 @@ export function Footer() {
           {footerColumns.map((column) => (
             <div className="fcol" key={column.heading}>
               <h4>{column.heading}</h4>
-              {column.links.map((label) => (
-                <a href="#" key={label}>
-                  {label}
-                </a>
-              ))}
+              {column.links.map((link) =>
+                link.href.startsWith("http") ? (
+                  <a
+                    href={link.href}
+                    key={link.label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.label}
+                  </a>
+                ) : link.href === "#" ? (
+                  <a href="#" key={link.label}>
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link href={link.href} key={link.label}>
+                    {link.label}
+                  </Link>
+                ),
+              )}
             </div>
           ))}
         </div>

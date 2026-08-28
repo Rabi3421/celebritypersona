@@ -21,7 +21,12 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+/** Set NEXT_PUBLIC_SITE_URL in the deploy environment. Canonical and Open
+ *  Graph URLs resolve against it. */
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://celebritypersona.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default:
       "CelebrityPersona — What Indian celebrities wear, and where to get the look",

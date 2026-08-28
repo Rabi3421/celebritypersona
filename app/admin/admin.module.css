@@ -1,0 +1,31 @@
+/* Sign-in screen only. The signed-in shell lives in panel.module.css.
+   Neither shares anything with the public site chrome, so the panel cannot
+   accidentally render a link back into the marketing navigation. */
+.shell{min-height:100vh;background:#0e1014;color:#f4f2ee;
+  font-family:var(--body),system-ui,sans-serif;display:flex;flex-direction:column}
+.loginWrap{flex:1;display:grid;place-items:center;padding:var(--s6);position:relative;overflow:hidden}
+.loginWrap::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(58% 60% at 50% 0%,rgba(224,0,108,.18),transparent 64%)}
+.card{position:relative;z-index:2;width:100%;max-width:400px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.11);border-radius:var(--r-xl);padding:var(--s7)}
+.mark{display:flex;align-items:center;gap:9px;font-family:var(--display),system-ui,sans-serif;
+  font-weight:800;font-size:17px;letter-spacing:-.03em;margin-bottom:var(--s6)}
+.mark i{width:7px;height:7px;border-radius:50%;background:#e0006c;flex:none}
+.card h1{font-family:var(--display),system-ui,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.03em}
+.card>p{font-size:14.5px;color:rgba(244,242,238,.56);margin-top:var(--s2);line-height:1.6}
+.form{margin-top:var(--s6)}
+.field{margin-bottom:var(--s4)}
+.field label{display:block;font-family:var(--mono),ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:rgba(244,242,238,.5);margin-bottom:7px}
+.field input{width:100%;font-family:inherit;font-size:15.5px;padding:13px 15px;color:#fff;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-md);
+  transition:border-color 130ms,box-shadow 130ms}
+.field input:focus{outline:none;border-color:#e0006c;box-shadow:0 0 0 3px rgba(224,0,108,.22)}
+.error{background:rgba(224,0,108,.12);border:1px solid rgba(224,0,108,.42);color:#ff89bb;
+  border-radius:var(--r-md);padding:11px 14px;font-size:14px;margin-bottom:var(--s4);line-height:1.5}
+.submit{width:100%;font-family:inherit;font-weight:600;font-size:15.5px;border:0;border-radius:var(--r-md);
+  padding:15px;cursor:pointer;background:#e0006c;color:#fff;transition:background 130ms}
+.submit:hover:not(:disabled){background:#b00055}
+.submit:disabled{opacity:.6;cursor:progress}
+.note{font-family:var(--mono),ui-monospace,monospace;font-size:11px;color:rgba(244,242,238,.34);
+  margin-top:var(--s5);text-align:center;line-height:1.6}

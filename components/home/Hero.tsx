@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { RollingTotal } from "./RollingTotal";
 import { inr } from "@/lib/format";
 import { heroLook, heroTotals } from "@/lib/home-content";
@@ -9,18 +10,14 @@ export function Hero() {
     <section className="hero">
       <div className="hero-in">
         <figure className="hero-photo rv">
-          <svg className="figure" viewBox="0 0 120 300" fill="none" aria-hidden="true">
-            <ellipse cx="60" cy="26" rx="17" ry="21" fill="rgba(255,255,255,.30)" />
-            <path
-              d="M60 47c-16 0-27 9-30 24l-6 62c-1 8 3 12 10 12h52c7 0 11-4 10-12l-6-62c-3-15-14-24-30-24z"
-              fill="rgba(255,255,255,.34)"
-            />
-            <path
-              d="M34 145h52l-5 96c-1 7-4 10-10 10H49c-6 0-9-3-10-10l-5-96z"
-              fill="rgba(255,255,255,.26)"
-            />
-            <rect x="82" y="96" width="26" height="34" rx="4" fill="rgba(255,255,255,.30)" />
-          </svg>
+          <Image
+            className="home-cover hero-image"
+            src="https://picsum.photos/seed/cp-home-alia/900/1125"
+            alt="Sample editorial outfit for the latest Alia Bhatt decode"
+            fill
+            priority
+            sizes="(max-width: 760px) 100vw, 48vw"
+          />
           <span className="stamp">
             <em aria-hidden="true" />
             Latest decode

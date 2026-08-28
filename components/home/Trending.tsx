@@ -1,15 +1,21 @@
+import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
-import { trendingSearches } from "@/lib/home-content";
+import { trendingSearches } from "@/lib/trending-content";
 
 export function Trending() {
   return (
     <section className="sec">
-      <SectionHeading eyebrow="Right now" title="What people are searching" />
+      <SectionHeading
+        eyebrow="Right now"
+        title="What people are searching"
+        moreLabel="Full leaderboard →"
+        moreHref="/trending"
+      />
       <div className="tags rv rv-d1">
         {trendingSearches.map((search) => (
-          <a href="#" key={search.term}>
-            {search.term} <b>{search.count}</b>
-          </a>
+          <Link href={search.href} key={search.term}>
+            {search.term} <b>{search.volume.toLocaleString("en-IN")}</b>
+          </Link>
         ))}
       </div>
     </section>
