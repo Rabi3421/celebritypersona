@@ -4,14 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import {
-  outfitCelebrities,
-  outfitOccasions,
-  outfits,
-  outfitSlug,
-  savingThresholds,
-  type Outfit,
-} from "@/lib/outfits-content";
+import { outfitCelebrities, outfitOccasions, savingThresholds } from "@/lib/filters";
+import { outfitSlug } from "@/lib/slugs";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";
@@ -40,7 +35,7 @@ function toggleValue(values: string[], value: string) {
     : [...values, value];
 }
 
-export function OutfitsExplorer() {
+export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   const router = useRouter();
   const [occasions, setOccasions] = useState<string[]>([]);
   const [celebrities, setCelebrities] = useState<string[]>([]);
@@ -69,7 +64,7 @@ export function OutfitsExplorer() {
       if (sort === "lux") return b.worn - a.worn;
       return b.date.localeCompare(a.date);
     });
-  }, [budget, celebrities, minimumSaving, occasions, sort]);
+  }, [outfits, budget, celebrities, minimumSaving, occasions, sort]);
 
   const activeFilterCount =
     occasions.length +

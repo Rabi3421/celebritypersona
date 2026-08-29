@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { celebrities, celebritySlug } from "@/lib/celebrities-content";
-import { outfits } from "@/lib/outfits-content";
+import { celebritySlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
+import { getCelebrities, getOutfits } from "@/lib/db/content";
 
-export default function AdminCelebrities() {
+export default async function AdminCelebrities() {
+  const celebrities = await getCelebrities();
+  const outfits = await getOutfits();
+
   return (
     <>
       <div className={styles.tableWrap}>

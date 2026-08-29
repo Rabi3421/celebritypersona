@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
-import { trendingSearches } from "@/lib/trending-content";
+import { getTrendingSearches } from "@/lib/db/content";
 
-export function Trending() {
+export async function Trending() {
+  const trendingSearches = await getTrendingSearches();
+
   return (
     <section className="sec">
       <SectionHeading

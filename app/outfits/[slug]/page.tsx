@@ -5,19 +5,21 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { getOutfitBySlug, outfitSlug, outfits } from "@/lib/outfits-content";
+import { outfitSlug } from "@/lib/slugs";
+import { getOutfitBySlug, getOutfits } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export const dynamicParams = false;
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const outfits = await getOutfits();
   return outfits.map((outfit) => ({ slug: outfitSlug(outfit) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const outfit = getOutfitBySlug(slug);
+  const outfit = await getOutfitBySlug(slug);
   if (!outfit) return {};
 
   return {
@@ -28,7 +30,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function OutfitPage({ params }: Props) {
   const { slug } = await params;
-  const outfit = getOutfitBySlug(slug);
+  const [outfit, outfits] = await Promise.all([
+    getOutfitBySlug(slug),
+    getOutfits(),
+  ]);
   if (!outfit) notFound();
 
   const sameCelebrity = outfits

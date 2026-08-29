@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { trendingBrands, trendingSearches } from "@/lib/trending-content";
+import { trendingBrands } from "@/lib/trending";
 import styles from "@/app/admin/panel.module.css";
+import { getOutfits, getTrendingSearches } from "@/lib/db/content";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -8,7 +9,10 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default function AdminTrending() {
+export default async function AdminTrending() {
+  const trendingSearches = await getTrendingSearches();
+  const outfits = await getOutfits();
+
   return (
     <>
       <div className={styles.notice}>
@@ -86,7 +90,7 @@ export default function AdminTrending() {
                 </tr>
               </thead>
               <tbody>
-                {trendingBrands.map((brand) => (
+                {trendingBrands(outfits).map((brand) => (
                   <tr key={brand.name}>
                     <td>{brand.name}</td>
                     <td className={styles.num}>{brand.swaps}</td>

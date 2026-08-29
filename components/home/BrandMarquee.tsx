@@ -1,6 +1,9 @@
-import { brands } from "@/lib/home-content";
+import { getHomeContent } from "@/lib/db/content";
 
-export function BrandMarquee() {
+
+export async function BrandMarquee() {
+  const { brands } = await getHomeContent();
+
   const loop = [...brands, ...brands];
 
   return (

@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
-import { occasions } from "@/lib/home-content";
 import { revealClass } from "@/lib/reveal";
+import { getHomeContent } from "@/lib/db/content";
 
-export function Occasions() {
+export async function Occasions() {
+  const { occasions } = await getHomeContent();
+
   return (
     <section className="sec">
       <SectionHeading

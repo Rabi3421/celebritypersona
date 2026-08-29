@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
-import { footerColumns } from "@/lib/home-content";
+import { footerColumns } from "@/lib/navigation";
 
 export function Footer() {
   return (

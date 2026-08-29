@@ -1,7 +1,9 @@
-import { trustPoints } from "@/lib/home-content";
 import { revealClass } from "@/lib/reveal";
+import { getHomeContent } from "@/lib/db/content";
 
-export function Trust() {
+export async function Trust() {
+  const { trustPoints } = await getHomeContent();
+
   return (
     <section className="trust">
       <div className="shell in">

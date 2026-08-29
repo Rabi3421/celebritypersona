@@ -1,30 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { inr } from "@/lib/format";
-import { heroLook, heroTotals, swapSteps } from "@/lib/home-content";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { HomeContent } from "@/lib/types";
 
 type Mode = "worn" | "swap";
 
-const ITEMS = heroLook.items;
 const ROLL_MS = 520;
 const ROW_STAGGER_MS = 60;
 const BRAND_FADE_MS = 200;
 const SAVING_DELAY_MS = 340;
 
-const saving = heroTotals.worn - heroTotals.swap;
-const savingPercent = ((saving / heroTotals.worn) * 100).toFixed(1);
-
-const totalFor = (mode: Mode) =>
-  mode === "worn" ? heroTotals.worn : heroTotals.swap;
-
 /** Side-by-side of the look as worn and the look as you can afford it.
  *  Auto-plays the swap once when it first scrolls into view. */
-export function SwapDemo() {
+export function SwapDemo({
+  heroLook,
+  swapSteps,
+}: {
+  heroLook: HomeContent["heroLook"];
+  swapSteps: HomeContent["swapSteps"];
+}) {
+  const ITEMS = heroLook.items;
+  // Memoised so the roll callback below keeps a stable identity.
+  const totals = useMemo(
+    () => ({
+      worn: ITEMS.reduce((sum, item) => sum + item.worn, 0),
+      swap: ITEMS.reduce((sum, item) => sum + item.swap, 0),
+    }),
+    [ITEMS],
+  );
+  const saving = totals.worn - totals.swap;
+  const savingPercent = ((saving / totals.worn) * 100).toFixed(1);
+  const totalFor = useCallback(
+    (mode: Mode) => (mode === "worn" ? totals.worn : totals.swap),
+    [totals],
+  );
+
   const [mode, setMode] = useState<Mode>("worn");
   const [prices, setPrices] = useState<number[]>(ITEMS.map((item) => item.worn));
-  const [total, setTotal] = useState(heroTotals.worn);
+  const [total, setTotal] = useState(totals.worn);
   const [brandMode, setBrandMode] = useState<Mode>("worn");
   const [brandsVisible, setBrandsVisible] = useState(true);
   const [savingShown, setSavingShown] = useState(false);
@@ -115,7 +130,7 @@ export function SwapDemo() {
         ),
       );
     },
-    [clearPending],
+    [clearPending, ITEMS, totalFor],
   );
 
   // Play the swap once, unprompted, the first time the toggle is on screen.

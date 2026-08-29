@@ -1,41 +1,8 @@
-import { social } from "@/lib/site-config";
+/** Seed source for the single `homeContent` document. Not read by the app. */
+import type { HomeContent } from "@/lib/types";
 
-/**
- * Homepage content.
- *
- * Everything the homepage renders lives here so copy and numbers can be edited
- * in one place, and later swapped for a CMS or database query without touching
- * the components.
- */
-
-export type TickerEntry = {
-  celebrity: string;
-  occasion: string;
-  worn: number;
-  swap: number;
-};
-
-export type LookItem = {
-  name: string;
-  /** Short label used on the floating pills over the hero photo. */
-  short: string;
-  wornBrand: string;
-  swapBrand: string;
-  worn: number;
-  swap: number;
-};
-
-export type OutfitCard = {
-  celebrity: string;
-  occasion: string;
-  posted: string;
-  tone: "" | "v2" | "v3" | "v4" | "v5";
-  worn: number;
-  swap: number;
-  peek: { label: string; price: number }[];
-};
-
-export const heroLook = {
+export const homeContent: HomeContent = {
+  heroLook: {
   date: "24 August 2026",
   occasion: "Airport",
   celebrity: "Alia Bhatt",
@@ -76,23 +43,9 @@ export const heroLook = {
       worn: 38500,
       swap: 1299,
     },
-  ] satisfies LookItem[],
-};
-
-export const heroTotals = {
-  worn: heroLook.items.reduce((sum, item) => sum + item.worn, 0),
-  swap: heroLook.items.reduce((sum, item) => sum + item.swap, 0),
-};
-
-export const navLinks = [
-  { label: "Outfits", href: "/outfits" },
-  { label: "Celebrities", href: "/celebrities" },
-  { label: "Occasions", href: "/occasions" },
-  { label: "Budget", href: "/budget" },
-  { label: "Trending", href: "/trending" },
-];
-
-export const tickerEntries: TickerEntry[] = [
+  ],
+},
+  tickerEntries: [
   {
     celebrity: "Deepika",
     occasion: "Mumbai airport",
@@ -103,16 +56,14 @@ export const tickerEntries: TickerEntry[] = [
   { celebrity: "Sara", occasion: "Jaipur sangeet", worn: 76000, swap: 1850 },
   { celebrity: "Kiara", occasion: "Red carpet", worn: 340000, swap: 5210 },
   { celebrity: "Janhvi", occasion: "Bandra casual", worn: 112000, swap: 2140 },
-];
-
-export const stats = [
+],
+  stats: [
   { value: 486, suffix: "", label: "Looks decoded" },
   { value: 2140, suffix: "", label: "Pieces identified" },
   { value: 94, suffix: "%", label: "Average saving" },
   { value: 7, suffix: " days", label: "Prices re-checked every" },
-];
-
-export const thisWeek: OutfitCard[] = [
+],
+  thisWeek: [
   {
     celebrity: "Deepika Padukone",
     occasion: "Mumbai airport",
@@ -178,9 +129,8 @@ export const thisWeek: OutfitCard[] = [
       { label: "Sneakers", price: 2240 },
     ],
   },
-];
-
-export const swapSteps = [
+],
+  swapSteps: [
   {
     n: "01",
     title: "We identify every piece",
@@ -196,20 +146,17 @@ export const swapSteps = [
     title: "We test every link weekly",
     body: "Sold out gets labelled. Dead links get removed, not hidden.",
   },
-];
-
-export const budgetTiers = [
+],
+  budgetTiers: [
   { cap: 2000, looks: 64 },
   { cap: 5000, looks: 148 },
   { cap: 10000, looks: 231 },
-];
-
-export const dupeOfTheWeek = {
+],
+  dupeOfTheWeek: {
   worn: { name: "Sabyasachi silk lehenga", price: 485000 },
   swap: { name: "Libas embroidered lehenga", price: 4299 },
-};
-
-export const occasions = [
+},
+  occasions: [
   { name: "Airport", looks: 142 },
   { name: "Sangeet", looks: 58 },
   { name: "Red carpet", looks: 91 },
@@ -218,18 +165,16 @@ export const occasions = [
   { name: "Diwali", looks: 29 },
   { name: "Promo tour", looks: 76 },
   { name: "Casual", looks: 103 },
-];
-
-export const celebrities = [
+],
+  celebrities: [
   { name: "Alia Bhatt", looks: 47 },
   { name: "Deepika Padukone", looks: 39 },
   { name: "Ananya Panday", looks: 34 },
   { name: "Sara Ali Khan", looks: 31 },
   { name: "Kiara Advani", looks: 28 },
   { name: "Janhvi Kapoor", looks: 22 },
-];
-
-export const brands = [
+],
+  brands: [
   "Sabyasachi",
   "Anita Dongre",
   "Manish Malhotra",
@@ -245,9 +190,8 @@ export const brands = [
   "Zara",
   "H&M",
   "Westside",
-];
-
-export const trustPoints = [
+],
+  trustPoints: [
   {
     n: "01",
     title: "A person, not a scraper",
@@ -268,57 +212,13 @@ export const trustPoints = [
     title: "Swaps are labelled swaps",
     body: "A lookalike is never presented as the real piece. You always know which one you're buying.",
   },
-];
-
-export const reels = [
+],
+  reels: [
   { views: "142k", caption: "Alia ka ₹4.4 lakh look → ₹5,489 mein" },
   { views: "98k", caption: "Sangeet lehenga under ₹5,000" },
   { views: "211k", caption: "Deepika airport look decode" },
   { views: "76k", caption: "Yeh bag actually kitne ka hai?" },
   { views: "134k", caption: "Diwali kurta sets — 5 dupes" },
   { views: "89k", caption: "Red carpet vs Myntra" },
-];
-
-export const footerColumns: { heading: string; links: { label: string; href: string }[] }[] = [
-  {
-    heading: "Browse",
-    links: [
-      { label: "All outfits", href: "/outfits" },
-      { label: "Celebrities", href: "/celebrities" },
-      { label: "Occasions", href: "/occasions" },
-      { label: "By budget", href: "/budget" },
-      { label: "Trending", href: "/trending" },
-      { label: "Wedding edit", href: "#" },
-    ],
-  },
-  {
-    heading: "About",
-    links: [
-      { label: "Who we are", href: "/about" },
-      { label: "How we work", href: "/how-we-work" },
-      { label: "Corrections", href: "/corrections" },
-      { label: "Contact", href: "/contact" },
-      { label: "Report a price", href: "/report-a-price" },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
-      { label: "Affiliate disclosure", href: "/affiliate-disclosure" },
-      { label: "Cookies", href: "/cookies" },
-      { label: "DMCA", href: "/dmca" },
-      { label: "Photo credits", href: "/photo-credits" },
-    ],
-  },
-  {
-    heading: "Follow",
-    links: [
-      { label: "Instagram", href: social.instagram },
-      { label: "YouTube", href: social.youtube },
-      { label: "Pinterest", href: social.pinterest },
-      { label: "WhatsApp updates", href: "#" },
-    ],
-  },
-];
+],
+};

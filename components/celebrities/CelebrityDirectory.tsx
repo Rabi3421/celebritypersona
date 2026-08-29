@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
-import { celebrities, celebritySlug, type Celebrity } from "@/lib/celebrities-content";
+import { celebritySlug } from "@/lib/slugs";
+import type { Celebrity } from "@/lib/types";
 import styles from "@/app/celebrities/celebrities.module.css";
 
 type SortMode = "looks" | "trend" | "new" | "save" | "az";
@@ -14,7 +15,7 @@ function compactPrice(value: number) {
   return `₹${value}`;
 }
 
-export function CelebrityDirectory() {
+export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }) {
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [letter, setLetter] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function CelebrityDirectory() {
       if (sort === "az") return a.name.localeCompare(b.name);
       return b.looks - a.looks;
     });
-  }, [following, followingOnly, letter, query, sort]);
+  }, [celebrities, following, followingOnly, letter, query, sort]);
 
   const searchMatches = query.trim()
     ? celebrities.filter((celebrity) => celebrity.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 6)

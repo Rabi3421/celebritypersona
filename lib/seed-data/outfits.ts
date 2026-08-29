@@ -1,22 +1,5 @@
-export type OutfitItem = {
-  name: string;
-  wornBrand: string;
-  swapBrand: string;
-  worn: number;
-  swap: number;
-};
-
-export type Outfit = {
-  id: number;
-  celebrity: string;
-  event: string;
-  occasion: string;
-  date: string;
-  worn: number;
-  swap: number;
-  isNew?: boolean;
-  items: OutfitItem[];
-};
+/** Seed source for the `outfits` collection. Not read by the app. */
+import type { Outfit } from "@/lib/types";
 
 export const outfits: Outfit[] = [
   { id: 1, celebrity: "Alia Bhatt", event: "Mumbai Airport", occasion: "Airport", date: "2026-08-24", worn: 443500, swap: 5489, isNew: true, items: [
@@ -104,18 +87,3 @@ export const outfits: Outfit[] = [
     { name: "Shorts", wornBrand: "Agolde", swapBrand: "Levis", worn: 48000, swap: 881 },
   ]},
 ];
-
-export const outfitOccasions = ["Airport", "Sangeet", "Red carpet", "Mehendi", "Reception", "Diwali", "Promo tour", "Casual"];
-export const outfitCelebrities = ["Alia Bhatt", "Deepika Padukone", "Ananya Panday", "Sara Ali Khan", "Kiara Advani", "Janhvi Kapoor"];
-export const savingThresholds = [90, 93, 95];
-
-export function outfitSlug(outfit: Outfit) {
-  return `${outfit.celebrity}-${outfit.event}-${outfit.date}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-export function getOutfitBySlug(slug: string) {
-  return outfits.find((outfit) => outfitSlug(outfit) === slug);
-}

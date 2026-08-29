@@ -17,8 +17,11 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
+import { getHomeContent } from "@/lib/db/content";
 
-export default function Home() {
+export default async function Home() {
+  const { stats, heroLook, swapSteps } = await getHomeContent();
+
   return (
     <>
       <Nav />
@@ -26,13 +29,13 @@ export default function Home() {
 
       <HeroShowcase />
 
-      <Stats />
+      <Stats stats={stats} />
 
       <div className="shell">
         <DecodedThisWeek />
       </div>
 
-      <SwapDemo />
+      <SwapDemo heroLook={heroLook} swapSteps={swapSteps} />
 
       <div className="shell">
         <Budget />

@@ -1,18 +1,14 @@
 import type { CSSProperties } from "react";
+import type { Outfit } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
-import { outfits, outfitSlug } from "@/lib/outfits-content";
+import { nameSlug, outfitSlug } from "@/lib/slugs";
 import {
-  biggestSavers,
-  freshestLooks,
-  nameSlug,
-  savingPercent,
-  trendingBrands,
-  trendingDupes,
-  trendingFaqs,
-  trendingOccasions,
-  trendingSearches,
-} from "@/lib/trending-content";
+  getOutfits,
+  getTrendingFaqs,
+  getTrendingSearches,
+} from "@/lib/db/content";
+import { biggestSavers, freshestLooks, savingPercent, trendingBrands, trendingDupes, trendingOccasions } from "@/lib/trending";
 import styles from "@/app/trending/trending.module.css";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -21,12 +17,18 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-const totalSearches = trendingSearches.reduce((sum, item) => sum + item.volume, 0);
-const topVolume = Math.max(...trendingSearches.map((item) => item.volume));
-const fastestRiser = [...trendingSearches].sort((a, b) => b.changePct - a.changePct)[0];
-const cheapestLook = Math.min(...outfits.map((outfit) => outfit.swap));
+export async function TrendingBoard() {
+  const [outfits, trendingSearches, trendingFaqs] = await Promise.all([
+    getOutfits(),
+    getTrendingSearches(),
+    getTrendingFaqs(),
+  ]);
 
-export function TrendingBoard() {
+  const totalSearches = trendingSearches.reduce((sum, item) => sum + item.volume, 0);
+  const topVolume = Math.max(...trendingSearches.map((item) => item.volume));
+  const fastestRiser = [...trendingSearches].sort((a, b) => b.changePct - a.changePct)[0];
+  const cheapestLook = Math.min(...outfits.map((outfit) => outfit.swap));
+
   return (
     <main className={styles.page}>
       <header className={styles.band}>
@@ -113,7 +115,7 @@ export function TrendingBoard() {
             <Link href="/outfits">All outfits →</Link>
           </div>
           <div className={styles.looks}>
-            {freshestLooks.map((outfit) => (
+            {freshestLooks(outfits).map((outfit) => (
               <LookCard outfit={outfit} key={outfit.id} />
             ))}
           </div>
@@ -133,7 +135,7 @@ export function TrendingBoard() {
             <Link href="/budget">Shop by budget →</Link>
           </div>
           <div className={styles.dupes}>
-            {trendingDupes.map((dupe) => (
+            {trendingDupes(outfits).map((dupe) => (
               <Link
                 href={`/outfits/${dupe.slug}`}
                 className={styles.dupe}
@@ -170,7 +172,7 @@ export function TrendingBoard() {
                 </div>
               </div>
               <div className={styles.list}>
-                {trendingBrands.map((brand, index) => (
+                {trendingBrands(outfits).map((brand, index) => (
                   <div className={styles.listRow} key={brand.name}>
                     <i>{String(index + 1).padStart(2, "0")}</i>
                     <strong>{brand.name}</strong>
@@ -192,7 +194,7 @@ export function TrendingBoard() {
                 </div>
               </div>
               <div className={styles.list}>
-                {trendingOccasions.map((occasion, index) => (
+                {trendingOccasions(outfits).map((occasion, index) => (
                   <Link
                     href={`/occasions/${nameSlug(occasion.name)}`}
                     className={styles.listRow}
@@ -222,7 +224,7 @@ export function TrendingBoard() {
             <Link href="/celebrities">Style archives →</Link>
           </div>
           <div className={styles.looks}>
-            {biggestSavers.slice(0, 4).map((outfit) => (
+            {biggestSavers(outfits).slice(0, 4).map((outfit) => (
               <LookCard outfit={outfit} key={outfit.id} />
             ))}
           </div>
@@ -287,7 +289,7 @@ export function TrendingBoard() {
   );
 }
 
-function LookCard({ outfit }: { outfit: (typeof outfits)[number] }) {
+function LookCard({ outfit }: { outfit: Outfit }) {
   return (
     <article className={styles.look}>
       <Link href={`/outfits/${outfitSlug(outfit)}`}>

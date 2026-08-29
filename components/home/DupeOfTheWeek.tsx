@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
-import { dupeOfTheWeek } from "@/lib/home-content";
+import { getHomeContent } from "@/lib/db/content";
 
-export function DupeOfTheWeek() {
+export async function DupeOfTheWeek() {
+  const { dupeOfTheWeek } = await getHomeContent();
+
   return (
     <section className="sec">
       <SectionHeading

@@ -1,15 +1,5 @@
-export type Celebrity = {
-  id: number;
-  name: string;
-  looks: number;
-  averageSaving: number;
-  low: number;
-  high: number;
-  brands: string[];
-  trending?: boolean;
-  newArchive?: boolean;
-  bio?: string[];
-};
+/** Seed source for the `celebrities` collection. Not read by the app. */
+import type { Celebrity } from "@/lib/types";
 
 export const celebrities: Celebrity[] = [
   { id: 1, name: "Alia Bhatt", looks: 47, averageSaving: 96, low: 42000, high: 1280000, brands: ["Anita Dongre", "Gucci", "Sabyasachi"], trending: true, bio: [
@@ -35,19 +25,3 @@ export const celebrities: Celebrity[] = [
   { id: 18, name: "Nora Fatehi", looks: 9, averageSaving: 91, low: 27000, high: 228000, brands: ["Amit Aggarwal", "Mango"] },
 ];
 
-export function celebritySlug(celebrity: Celebrity) {
-  return celebrity.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-
-export function getCelebrityBySlug(slug: string) {
-  return celebrities.find((celebrity) => celebritySlug(celebrity) === slug);
-}
-
-export function celebrityBio(celebrity: Celebrity) {
-  if (celebrity.bio) return celebrity.bio;
-  const [first, second = "high-street staples"] = celebrity.brands;
-  return [
-    `${celebrity.name}'s archive moves comfortably between polished occasion dressing and practical off-duty looks. The common thread is a clear silhouette, controlled colour, and one focal piece rather than styling that competes for attention.`,
-    `${first} and ${second} are among the labels that recur most often. Across ${celebrity.looks} decoded appearances, those repeat choices make the proportions, palette, and affordable alternatives easier to identify with confidence.`,
-  ];
-}

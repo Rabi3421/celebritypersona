@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:admin": "node --env-file=.env.local scripts/seed-admin.mjs"
+    "seed:admin": "node --env-file=.env.local scripts/seed-admin.mjs",
+    "seed:content": "tsx --env-file=.env.local scripts/seed-content.ts",
+    "mongo:local": "node scripts/local-mongo.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -25,7 +27,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "mongodb-memory-server": "^11.2.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

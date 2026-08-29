@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { celebrities } from "@/lib/celebrities-content";
+import {
+  getCelebrities,
+  getOccasions,
+  getOutfits,
+  getPriceReports,
+} from "@/lib/db/content";
 import { getDb } from "@/lib/mongodb";
-import { occasions } from "@/lib/occasions-content";
-import { outfits } from "@/lib/outfits-content";
-import { priceReports } from "@/lib/admin-content";
 import { grievanceOfficer, legalEntity, pending } from "@/lib/site-config";
 import styles from "@/app/admin/panel.module.css";
 
@@ -24,7 +26,13 @@ async function databaseStatus() {
 }
 
 export default async function Overview() {
-  const status = await databaseStatus();
+  const [status, outfits, celebrities, occasions, priceReports] = await Promise.all([
+    databaseStatus(),
+    getOutfits(),
+    getCelebrities(),
+    getOccasions(),
+    getPriceReports(),
+  ]);
 
   const averageSaving = Math.round(
     outfits.reduce((sum, o) => sum + (o.worn - o.swap) / o.worn, 0) /

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { stats } from "@/lib/home-content";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { HomeContent } from "@/lib/types";
 
 function StatTile({
   value,
@@ -64,7 +64,7 @@ function StatTile({
   );
 }
 
-export function Stats() {
+export function Stats({ stats }: { stats: HomeContent["stats"] }) {
   return (
     <section className="stats">
       <div className="shell">

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { occasions, occasionSlug } from "@/lib/occasions-content";
-import { outfits } from "@/lib/outfits-content";
+import { occasionSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
+import { getOccasions, getOutfits } from "@/lib/db/content";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -9,7 +9,10 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default function AdminOccasions() {
+export default async function AdminOccasions() {
+  const occasions = await getOccasions();
+  const outfits = await getOutfits();
+
   return (
     <>
       <div className={styles.tableWrap}>

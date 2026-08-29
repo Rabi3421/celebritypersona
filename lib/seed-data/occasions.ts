@@ -1,18 +1,5 @@
-export type OccasionGroup = "Wedding" | "Festival" | "Everyday";
-
-export type Occasion = {
-  id: number;
-  name: string;
-  group: OccasionGroup;
-  looks: number;
-  swapFrom: number;
-  averageWorn: number;
-  averageSwap: number;
-  peak: string;
-  description: string;
-  colours: { name: string; value: string }[];
-  garments: { name: string; count: number }[];
-};
+/** Seed source for the `occasions` collection. Not read by the app. */
+import type { Occasion } from "@/lib/types";
 
 const weddingColours = [{name:"Emerald",value:"#0E5E45"},{name:"Fuchsia",value:"#C2185B"},{name:"Wine",value:"#6E1023"},{name:"Gold",value:"#C9A227"},{name:"Ink blue",value:"#1B3A6B"}];
 const festivalColours = [{name:"Marigold",value:"#D28A10"},{name:"Rani",value:"#C2185B"},{name:"Vermilion",value:"#A72A20"},{name:"Leaf",value:"#526B3E"},{name:"Ivory",value:"#F2EDE3"}];
@@ -35,5 +22,3 @@ export const occasions: Occasion[] = [
   {id:54,name:"Casual",group:"Everyday",looks:103,swapFrom:599,averageWorn:100000,averageSwap:1690,peak:"All year",description:"The useful archive: denim, tees, relaxed shirts and everyday shoes that translate directly without costume-level styling.",colours:everydayColours,garments:[{name:"Denim",count:38},{name:"Tee",count:27},{name:"Dress",count:21},{name:"Athleisure",count:17}]},
 ];
 
-export function occasionSlug(occasion: Occasion) { return occasion.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
-export function getOccasionBySlug(slug: string) { return occasions.find((occasion) => occasionSlug(occasion) === slug); }

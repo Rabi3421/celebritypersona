@@ -2,7 +2,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import {useMemo,useState,type CSSProperties,type ReactNode} from "react";
-import {outfitOccasions,outfitSlug,outfits,type Outfit} from "@/lib/outfits-content";
+import { outfitOccasions } from "@/lib/filters";
+import { outfitSlug } from "@/lib/slugs";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/budget/budget.module.css";
 
 const inr=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
@@ -19,9 +21,9 @@ const tierCollections: Array<{value:number;body:string}> = [
  {value:10000,body:"Designer-diffusion territory. Reception and red carpet looks become possible."},
 ];
 
-export function BudgetExplorer(){
+export function BudgetExplorer({ outfits }: { outfits: Outfit[] }){
  const [budget,setBudget]=useState(3000);const [saved,setSaved]=useState<number[]>([]);
- const eligible=useMemo(()=>outfits.filter((outfit)=>outfit.swap<=budget).sort((a,b)=>b.worn-a.worn),[budget]);
+ const eligible=useMemo(()=>outfits.filter((outfit)=>outfit.swap<=budget).sort((a,b)=>b.worn-a.worn),[outfits,budget]);
  const occasions=useMemo(()=>Object.fromEntries(outfitOccasions.map((occasion)=>[occasion,eligible.filter((outfit)=>outfit.occasion===occasion).length])),[eligible]);
  const kit=kits.find((item)=>budget<=item.max)??kits[kits.length-1];const kitTotal=kit.items.reduce((sum,item)=>sum+item[3],0);const maxOccasion=Math.max(1,...Object.values(occasions));
  const biggestGap=eligible[0]?.worn;const progress=(budget-1000)/14000*100;

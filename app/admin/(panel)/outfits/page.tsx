@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { outfits, outfitSlug } from "@/lib/outfits-content";
+import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
+import { getOutfits } from "@/lib/db/content";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -8,7 +9,9 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default function AdminOutfits() {
+export default async function AdminOutfits() {
+  const outfits = await getOutfits();
+
   const rows = [...outfits].sort((a, b) => b.date.localeCompare(a.date));
 
   return (

@@ -1,10 +1,12 @@
 import Image from "next/image";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
-import { thisWeek } from "@/lib/home-content";
 import { revealClass } from "@/lib/reveal";
+import { getHomeContent } from "@/lib/db/content";
 
-export function DecodedThisWeek() {
+export async function DecodedThisWeek() {
+  const { thisWeek } = await getHomeContent();
+
   return (
     <section className="sec">
       <SectionHeading

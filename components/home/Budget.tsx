@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
-import { budgetTiers } from "@/lib/home-content";
 import { revealClass } from "@/lib/reveal";
+import { getHomeContent } from "@/lib/db/content";
 
-export function Budget() {
+export async function Budget() {
+  const { budgetTiers } = await getHomeContent();
+
   return (
     <section className="sec">
       <SectionHeading

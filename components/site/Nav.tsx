@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
 import { HeartIcon, SearchIcon } from "./Icons";
-import { navLinks } from "@/lib/home-content";
+import { navLinks } from "@/lib/navigation";
 
 /** Sticky top bar. The `stuck` class is toggled on scroll by ScrollEffects. */
 export function Nav({

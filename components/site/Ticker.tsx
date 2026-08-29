@@ -1,9 +1,11 @@
 import { inr } from "@/lib/format";
-import { tickerEntries } from "@/lib/home-content";
+import { getHomeContent } from "@/lib/db/content";
 
 /** Infinite marquee of recent decodes. The list is rendered twice so the
  *  50%-translate keyframe loops seamlessly. */
-export function Ticker() {
+export async function Ticker() {
+  const { tickerEntries } = await getHomeContent();
+
   const loop = [...tickerEntries, ...tickerEntries];
 
   return (

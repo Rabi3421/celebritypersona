@@ -2,8 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import {useMemo,useState} from "react";
-import {occasionSlug,type Occasion} from "@/lib/occasions-content";
-import {outfitSlug,type Outfit} from "@/lib/outfits-content";
+import { occasionSlug } from "@/lib/slugs";
+import type { Occasion } from "@/lib/types";
+import { outfitSlug } from "@/lib/slugs";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/occasions/[slug]/occasion-detail.module.css";
 
 type SortMode="new"|"saving"|"cheap";

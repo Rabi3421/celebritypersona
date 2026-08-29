@@ -1,11 +1,13 @@
 import Image from "next/image";
 import { SectionHeading } from "./SectionHeading";
 import { PlayIcon } from "@/components/site/Icons";
-import { reels } from "@/lib/home-content";
 import { social } from "@/lib/site-config";
 import { revealClass } from "@/lib/reveal";
+import { getHomeContent } from "@/lib/db/content";
 
-export function Reels() {
+export async function Reels() {
+  const { reels } = await getHomeContent();
+
   return (
     <section className="sec">
       <SectionHeading

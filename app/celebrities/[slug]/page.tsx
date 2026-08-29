@@ -5,20 +5,21 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { celebrities, celebritySlug, getCelebrityBySlug } from "@/lib/celebrities-content";
-import { outfits } from "@/lib/outfits-content";
+import { celebritySlug } from "@/lib/slugs";
+import { getCelebrities, getCelebrityBySlug, getOutfits } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export const dynamicParams = false;
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const celebrities = await getCelebrities();
   return celebrities.map((celebrity) => ({ slug: celebritySlug(celebrity) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const celebrity = getCelebrityBySlug(slug);
+  const celebrity = await getCelebrityBySlug(slug);
   if (!celebrity) return {};
   return {
     title: `${celebrity.name} Style Archive — ${celebrity.looks} looks decoded`,
@@ -28,7 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CelebrityProfilePage({ params }: Props) {
   const { slug } = await params;
-  const celebrity = getCelebrityBySlug(slug);
+  const [celebrity, outfits, celebrities] = await Promise.all([
+    getCelebrityBySlug(slug),
+    getOutfits(),
+    getCelebrities(),
+  ]);
   if (!celebrity) notFound();
 
   const celebrityOutfits = outfits.filter((outfit) => outfit.celebrity === celebrity.name);

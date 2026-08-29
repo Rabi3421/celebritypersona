@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { priceReports } from "@/lib/admin-content";
 import { contacts } from "@/lib/site-config";
 import styles from "@/app/admin/panel.module.css";
+import { getPriceReports } from "@/lib/db/content";
 
-export default function AdminReports() {
+export default async function AdminReports() {
+  const priceReports = await getPriceReports();
+
   return (
     <>
       {priceReports.length === 0 ? (

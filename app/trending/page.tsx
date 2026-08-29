@@ -4,7 +4,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { TrendingBoard } from "@/components/trending/TrendingBoard";
-import { trendingFaqs, trendingSearches } from "@/lib/trending-content";
+import { getTrendingFaqs, getTrendingSearches } from "@/lib/db/content";
 
 export const metadata: Metadata = {
   title: "Trending Celebrity Outfits — What India is searching this week",
@@ -20,34 +20,40 @@ export const metadata: Metadata = {
   },
 };
 
-/** ItemList for the leaderboard plus the FAQ block, in one graph. */
-const structuredData = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "ItemList",
-      name: "Trending celebrity outfit searches in India",
-      itemListOrder: "https://schema.org/ItemListOrderDescending",
-      numberOfItems: trendingSearches.length,
-      itemListElement: trendingSearches.map((search, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: search.term,
-        description: search.answer,
-      })),
-    },
-    {
-      "@type": "FAQPage",
-      mainEntity: trendingFaqs.map((faq) => ({
-        "@type": "Question",
-        name: faq.q,
-        acceptedAnswer: { "@type": "Answer", text: faq.a },
-      })),
-    },
-  ],
-};
 
-export default function TrendingPage() {
+export default async function TrendingPage() {
+  const [trendingSearches, trendingFaqs] = await Promise.all([
+    getTrendingSearches(),
+    getTrendingFaqs(),
+  ]);
+
+  /** ItemList for the leaderboard plus the FAQ block, in one graph. */
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ItemList",
+        name: "Trending celebrity outfit searches in India",
+        itemListOrder: "https://schema.org/ItemListOrderDescending",
+        numberOfItems: trendingSearches.length,
+        itemListElement: trendingSearches.map((search, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: search.term,
+          description: search.answer,
+        })),
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: trendingFaqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: { "@type": "Answer", text: faq.a },
+        })),
+      },
+    ],
+  };
+
   return (
     <>
       <script

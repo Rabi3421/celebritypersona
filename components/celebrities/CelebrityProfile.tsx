@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { celebrityBio, celebritySlug, type Celebrity } from "@/lib/celebrities-content";
-import { outfitSlug, type Outfit } from "@/lib/outfits-content";
+import { celebrityBio } from "@/lib/celebrity-bio";
+import { celebritySlug } from "@/lib/slugs";
+import type { Celebrity } from "@/lib/types";
+import { outfitSlug } from "@/lib/slugs";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/celebrities/[slug]/celebrity-profile.module.css";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";

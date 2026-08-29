@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { outfitSlug, type Outfit } from "@/lib/outfits-content";
+import { outfitSlug } from "@/lib/slugs";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
 type PriceMode = "worn" | "swap";

@@ -4,17 +4,20 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
+import { getCelebrities } from "@/lib/db/content";
 
 export const metadata: Metadata = {
   title: "Celebrity Style Archives — Every look decoded",
   description: "Browse Indian celebrity style archives with outfits decoded piece by piece, original prices, and affordable swaps.",
 };
 
-export default function CelebritiesPage() {
+export default async function CelebritiesPage() {
+  const celebrities = await getCelebrities();
+
   return (
     <>
       <Nav active="celebrities" />
-      <CelebrityDirectory />
+      <CelebrityDirectory celebrities={celebrities} />
       <Footer />
       <MobileTabs />
       <ScrollEffects />

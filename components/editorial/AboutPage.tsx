@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Pending } from "./Pending";
-import { outfits } from "@/lib/outfits-content";
 import { contacts, legalEntity, site } from "@/lib/site-config";
 import styles from "./editorial.module.css";
+import { getOutfits } from "@/lib/db/content";
 
-export function AboutPage() {
+export async function AboutPage() {
+  const outfits = await getOutfits();
+
   return (
     <main className={styles.page}>
       <header className={styles.band}>
