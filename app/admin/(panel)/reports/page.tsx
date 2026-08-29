@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReportRowActions } from "@/components/admin/ReportRowActions";
 import { contacts } from "@/lib/site-config";
 import styles from "@/app/admin/panel.module.css";
 import { getPriceReports } from "@/lib/db/content";
@@ -46,7 +47,7 @@ export default async function AdminReports() {
                     </td>
                     <td className={styles.muted}>{report.detail}</td>
                     <td>
-                      <span className={styles.chip}>{report.status}</span>
+                      <ReportRowActions report={report} />
                     </td>
                   </tr>
                 ))}

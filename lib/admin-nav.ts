@@ -38,12 +38,19 @@ export const adminRoutes: AdminRoute[] = [
     description: "What the public site is serving",
   },
   {
+    href: "/admin/home",
+    label: "Homepage",
+    icon: "overview",
+    group: "Content",
+    description: "Hero, ticker, stats and the editorial tiles",
+  },
+  {
     href: "/admin/outfits",
     label: "Outfits",
     icon: "outfits",
     group: "Content",
     countKey: "outfits",
-    description: "Every decoded look, newest first",
+    description: "Every decoded look, add, edit or remove",
   },
   {
     href: "/admin/celebrities",
@@ -85,6 +92,18 @@ export const adminRoutes: AdminRoute[] = [
   },
 ];
 
+/** Screens reachable from a list rather than the sidebar. */
+export const adminDetailRoutes: { href: string; group: AdminGroup; label: string; description: string }[] = [
+  { href: "/admin/outfits/new", group: "Content", label: "New outfit", description: "Add a decoded look" },
+  { href: "/admin/outfits", group: "Content", label: "Edit outfit", description: "Totals are calculated from the pieces" },
+  { href: "/admin/celebrities/new", group: "Content", label: "New celebrity", description: "Add a style archive" },
+  { href: "/admin/celebrities", group: "Content", label: "Edit celebrity", description: "Archive details and brands" },
+  { href: "/admin/occasions/new", group: "Content", label: "New occasion", description: "Add an event category" },
+  { href: "/admin/occasions", group: "Content", label: "Edit occasion", description: "Colours, garments and timing" },
+  { href: "/admin/trending/new", group: "Operations", label: "New search term", description: "Add a leaderboard row" },
+  { href: "/admin/trending", group: "Operations", label: "Edit search term", description: "Leaderboard row" },
+];
+
 export const adminGroups: AdminGroup[] = [
   "Panel",
   "Content",
@@ -94,6 +113,14 @@ export const adminGroups: AdminGroup[] = [
 
 /** Longest matching route, so /admin never wins over /admin/outfits. */
 export function findAdminRoute(pathname: string): AdminRoute | undefined {
+  const detail = adminDetailRoutes.find((route) =>
+    route.href.endsWith("/new")
+      ? pathname === route.href
+      : pathname.startsWith(`${route.href}/`),
+  );
+  if (detail) {
+    return { ...detail, icon: "overview", countKey: undefined };
+  }
   return [...adminRoutes]
     .sort((a, b) => b.href.length - a.href.length)
     .find(

@@ -16,6 +16,13 @@ export default async function AdminOutfits() {
 
   return (
     <>
+      <div className={styles.listTop}>
+        <p>{rows.length} decoded looks, newest first.</p>
+        <Link className={styles.newButton} href="/admin/outfits/new">
+          New outfit
+        </Link>
+      </div>
+
       <div className={styles.tableWrap}>
         <div className={styles.scroll}>
           <table className={styles.table}>
@@ -57,9 +64,12 @@ export default async function AdminOutfits() {
                     {Math.floor(((outfit.worn - outfit.swap) / outfit.worn) * 100)}%
                   </td>
                   <td className={styles.num}>
-                    <Link href={`/outfits/${outfitSlug(outfit)}`} target="_blank">
-                      View ↗
-                    </Link>
+                    <span className={styles.rowActions}>
+                      <Link href={`/admin/outfits/${outfit.id}`}>Edit</Link>
+                      <Link href={`/outfits/${outfitSlug(outfit)}`} target="_blank">
+                        View ↗
+                      </Link>
+                    </span>
                   </td>
                 </tr>
               ))}

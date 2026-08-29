@@ -10,7 +10,9 @@ import { getOutfitBySlug, getOutfits } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const dynamicParams = false;
+// Records added in the admin panel render on demand instead of 404ing
+// until the next build.
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const outfits = await getOutfits();

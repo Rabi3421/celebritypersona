@@ -9,6 +9,13 @@ export default async function AdminCelebrities() {
 
   return (
     <>
+      <div className={styles.listTop}>
+        <p>{`${celebrities.length} archives.`}</p>
+        <Link className={styles.newButton} href="/admin/celebrities/new">
+          New celebrity
+        </Link>
+      </div>
+
       <div className={styles.tableWrap}>
         <div className={styles.scroll}>
           <table className={styles.table}>
@@ -41,12 +48,15 @@ export default async function AdminCelebrities() {
                       )}
                     </td>
                     <td className={styles.num}>
-                      <Link
-                        href={`/celebrities/${celebritySlug(celebrity)}`}
-                        target="_blank"
-                      >
-                        View ↗
-                      </Link>
+                      <span className={styles.rowActions}>
+                        <Link href={`/admin/celebrities/${celebrity.id}`}>Edit</Link>
+                        <Link
+                          href={`/celebrities/${celebritySlug(celebrity)}`}
+                          target="_blank"
+                        >
+                          View ↗
+                        </Link>
+                      </span>
                     </td>
                   </tr>
                 );

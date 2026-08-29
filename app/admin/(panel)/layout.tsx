@@ -19,8 +19,8 @@ import styles from "@/app/admin/panel.module.css";
  * signed-out visitors, but that runs before rendering and is optimistic.
  */
 export default async function PanelLayout({ children }: { children: ReactNode }) {
-  const [session, outfits, celebrities, occasions, priceReports] = await Promise.all([
-    requireAdmin(),
+  const session = await requireAdmin();
+  const [outfits, celebrities, occasions, priceReports] = await Promise.all([
     getOutfits(),
     getCelebrities(),
     getOccasions(),

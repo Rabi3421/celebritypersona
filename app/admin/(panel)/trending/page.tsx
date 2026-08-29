@@ -26,6 +26,12 @@ export default async function AdminTrending() {
       </div>
 
       <section>
+        <div className={styles.listTop}>
+          <p>{trendingSearches.length} leaderboard rows.</p>
+          <Link className={styles.newButton} href="/admin/trending/new">
+            New search term
+          </Link>
+        </div>
         <div className={styles.sectionHead}>
           <h2>Search leaderboard</h2>
           <Link href="/trending" target="_blank">
@@ -62,9 +68,14 @@ export default async function AdminTrending() {
                       +{search.changePct}%
                     </td>
                     <td className={styles.num}>
-                      <Link href={search.href} target="_blank">
-                        {search.href} ↗
-                      </Link>
+                      <span className={styles.rowActions}>
+                        <Link href={`/admin/trending/${encodeURIComponent(search.term)}`}>
+                          Edit
+                        </Link>
+                        <Link href={search.href} target="_blank">
+                          {search.href} ↗
+                        </Link>
+                      </span>
                     </td>
                   </tr>
                 ))}

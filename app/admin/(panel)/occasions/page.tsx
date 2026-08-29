@@ -15,6 +15,13 @@ export default async function AdminOccasions() {
 
   return (
     <>
+      <div className={styles.listTop}>
+        <p>{`${occasions.length} occasions.`}</p>
+        <Link className={styles.newButton} href="/admin/occasions/new">
+          New occasion
+        </Link>
+      </div>
+
       <div className={styles.tableWrap}>
         <div className={styles.scroll}>
           <table className={styles.table}>
@@ -54,12 +61,15 @@ export default async function AdminOccasions() {
                       {inr.format(occasion.swapFrom)}
                     </td>
                     <td className={styles.num}>
-                      <Link
-                        href={`/occasions/${occasionSlug(occasion)}`}
-                        target="_blank"
-                      >
-                        View ↗
-                      </Link>
+                      <span className={styles.rowActions}>
+                        <Link href={`/admin/occasions/${occasion.id}`}>Edit</Link>
+                        <Link
+                          href={`/occasions/${occasionSlug(occasion)}`}
+                          target="_blank"
+                        >
+                          View ↗
+                        </Link>
+                      </span>
                     </td>
                   </tr>
                 );
