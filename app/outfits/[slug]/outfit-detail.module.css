@@ -37,8 +37,9 @@
 .stockTag.archived { background: #f1f0ed; color: var(--stone); }
 .linePrice { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: var(--s3); }
 .linePrice > b { font-family: var(--mono); font-weight: 600; font-size: 16px; white-space: nowrap; }
-.linePrice button { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 15px; cursor: pointer; }
-.linePrice button:hover:not(:disabled) { border-color: var(--rani); color: var(--rani); }
+.linePrice button, .linePrice a { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 15px; cursor: pointer; }
+.linePrice button:hover:not(:disabled), .linePrice a:hover { border-color: var(--rani); color: var(--rani); }
+.linePrice a { display: inline-block; text-decoration: none; }
 .linePrice button:disabled { opacity: .35; cursor: not-allowed; }
 .total { margin-top: var(--s5); background: var(--ink); color: var(--bone); border-radius: var(--r-lg) var(--r-lg) 0 0; padding: var(--s5) var(--s5) var(--s4); display: flex; justify-content: space-between; align-items: baseline; }
 .total span { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #8a8e97; }
@@ -49,6 +50,9 @@
 @keyframes reveal { from { opacity: 0; transform: translateY(4px); } }
 .purchaseBox > button, .mobileBar button { width: 100%; font-family: var(--body); font-weight: 600; font-size: 16px; background: var(--rani); color: white; border: 0; border-radius: var(--r-md); padding: 17px; cursor: pointer; transition: background var(--fast) var(--ease), transform var(--fast) var(--ease); }
 .purchaseBox > button:hover, .mobileBar button:hover { background: var(--rani-press); }
+.pendingNote { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: var(--bone); font-size: 14.5px; line-height: 1.6; padding: 13px var(--s4); border-radius: var(--r-sm); margin-bottom: var(--s4); }
+.pendingAction { display: block; width: 100%; text-align: center; font-family: var(--body); font-weight: 600; font-size: 15px; background: rgba(255,255,255,.08); color: var(--bone); border: 1px solid rgba(255,255,255,.2); border-radius: var(--r-md); padding: 15px; text-decoration: none; transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease); }
+.pendingAction:hover { border-color: var(--rani); background: rgba(224,0,108,.14); }
 .purchaseBox > small { display: block; font-size: 11.5px; color: var(--ash); text-align: center; margin-top: var(--s3); line-height: 1.5; }
 
 .related { margin-top: var(--s8); padding-top: var(--s7); border-top: 1px solid var(--line); }

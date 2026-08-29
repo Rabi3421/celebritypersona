@@ -2,6 +2,8 @@ import Link from "next/link";
 import { occasionSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getOccasions, getOutfits } from "@/lib/db/content";
+import { Pagination } from "@/components/admin/Pagination";
+import { paginate, readPerPage } from "@/lib/pagination";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -9,14 +11,21 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default async function AdminOccasions() {
-  const occasions = await getOccasions();
+export default async function AdminOccasions({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; per?: string }>;
+}) {
+  const query = await searchParams;
+  const allOccasions = await getOccasions();
+  const paged = paginate(allOccasions, query.page, readPerPage(query.per));
+  const occasions = paged.rows;
   const outfits = await getOutfits();
 
   return (
     <>
       <div className={styles.listTop}>
-        <p>{`${occasions.length} occasions.`}</p>
+        <p>{`${paged.total} occasions.`}</p>
         <Link className={styles.newButton} href="/admin/occasions/new">
           New occasion
         </Link>
@@ -77,6 +86,8 @@ export default async function AdminOccasions() {
             </tbody>
           </table>
         </div>
+
+      <Pagination paged={paged} basePath="/admin/occasions" label="occasions" />
       </div>
     </>
   );

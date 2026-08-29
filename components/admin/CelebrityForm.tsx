@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import {
   CheckField,
+  ErrorSummary,
   FormError,
   NumberField,
   SaveButton,
@@ -24,33 +25,35 @@ export function CelebrityForm({ celebrity }: { celebrity?: Celebrity }) {
     {},
   );
   const errors = state.errors;
+  const draft = state.values;
 
   return (
     <>
       <FormError message={errors?.form} />
+      <ErrorSummary errors={errors} />
       <form action={action} id="entity-form">
         {celebrity ? <input type="hidden" name="id" value={celebrity.id} /> : null}
         <div className={styles.formGrid}>
-          <TextField name="name" label="Name" defaultValue={celebrity?.name} errors={errors} required />
-          <NumberField name="looks" label="Published looks" defaultValue={celebrity?.looks ?? 0} errors={errors} />
-          <NumberField name="averageSaving" label="Average saving %" defaultValue={celebrity?.averageSaving ?? 0} errors={errors} />
-          <NumberField name="low" label="Cheapest look ₹" defaultValue={celebrity?.low ?? 0} errors={errors} />
-          <NumberField name="high" label="Dearest look ₹" defaultValue={celebrity?.high ?? 0} errors={errors} />
+          <TextField name="name" label="Name" defaultValue={draft?.name ?? celebrity?.name} errors={errors} required />
+          <NumberField name="looks" label="Published looks" defaultValue={draft?.looks ?? celebrity?.looks ?? 0} errors={errors} />
+          <NumberField name="averageSaving" label="Average saving %" defaultValue={draft?.averageSaving ?? celebrity?.averageSaving ?? 0} errors={errors} />
+          <NumberField name="low" label="Cheapest look ₹" defaultValue={draft?.low ?? celebrity?.low ?? 0} errors={errors} />
+          <NumberField name="high" label="Dearest look ₹" defaultValue={draft?.high ?? celebrity?.high ?? 0} errors={errors} />
           <TextField
             name="brands"
             label="Brands"
             hint="Comma separated"
-            defaultValue={celebrity?.brands.join(", ")}
+            defaultValue={draft?.brands ?? celebrity?.brands.join(", ")}
             errors={errors}
             wide
           />
-          <CheckField name="trending" label="Trending" defaultChecked={celebrity?.trending} />
-          <CheckField name="newArchive" label="New archive" defaultChecked={celebrity?.newArchive} />
+          <CheckField name="trending" label="Trending" defaultChecked={draft?.trending ?? celebrity?.trending} />
+          <CheckField name="newArchive" label="New archive" defaultChecked={draft?.newArchive ?? celebrity?.newArchive} />
           <TextAreaField
             name="bio"
             label="Bio"
             hint="One paragraph per line. Leave empty to generate one."
-            defaultValue={celebrity?.bio?.join("\n")}
+            defaultValue={draft?.bio ?? celebrity?.bio?.join("\n")}
             errors={errors}
             rows={6}
           />

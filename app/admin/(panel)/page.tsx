@@ -5,6 +5,7 @@ import {
   getOutfits,
   getPriceReports,
 } from "@/lib/db/content";
+import { isFullySwapped } from "@/lib/types";
 import { getDb } from "@/lib/mongodb";
 import { grievanceOfficer, legalEntity, pending } from "@/lib/site-config";
 import styles from "@/app/admin/panel.module.css";
@@ -39,7 +40,8 @@ export default async function Overview() {
       outfits.length *
       100,
   );
-  const cheapest = Math.min(...outfits.map((o) => o.swap));
+  const buyable = outfits.filter(isFullySwapped);
+  const cheapest = buyable.length ? Math.min(...buyable.map((o) => o.swap)) : 0;
   const freshCount = outfits.filter((o) => o.isNew).length;
 
   const unfilledLegal = [

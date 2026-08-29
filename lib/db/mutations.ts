@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/mongodb";
+import { hasSwap, hasWornPrice } from "@/lib/types";
 import type {
   Celebrity,
   HomeContent,
@@ -22,10 +23,11 @@ function revalidateSite() {
   revalidatePath("/", "layout");
 }
 
-/** Totals are always the sum of the pieces, never typed in by hand. */
+/** Totals are always the sum of the pieces, never typed in by hand. A piece
+ *  with no swap yet contributes to the worn total but not the swap total. */
 export const outfitTotals = (items: OutfitItem[]) => ({
-  worn: items.reduce((sum, item) => sum + item.worn, 0),
-  swap: items.reduce((sum, item) => sum + item.swap, 0),
+  worn: items.filter(hasWornPrice).reduce((sum, item) => sum + (item.worn ?? 0), 0),
+  swap: items.filter(hasSwap).reduce((sum, item) => sum + item.swap, 0),
 });
 
 async function nextId(collection: string) {

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import {
+  ErrorSummary,
   FormError,
   NumberField,
   SaveButton,
@@ -26,19 +27,21 @@ export function TrendingForm({ search }: { search?: TrendingSearch }) {
     {},
   );
   const errors = state.errors;
+  const draft = state.values;
 
   return (
     <>
       <FormError message={errors?.form} />
+      <ErrorSummary errors={errors} />
       <form action={action} id="entity-form">
         {search ? <input type="hidden" name="original" value={search.term} /> : null}
         <div className={styles.formGrid}>
-          <TextField name="term" label="Search term" defaultValue={search?.term} errors={errors} required />
-          <SelectField name="intent" label="Intent" options={INTENTS} defaultValue={search?.intent} errors={errors} />
-          <NumberField name="volume" label="Volume" defaultValue={search?.volume ?? 0} errors={errors} />
-          <NumberField name="changePct" label="Change %" defaultValue={search?.changePct ?? 0} errors={errors} />
-          <TextField name="href" label="Answers to" hint="Where the row links" defaultValue={search?.href} errors={errors} wide required />
-          <TextAreaField name="answer" label="Answer" defaultValue={search?.answer} errors={errors} rows={3} />
+          <TextField name="term" label="Search term" defaultValue={draft?.term ?? search?.term} errors={errors} required />
+          <SelectField name="intent" label="Intent" options={INTENTS} defaultValue={draft?.intent ?? search?.intent} errors={errors} />
+          <NumberField name="volume" label="Volume" defaultValue={draft?.volume ?? search?.volume ?? 0} errors={errors} />
+          <NumberField name="changePct" label="Change %" defaultValue={draft?.changePct ?? search?.changePct ?? 0} errors={errors} />
+          <TextField name="href" label="Answers to" hint="Where the row links" defaultValue={draft?.href ?? search?.href} errors={errors} wide required />
+          <TextAreaField name="answer" label="Answer" defaultValue={draft?.answer ?? search?.answer} errors={errors} rows={3} />
         </div>
         <div className={styles.formBar}>
           <SaveButton>{search ? "Save changes" : "Create term"}</SaveButton>

@@ -2,15 +2,24 @@ import Link from "next/link";
 import { celebritySlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getCelebrities, getOutfits } from "@/lib/db/content";
+import { Pagination } from "@/components/admin/Pagination";
+import { paginate, readPerPage } from "@/lib/pagination";
 
-export default async function AdminCelebrities() {
-  const celebrities = await getCelebrities();
+export default async function AdminCelebrities({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; per?: string }>;
+}) {
+  const query = await searchParams;
+  const allCelebrities = await getCelebrities();
+  const paged = paginate(allCelebrities, query.page, readPerPage(query.per));
+  const celebrities = paged.rows;
   const outfits = await getOutfits();
 
   return (
     <>
       <div className={styles.listTop}>
-        <p>{`${celebrities.length} archives.`}</p>
+        <p>{`${paged.total} archives.`}</p>
         <Link className={styles.newButton} href="/admin/celebrities/new">
           New celebrity
         </Link>
@@ -64,6 +73,8 @@ export default async function AdminCelebrities() {
             </tbody>
           </table>
         </div>
+
+      <Pagination paged={paged} basePath="/admin/celebrities" label="archives" />
       </div>
     </>
   );

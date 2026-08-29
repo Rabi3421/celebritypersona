@@ -15,7 +15,7 @@ export type RowField = {
  * keyed by a stable row id, so adding or removing a row never shuffles what the
  * other rows contain.
  */
-export function RepeatableRows<T extends Record<string, string | number>>({
+export function RepeatableRows({
   name,
   title,
   hint,
@@ -29,19 +29,22 @@ export function RepeatableRows<T extends Record<string, string | number>>({
   title: string;
   hint?: ReactNode;
   fields: RowField[];
-  initial: T[];
+  initial: readonly Record<string, string | number>[];
   /** Grid template for one row, excluding the remove button. */
   columns: string;
   addLabel?: string;
   error?: string;
 }) {
   const [rows, setRows] = useState(() =>
-    (initial.length ? initial : [{} as T]).map((values, i) => ({ id: i, values })),
+    (initial.length ? initial : [{}]).map((values, i) => ({
+      id: i,
+      values: values as Record<string, string | number>,
+    })),
   );
   const [nextId, setNextId] = useState(rows.length);
 
   const add = () => {
-    setRows((current) => [...current, { id: nextId, values: {} as T }]);
+    setRows((current) => [...current, { id: nextId, values: {} }]);
     setNextId((n) => n + 1);
   };
   const remove = (id: number) =>

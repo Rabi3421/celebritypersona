@@ -6,25 +6,50 @@ import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
 import { flag, rows, text } from "@/lib/form-data";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 
-export type OutfitFormState = { errors?: FieldErrors };
+/** Exactly what the form posted, echoed back so a rejected save keeps the
+ *  typing. React resets an uncontrolled form after every action. */
+export type OutfitDraft = {
+  celebrity: string;
+  event: string;
+  occasion: string;
+  date: string;
+  isNew: boolean;
+  items: Record<string, string>[];
+};
 
-const ITEM_FIELDS = ["name", "wornBrand", "swapBrand", "worn", "swap"];
+export type OutfitFormState = { attempt?: number; errors?: FieldErrors; values?: OutfitDraft };
+
+const ITEM_FIELDS = [
+  "name",
+  "wornBrand",
+  "worn",
+  "wornUrl",
+  "swapBrand",
+  "swap",
+  "swapUrl",
+];
 
 export async function saveOutfit(
-  _previous: OutfitFormState,
+  previous: OutfitFormState,
   form: FormData,
 ): Promise<OutfitFormState> {
   await requireAdmin();
 
-  const parsed = outfitSchema.safeParse({
+  const draft: OutfitDraft = {
     celebrity: text(form, "celebrity"),
     event: text(form, "event"),
     occasion: text(form, "occasion"),
     date: text(form, "date"),
     isNew: flag(form, "isNew"),
     items: rows(form, "items", ITEM_FIELDS),
-  });
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  };
+
+  const parsed = outfitSchema.safeParse(draft);
+  if (!parsed.success) return {
+      attempt: (previous.attempt ?? 0) + 1,
+      errors: fieldErrors(parsed.error),
+      values: draft,
+    };
 
   const id = Number(form.get("id"));
   if (Number.isFinite(id) && id > 0) {

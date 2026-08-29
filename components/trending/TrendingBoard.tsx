@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { isFullySwapped } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +28,10 @@ export async function TrendingBoard() {
   const totalSearches = trendingSearches.reduce((sum, item) => sum + item.volume, 0);
   const topVolume = Math.max(...trendingSearches.map((item) => item.volume));
   const fastestRiser = [...trendingSearches].sort((a, b) => b.changePct - a.changePct)[0];
-  const cheapestLook = Math.min(...outfits.map((outfit) => outfit.swap));
+  const buyable = outfits.filter(isFullySwapped);
+  const cheapestLook = buyable.length
+    ? Math.min(...buyable.map((outfit) => outfit.swap))
+    : 0;
 
   return (
     <main className={styles.page}>

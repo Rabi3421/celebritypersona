@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import {
   CheckField,
+  ErrorSummary,
   FormError,
   SaveButton,
   SelectField,
@@ -23,10 +24,12 @@ export function OutfitForm({
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
   const errors = state.errors;
+  const draft = state.values;
 
   return (
     <>
       <FormError message={errors?.form} />
+      <ErrorSummary errors={errors} />
 
       <form action={action} id="outfit-form">
         {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
@@ -35,7 +38,7 @@ export function OutfitForm({
           <TextField
             name="celebrity"
             label="Celebrity"
-            defaultValue={outfit?.celebrity}
+            defaultValue={draft?.celebrity ?? outfit?.celebrity}
             placeholder="Alia Bhatt"
             errors={errors}
             required
@@ -43,7 +46,7 @@ export function OutfitForm({
           <TextField
             name="event"
             label="Event"
-            defaultValue={outfit?.event}
+            defaultValue={draft?.event ?? outfit?.event}
             placeholder="Mumbai Airport"
             errors={errors}
             required
@@ -52,33 +55,46 @@ export function OutfitForm({
             name="occasion"
             label="Occasion"
             options={occasions}
-            defaultValue={outfit?.occasion}
+            defaultValue={draft?.occasion ?? outfit?.occasion}
             errors={errors}
           />
           <TextField
             name="date"
             label="Date"
             type="date"
-            defaultValue={outfit?.date}
+            defaultValue={draft?.date ?? outfit?.date}
             errors={errors}
             required
           />
-          <CheckField name="isNew" label="Flag as new" defaultChecked={outfit?.isNew} />
+          <CheckField name="isNew" label="Flag as new" defaultChecked={draft?.isNew ?? outfit?.isNew} />
 
           <RepeatableRows
+            key={`items-${state.attempt ?? 0}`}
             name="items"
             title="Pieces"
             hint="Totals are calculated from these"
-            columns="minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 130px 130px"
+            columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
             error={errors?.items}
-            initial={outfit?.items ?? []}
+            initial={draft?.items ?? outfit?.items ?? []}
             addLabel="Add a piece"
             fields={[
               { key: "name", label: "Piece", placeholder: "Ivory kurta" },
               { key: "wornBrand", label: "Worn brand", placeholder: "Anita Dongre" },
-              { key: "swapBrand", label: "Swap brand", placeholder: "Libas" },
               { key: "worn", label: "Worn ₹", type: "number" },
-              { key: "swap", label: "Swap ₹", type: "number" },
+              {
+                key: "wornUrl",
+                label: "Worn link (optional)",
+                type: "url",
+                placeholder: "https://…",
+              },
+              { key: "swapBrand", label: "Swap brand (optional)", placeholder: "Libas" },
+              { key: "swap", label: "Swap ₹ (optional)", type: "number" },
+              {
+                key: "swapUrl",
+                label: "Swap link (optional)",
+                type: "url",
+                placeholder: "https://…",
+              },
             ]}
           />
         </div>

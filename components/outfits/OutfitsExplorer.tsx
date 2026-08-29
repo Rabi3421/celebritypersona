@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { outfitCelebrities, outfitOccasions, savingThresholds } from "@/lib/filters";
 import { outfitSlug } from "@/lib/slugs";
+import { pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
 
@@ -19,7 +20,7 @@ const inr = new Intl.NumberFormat("en-IN", {
 });
 
 function saving(outfit: Outfit) {
-  return Math.round((1 - outfit.swap / outfit.worn) * 100);
+  return outfit.worn > 0 ? Math.round((1 - outfit.swap / outfit.worn) * 100) : 0;
 }
 
 function shortDate(value: string) {
@@ -143,7 +144,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 <span className={styles.rank}>{index + 1}</span>
                 <span className={styles.trendingMeta}>
                   <b>{outfit.celebrity}</b>
-                  <span><s>{inr.format(outfit.worn)}</s><em>{inr.format(outfit.swap)}</em></span>
+                  <span><CardPrices outfit={outfit} tone="featured" /></span>
                 </span>
               </Link>
             ))}
@@ -281,6 +282,37 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   );
 }
 
+
+/**
+ * One place decides how a card states its prices, so a look that is unpriced,
+ * partly swapped or fully swapped can never be described as any of the others.
+ */
+function CardPrices({ outfit, tone }: { outfit: Outfit; tone: "featured" | "card" }) {
+  const money = pricing(outfit);
+  const worn = money.anyPriced ? inr.format(money.wornTotal) : "Price unconfirmed";
+  const Swap = tone === "featured" ? "em" : "b";
+
+  if (money.allSwapped) {
+    return (
+      <>
+        {/* Only cross out a real figure the swap replaces. */}
+        {money.anyPriced ? <s>{worn}</s> : <span>{worn}</span>}
+        <Swap>{inr.format(money.swapTotal)}</Swap>
+      </>
+    );
+  }
+  return (
+    <>
+      <span>{worn}</span>
+      <Swap>
+        {money.anySwapped
+          ? `${inr.format(money.swapTotal)} · ${money.swapped} of ${money.pieces} swapped`
+          : "No swap yet"}
+      </Swap>
+    </>
+  );
+}
+
 function FilterGroup({ title, onClear, children }: { title: string; onClear?: () => void; children: React.ReactNode }) {
   return (
     <div className={styles.filterGroup}>
@@ -325,12 +357,12 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
             <div className={styles.badges}>
               <span>{shortDate(outfit.date)}</span>
               {outfit.isNew && <b>New</b>}
-              {percentage >= 97 && <em>Top swap</em>}
+              {pricing(outfit).allSwapped && percentage >= 97 && <em>Top swap</em>}
             </div>
             <span className={styles.occasion}>{outfit.occasion}</span>
-            <span className={styles.saving}>−{percentage}%</span>
+            <span className={styles.saving}>{pricing(outfit).allSwapped ? `−${percentage}%` : "No swap yet"}</span>
             <div className={styles.peek}>
-              {outfit.items.slice(0, 3).map((item) => <span key={item.name}>{item.name}<b>{inr.format(item.swap)}</b></span>)}
+              {outfit.items.slice(0, 3).map((item) => <span key={item.name}>{item.name}<b>{item.swap === undefined ? "—" : inr.format(item.swap)}</b></span>)}
               <button type="button" onClick={(event) => { event.stopPropagation(); onQuickView(); }}>Quick view</button>
             </div>
           </>
@@ -345,8 +377,8 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
       </div>
       <div className={styles.cardBody}>
         <h2>{outfit.celebrity}</h2>
-        <p>{outfit.event}{featured && ` · ${outfit.items.length} pieces identified`}</p>
-        <div className={styles.prices}><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></div>
+        <p>{outfit.event}{featured && ` · ${outfit.items.length} ${outfit.items.length === 1 ? "piece" : "pieces"} identified`}</p>
+        <div className={styles.prices}><CardPrices outfit={outfit} tone="card" /></div>
         {!featured && <span className={styles.savingBar}><i style={{ width: `${percentage}%` }} /></span>}
       </div>
     </article>
@@ -382,8 +414,8 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
         <div>
           {outfit.items.map((item) => (
             <div className={styles.modalLine} key={item.name}>
-              <div>{item.name}<small>{mode === "worn" ? item.wornBrand : item.swapBrand}</small></div>
-              <b>{inr.format(mode === "worn" ? item.worn : item.swap)}</b>
+              <div>{item.name}<small>{mode === "worn" ? item.wornBrand : (item.swapBrand ?? "No swap found yet")}</small></div>
+              <b>{(mode === "worn" ? item.worn : item.swap) === undefined ? "—" : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
             </div>
           ))}
         </div>

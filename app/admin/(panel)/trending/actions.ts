@@ -6,7 +6,16 @@ import { deleteTrendingSearch, upsertTrendingSearch } from "@/lib/db/mutations";
 import { text } from "@/lib/form-data";
 import { fieldErrors, trendingSearchSchema, type FieldErrors } from "@/lib/validation";
 
-export type TrendingFormState = { errors?: FieldErrors };
+export type TrendingDraft = {
+  term: string;
+  volume: string;
+  changePct: string;
+  intent: string;
+  href: string;
+  answer: string;
+};
+
+export type TrendingFormState = { errors?: FieldErrors; values?: TrendingDraft };
 
 export async function saveTrendingSearch(
   _previous: TrendingFormState,
@@ -14,15 +23,17 @@ export async function saveTrendingSearch(
 ): Promise<TrendingFormState> {
   await requireAdmin();
 
-  const parsed = trendingSearchSchema.safeParse({
+  const draft: TrendingDraft = {
     term: text(form, "term"),
     volume: text(form, "volume"),
     changePct: text(form, "changePct"),
     intent: text(form, "intent"),
     href: text(form, "href"),
     answer: text(form, "answer"),
-  });
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  };
+
+  const parsed = trendingSearchSchema.safeParse(draft);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values: draft };
 
   const original = text(form, "original");
   await upsertTrendingSearch(original || null, parsed.data);

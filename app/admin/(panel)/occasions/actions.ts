@@ -6,15 +6,28 @@ import { createOccasion, deleteOccasion, updateOccasion } from "@/lib/db/mutatio
 import { rows, text } from "@/lib/form-data";
 import { fieldErrors, occasionSchema, type FieldErrors } from "@/lib/validation";
 
-export type OccasionFormState = { errors?: FieldErrors };
+export type OccasionDraft = {
+  name: string;
+  group: string;
+  looks: string;
+  swapFrom: string;
+  averageWorn: string;
+  averageSwap: string;
+  peak: string;
+  description: string;
+  colours: Record<string, string>[];
+  garments: Record<string, string>[];
+};
+
+export type OccasionFormState = { attempt?: number; errors?: FieldErrors; values?: OccasionDraft };
 
 export async function saveOccasion(
-  _previous: OccasionFormState,
+  previous: OccasionFormState,
   form: FormData,
 ): Promise<OccasionFormState> {
   await requireAdmin();
 
-  const parsed = occasionSchema.safeParse({
+  const draft: OccasionDraft = {
     name: text(form, "name"),
     group: text(form, "group"),
     looks: text(form, "looks"),
@@ -25,8 +38,14 @@ export async function saveOccasion(
     description: text(form, "description"),
     colours: rows(form, "colours", ["name", "value"]),
     garments: rows(form, "garments", ["name", "count"]),
-  });
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  };
+
+  const parsed = occasionSchema.safeParse(draft);
+  if (!parsed.success) return {
+      attempt: (previous.attempt ?? 0) + 1,
+      errors: fieldErrors(parsed.error),
+      values: draft,
+    };
 
   const id = Number(form.get("id"));
   if (Number.isFinite(id) && id > 0) await updateOccasion(id, parsed.data);

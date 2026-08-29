@@ -115,7 +115,7 @@ export function CheckField({
 export function SaveButton({ children = "Save" }: { children?: ReactNode }) {
   const { pending } = useFormStatus();
   return (
-    <button className={styles.save} type="submit" disabled={pending}>
+    <button className={styles.saveButton} type="submit" disabled={pending}>
       {pending ? "Saving…" : children}
     </button>
   );
@@ -127,5 +127,29 @@ export function FormError({ message }: { message?: string }) {
     <p className={styles.formError} role="alert">
       {message}
     </p>
+  );
+}
+
+/**
+ * Lists everything that stopped the save. Without this a rejected form just
+ * sits there and looks like nothing happened.
+ */
+export function ErrorSummary({ errors }: { errors?: FieldErrors }) {
+  const messages = Object.entries(errors ?? {}).filter(([key]) => key !== "form");
+  if (messages.length === 0) return null;
+
+  return (
+    <div className={styles.formError} role="alert">
+      <strong>
+        {messages.length === 1
+          ? "One field needs attention"
+          : `${messages.length} fields need attention`}
+      </strong>
+      <ul>
+        {messages.map(([key, message]) => (
+          <li key={key}>{message}</li>
+        ))}
+      </ul>
+    </div>
   );
 }

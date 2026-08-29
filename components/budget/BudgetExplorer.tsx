@@ -6,6 +6,7 @@ import { outfitOccasions } from "@/lib/filters";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/budget/budget.module.css";
+import { isFullySwapped } from "@/lib/types";
 
 const inr=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
 const kits=[
@@ -23,7 +24,7 @@ const tierCollections: Array<{value:number;body:string}> = [
 
 export function BudgetExplorer({ outfits }: { outfits: Outfit[] }){
  const [budget,setBudget]=useState(3000);const [saved,setSaved]=useState<number[]>([]);
- const eligible=useMemo(()=>outfits.filter((outfit)=>outfit.swap<=budget).sort((a,b)=>b.worn-a.worn),[outfits,budget]);
+ const eligible=useMemo(()=>outfits.filter(isFullySwapped).filter((outfit)=>outfit.swap<=budget).sort((a,b)=>b.worn-a.worn),[outfits,budget]);
  const occasions=useMemo(()=>Object.fromEntries(outfitOccasions.map((occasion)=>[occasion,eligible.filter((outfit)=>outfit.occasion===occasion).length])),[eligible]);
  const kit=kits.find((item)=>budget<=item.max)??kits[kits.length-1];const kitTotal=kit.items.reduce((sum,item)=>sum+item[3],0);const maxOccasion=Math.max(1,...Object.values(occasions));
  const biggestGap=eligible[0]?.worn;const progress=(budget-1000)/14000*100;

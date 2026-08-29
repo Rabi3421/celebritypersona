@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  ErrorSummary,
   FormError,
   SaveButton,
   TextAreaField,
@@ -28,6 +29,7 @@ export function HomeForm({ home, saved }: { home: HomeContent; saved?: boolean }
         </div>
       ) : null}
       <FormError message={errors?.form} />
+      <ErrorSummary errors={errors} />
 
       <form action={action} id="entity-form">
         <section className={styles.section} style={{ marginTop: 0 }}>
@@ -45,7 +47,7 @@ export function HomeForm({ home, saved }: { home: HomeContent; saved?: boolean }
             <RepeatableRows
               name="heroItems"
               title="Hero pieces"
-              columns="minmax(0,1.2fr) 120px minmax(0,1fr) minmax(0,1fr) 110px 110px"
+              columns="minmax(0,1.2fr) 110px minmax(0,1fr) minmax(0,1fr) 110px 110px"
               error={errors?.["heroLook.items"]}
               initial={home.heroLook.items}
               addLabel="Add a piece"

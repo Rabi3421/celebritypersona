@@ -2,6 +2,9 @@ import Link from "next/link";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getOutfits } from "@/lib/db/content";
+import { Pagination } from "@/components/admin/Pagination";
+import { paginate, readPerPage } from "@/lib/pagination";
+import { pricing } from "@/lib/types";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -9,15 +12,22 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default async function AdminOutfits() {
-  const outfits = await getOutfits();
+export default async function AdminOutfits({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; per?: string }>;
+}) {
+  const [outfits, query] = await Promise.all([getOutfits(), searchParams]);
+  const perPage = readPerPage(query.per);
 
-  const rows = [...outfits].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...outfits].sort((a, b) => b.date.localeCompare(a.date));
+  const paged = paginate(sorted, query.page, perPage);
+  const rows = paged.rows;
 
   return (
     <>
       <div className={styles.listTop}>
-        <p>{rows.length} decoded looks, newest first.</p>
+        <p>{paged.total} decoded looks, newest first.</p>
         <Link className={styles.newButton} href="/admin/outfits/new">
           New outfit
         </Link>
@@ -35,12 +45,14 @@ export default async function AdminOutfits() {
                 <th>Pieces</th>
                 <th>As worn</th>
                 <th>Swap</th>
-                <th>Saving</th>
                 <th />
               </tr>
             </thead>
             <tbody>
-              {rows.map((outfit) => (
+              {rows.map((outfit) => {
+                const money = pricing(outfit);
+                const pending = money.pieces - money.swapped;
+                return (
                 <tr key={outfit.id}>
                   <td>
                     {outfit.celebrity}
@@ -53,15 +65,44 @@ export default async function AdminOutfits() {
                     <span className={styles.chip}>{outfit.occasion}</span>
                   </td>
                   <td className={`${styles.num} ${styles.muted}`}>{outfit.date}</td>
-                  <td className={styles.num}>{outfit.items.length}</td>
-                  <td className={`${styles.num} ${styles.strike}`}>
-                    {inr.format(outfit.worn)}
+                  <td className={styles.num}>
+                    {money.pieces}
+                    {pending > 0 ? (
+                      <>
+                        {" "}
+                        <span className={styles.chip}>
+                          {pending} pending
+                        </span>
+                      </>
+                    ) : null}
                   </td>
-                  <td className={`${styles.num} ${styles.save}`}>
-                    {inr.format(outfit.swap)}
+                  {/* Only strike a figure the swap actually replaces. */}
+                  <td
+                    className={`${styles.num} ${
+                      money.allSwapped && money.anyPriced ? styles.strike : styles.muted
+                    }`}
+                  >
+                    {money.anyPriced ? inr.format(money.wornTotal) : "Unconfirmed"}
+                    {money.anyPriced && !money.allPriced ? (
+                      <>
+                        {" "}
+                        <span className={styles.chip}>
+                          {money.priced} of {money.pieces} priced
+                        </span>
+                      </>
+                    ) : null}
                   </td>
                   <td className={styles.num}>
-                    {Math.floor(((outfit.worn - outfit.swap) / outfit.worn) * 100)}%
+                    {money.anySwapped ? (
+                      <span className={styles.swapCell}>
+                        <b className={styles.save}>{inr.format(money.swapTotal)}</b>
+                        {money.savingPct === null ? null : (
+                          <small>{money.savingPct}% less</small>
+                        )}
+                      </span>
+                    ) : (
+                      <span className={`${styles.muted} ${styles.swapCell}`}>None yet</span>
+                    )}
                   </td>
                   <td className={styles.num}>
                     <span className={styles.rowActions}>
@@ -72,11 +113,14 @@ export default async function AdminOutfits() {
                     </span>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Pagination paged={paged} basePath="/admin/outfits" label="looks" />
     </>
   );
 }

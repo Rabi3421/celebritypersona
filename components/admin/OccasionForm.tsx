@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import {
+  ErrorSummary,
   FormError,
   NumberField,
   SaveButton,
@@ -24,29 +25,32 @@ const GROUPS = ["Wedding", "Festival", "Everyday"] as const;
 export function OccasionForm({ occasion }: { occasion?: Occasion }) {
   const [state, action] = useActionState<OccasionFormState, FormData>(saveOccasion, {});
   const errors = state.errors;
+  const draft = state.values;
 
   return (
     <>
       <FormError message={errors?.form} />
+      <ErrorSummary errors={errors} />
       <form action={action} id="entity-form">
         {occasion ? <input type="hidden" name="id" value={occasion.id} /> : null}
         <div className={styles.formGrid}>
-          <TextField name="name" label="Name" defaultValue={occasion?.name} errors={errors} required />
-          <SelectField name="group" label="Group" options={GROUPS} defaultValue={occasion?.group} errors={errors} />
-          <NumberField name="looks" label="Published looks" defaultValue={occasion?.looks ?? 0} errors={errors} />
-          <NumberField name="swapFrom" label="Swaps from ₹" defaultValue={occasion?.swapFrom ?? 0} errors={errors} />
-          <NumberField name="averageWorn" label="Average worn ₹" defaultValue={occasion?.averageWorn ?? 0} errors={errors} />
-          <NumberField name="averageSwap" label="Average swap ₹" defaultValue={occasion?.averageSwap ?? 0} errors={errors} />
-          <TextField name="peak" label="Peak" defaultValue={occasion?.peak} placeholder="Peaks Nov–Feb" errors={errors} />
-          <TextAreaField name="description" label="Description" defaultValue={occasion?.description} errors={errors} rows={3} />
+          <TextField name="name" label="Name" defaultValue={draft?.name ?? occasion?.name} errors={errors} required />
+          <SelectField name="group" label="Group" options={GROUPS} defaultValue={draft?.group ?? occasion?.group} errors={errors} />
+          <NumberField name="looks" label="Published looks" defaultValue={draft?.looks ?? occasion?.looks ?? 0} errors={errors} />
+          <NumberField name="swapFrom" label="Swaps from ₹" defaultValue={draft?.swapFrom ?? occasion?.swapFrom ?? 0} errors={errors} />
+          <NumberField name="averageWorn" label="Average worn ₹" defaultValue={draft?.averageWorn ?? occasion?.averageWorn ?? 0} errors={errors} />
+          <NumberField name="averageSwap" label="Average swap ₹" defaultValue={draft?.averageSwap ?? occasion?.averageSwap ?? 0} errors={errors} />
+          <TextField name="peak" label="Peak" defaultValue={draft?.peak ?? occasion?.peak} placeholder="Peaks Nov–Feb" errors={errors} />
+          <TextAreaField name="description" label="Description" defaultValue={draft?.description ?? occasion?.description} errors={errors} rows={3} />
 
           <RepeatableRows
+            key={`colours-${state.attempt ?? 0}`}
             name="colours"
             title="Palette"
             hint="Shown as swatches"
             columns="minmax(0,1fr) 160px"
             error={errors?.colours}
-            initial={occasion?.colours ?? []}
+            initial={draft?.colours ?? occasion?.colours ?? []}
             addLabel="Add a colour"
             fields={[
               { key: "name", label: "Colour", placeholder: "Emerald" },
@@ -54,12 +58,13 @@ export function OccasionForm({ occasion }: { occasion?: Occasion }) {
             ]}
           />
           <RepeatableRows
+            key={`garments-${state.attempt ?? 0}`}
             name="garments"
             title="Garments"
             hint="Counts shown on the occasion page"
             columns="minmax(0,1fr) 160px"
             error={errors?.garments}
-            initial={occasion?.garments ?? []}
+            initial={draft?.garments ?? occasion?.garments ?? []}
             addLabel="Add a garment"
             fields={[
               { key: "name", label: "Garment", placeholder: "Lehenga" },

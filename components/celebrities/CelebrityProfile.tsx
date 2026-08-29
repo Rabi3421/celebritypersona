@@ -14,7 +14,7 @@ type SortMode = "new" | "saving" | "cheap" | "lux";
 const inr = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
 const shortDate = new Intl.DateTimeFormat("en-IN", { day:"numeric", month:"short", year:"2-digit" });
 
-function saving(outfit: Outfit) { return Math.round((1 - outfit.swap / outfit.worn) * 100); }
+function saving(outfit: Outfit) { return outfit.worn > 0 ? Math.round((1 - outfit.swap / outfit.worn) * 100) : 0; }
 
 export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: Celebrity; outfits: Outfit[]; similar: Celebrity[] }) {
   const [following, setFollowing] = useState(false);

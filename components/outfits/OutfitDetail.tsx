@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { outfitSlug } from "@/lib/slugs";
+import { isFullySwapped, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
@@ -41,7 +42,8 @@ export function OutfitDetail({
   const [mobileBarVisible, setMobileBarVisible] = useState(false);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const published = new Date(`${outfit.date}T00:00:00`);
-  const percentage = Math.round((1 - outfit.swap / outfit.worn) * 1000) / 10;
+  const money = pricing(outfit);
+  const pieceWord = (count: number) => (count === 1 ? "piece" : "pieces");
 
   useEffect(() => {
     const target = ctaRef.current;
@@ -113,41 +115,115 @@ export function OutfitDetail({
               <div>{longDate.format(published)} · <Link href={`/occasions/${outfit.occasion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.occasion} looks</Link> · <Link href={`/celebrities/${outfit.celebrity.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.celebrity} archive</Link></div>
             </header>
 
-            <div className={`${styles.toggle} ${mode === "swap" ? styles.swapMode : ""}`} role="tablist" aria-label="Price mode">
-              <i />
-              <button type="button" role="tab" aria-selected={mode === "worn"} onClick={() => selectMode("worn")}>As worn</button>
-              <button type="button" role="tab" aria-selected={mode === "swap"} onClick={() => selectMode("swap")}>The swap</button>
-            </div>
+            {money.anySwapped ? (
+              <div className={`${styles.toggle} ${mode === "swap" ? styles.swapMode : ""}`} role="tablist" aria-label="Price mode">
+                <i />
+                <button type="button" role="tab" aria-selected={mode === "worn"} onClick={() => selectMode("worn")}>As worn</button>
+                <button type="button" role="tab" aria-selected={mode === "swap"} onClick={() => selectMode("swap")}>The swap</button>
+              </div>
+            ) : null}
 
             <div className={styles.lines}>
               {outfit.items.map((item, index) => (
                 <article id={`outfit-item-${index}`} className={`${styles.line} ${highlighted === index ? styles.highlighted : ""}`} key={item.name}>
                   <div>
                     <h2>{item.name}</h2>
-                    <p>{mode === "worn" ? item.wornBrand : item.swapBrand}</p>
-                    <span className={`${styles.stockTag} ${mode === "worn" && index === 1 ? styles.archived : ""}`}>
-                      {mode === "swap" ? "Similar · in stock" : index === 1 ? "Archive · not sold" : index === 2 ? "Exact · low stock" : "Exact · in stock"}
+                    <p>{mode === "worn" ? item.wornBrand : (item.swapBrand ?? "No swap found yet")}</p>
+                    <span className={`${styles.stockTag} ${mode === "worn" && !item.wornUrl ? styles.archived : ""}`}>
+                      {mode === "swap"
+                        ? item.swapBrand
+                          ? item.swapUrl
+                            ? "Similar · buy it"
+                            : "Similar · link pending"
+                          : "Still looking"
+                        : item.worn === undefined
+                          ? "Exact · price unconfirmed"
+                          : item.wornUrl
+                            ? "Exact · buy it"
+                            : "Exact · link pending"}
                     </span>
                   </div>
                   <div className={styles.linePrice}>
-                    <b>{inr.format(mode === "worn" ? item.worn : item.swap)}</b>
-                    <button type="button" disabled={mode === "worn" && index === 1}>Buy</button>
+                    <b>{(mode === "worn" ? item.worn : item.swap) === undefined
+                        ? "—"
+                        : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
+                    {(mode === "worn" ? item.wornUrl : item.swapUrl) ? (
+                      <a
+                        href={mode === "worn" ? item.wornUrl : item.swapUrl}
+                        target="_blank"
+                        rel="nofollow sponsored noopener"
+                      >
+                        Buy
+                      </a>
+                    ) : (
+                      <button type="button" disabled>
+                        Buy
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}
             </div>
 
             <div className={styles.total}>
-              <span>{mode === "worn" ? "Total as worn" : "Total for the swap"}</span>
-              <b aria-live="polite">{inr.format(mode === "worn" ? outfit.worn : outfit.swap)}</b>
+              <span>
+                {mode === "worn"
+                  ? money.allPriced
+                    ? "Total as worn"
+                    : money.anyPriced
+                      ? `Total for ${money.priced} of ${money.pieces} priced`
+                      : "Original prices unconfirmed"
+                  : money.allSwapped
+                    ? "Total for the swap"
+                    : `Total for ${money.swapped} of ${money.pieces} swapped`}
+              </span>
+              <b aria-live="polite">
+                {mode === "worn"
+                  ? money.anyPriced ? inr.format(money.wornTotal) : "—"
+                  : inr.format(money.swapTotal)}
+              </b>
             </div>
             <div className={styles.purchaseBox}>
               <p>◷ Prices checked 2 days ago</p>
-              {mode === "swap" && <div>You save {inr.format(outfit.worn - outfit.swap)} — {percentage}% less</div>}
-              <button ref={ctaRef} type="button" onClick={handleCta}>
-                {mode === "swap" ? `Buy all ${outfit.items.length} pieces · ${inr.format(outfit.swap)}` : `Get this look for ${inr.format(outfit.swap)}`}
-              </button>
-              <small>We earn a commission on some links. It never changes what we pick or what you pay.</small>
+
+              {money.anySwapped ? (
+                <>
+                  {mode === "swap" && money.savingPct !== null && (
+                    <div>
+                      You save {inr.format(money.savingTotal)} — {money.savingPct}% less
+                      {money.allSwapped ? "" : ` on ${money.swapped} ${pieceWord(money.swapped)}`}
+                    </div>
+                  )}
+                  <button ref={ctaRef} type="button" onClick={handleCta}>
+                    {mode === "swap"
+                      ? money.allSwapped
+                        ? `Buy all ${money.pieces} ${pieceWord(money.pieces)} · ${inr.format(money.swapTotal)}`
+                        : `Buy the ${money.swapped} swapped ${pieceWord(money.swapped)} · ${inr.format(money.swapTotal)}`
+                      : money.allSwapped
+                        ? `Get this look for ${inr.format(money.swapTotal)}`
+                        : `See the ${money.swapped} ${pieceWord(money.swapped)} we have swapped`}
+                  </button>
+                  <small>
+                    {money.allSwapped
+                      ? "We earn a commission on some links. It never changes what we pick or what you pay."
+                      : `${money.pieces - money.swapped} ${pieceWord(money.pieces - money.swapped)} still ${money.pieces - money.swapped === 1 ? "needs" : "need"} a swap. We earn a commission on some links.`}
+                  </small>
+                </>
+              ) : (
+                <>
+                  <div className={styles.pendingNote}>
+                    We have identified {money.pieces === 1 ? "this piece" : `all ${money.pieces} pieces`}, but
+                    have not found an alternative worth recommending yet.
+                  </div>
+                  <Link className={styles.pendingAction} href="/report-a-price">
+                    Know a good match? Tell us
+                  </Link>
+                  <small>
+                    We only publish a swap once a person has checked it. Until then
+                    there is nothing here to sell you.
+                  </small>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -162,11 +238,19 @@ export function OutfitDetail({
         </div>
       </div>
 
-      <div className={`${styles.mobileBar} ${mobileBarVisible ? styles.mobileBarVisible : ""}`}>
-        <button type="button" onClick={handleCta}>
-          {mode === "swap" ? `Buy all ${outfit.items.length} pieces · ${inr.format(outfit.swap)}` : `Get this look for ${inr.format(outfit.swap)}`}
-        </button>
-      </div>
+      {money.anySwapped ? (
+        <div className={`${styles.mobileBar} ${mobileBarVisible ? styles.mobileBarVisible : ""}`}>
+          <button type="button" onClick={handleCta}>
+            {mode === "swap"
+              ? money.allSwapped
+                ? `Buy all ${money.pieces} ${pieceWord(money.pieces)} · ${inr.format(money.swapTotal)}`
+                : `Buy the ${money.swapped} swapped ${pieceWord(money.swapped)} · ${inr.format(money.swapTotal)}`
+              : money.allSwapped
+                ? `Get this look for ${inr.format(money.swapTotal)}`
+                : `See the ${money.swapped} ${pieceWord(money.swapped)} we have swapped`}
+          </button>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -186,7 +270,7 @@ function RelatedRail({ title, outfits }: { title: string; outfits: Outfit[] }) {
             <section>
               <h3>{outfit.celebrity}</h3>
               <p>{outfit.event} · {shortDate.format(new Date(`${outfit.date}T00:00:00`))}</p>
-              <span><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></span>
+              <span>{isFullySwapped(outfit) ? <><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></> : <b>{inr.format(outfit.worn)}</b>}</span>
             </section>
           </Link>
         ))}

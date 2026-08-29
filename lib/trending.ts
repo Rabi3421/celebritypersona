@@ -1,5 +1,6 @@
 import { outfitSlug } from "@/lib/slugs";
-import type { Outfit, OutfitItem } from "@/lib/types";
+import { hasSwap, hasWornPrice } from "@/lib/types";
+import type { Outfit, SwappedItem } from "@/lib/types";
 
 /**
  * Everything the trending surfaces show below the search leaderboard is
@@ -9,7 +10,7 @@ import type { Outfit, OutfitItem } from "@/lib/types";
 
 /** Floored, so a 99.5% saving never rounds up to a "100% less" badge. */
 export const savingPercent = (outfit: Outfit) =>
-  Math.floor(((outfit.worn - outfit.swap) / outfit.worn) * 100);
+  outfit.worn > 0 ? Math.floor(((outfit.worn - outfit.swap) / outfit.worn) * 100) : 0;
 
 /** Looks with the widest gap between what she paid and what you would. */
 export const biggestSavers = (outfits: Outfit[]) =>
@@ -19,13 +20,15 @@ export const biggestSavers = (outfits: Outfit[]) =>
 export const freshestLooks = (outfits: Outfit[]) =>
   [...outfits].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
 
-export type TrendingDupe = OutfitItem & { celebrity: string; slug: string };
+export type TrendingDupe = SwappedItem & { celebrity: string; slug: string; worn: number };
 
 /** Single pieces with the largest rupee gap, the classic dupe query. */
 export const trendingDupes = (outfits: Outfit[]): TrendingDupe[] =>
   outfits
     .flatMap((outfit) =>
-      outfit.items.map((item) => ({
+      outfit.items
+        .filter((item): item is SwappedItem & { worn: number } => hasSwap(item) && hasWornPrice(item))
+        .map((item) => ({
         ...item,
         celebrity: outfit.celebrity,
         slug: outfitSlug(outfit),
@@ -40,7 +43,7 @@ export type TrendingBrand = { name: string; swaps: number; cheapest: number };
 export const trendingBrands = (outfits: Outfit[]): TrendingBrand[] =>
   Object.values(
     outfits
-      .flatMap((outfit) => outfit.items)
+      .flatMap((outfit) => outfit.items.filter(hasSwap))
       .reduce<Record<string, TrendingBrand>>((acc, item) => {
         const entry = acc[item.swapBrand] ?? {
           name: item.swapBrand,
