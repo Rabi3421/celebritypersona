@@ -4,7 +4,7 @@ import { Campaign } from "@/components/home/Campaign";
 import { Celebrities } from "@/components/home/Celebrities";
 import { DecodedThisWeek } from "@/components/home/DecodedThisWeek";
 import { DupeOfTheWeek } from "@/components/home/DupeOfTheWeek";
-import { Hero } from "@/components/home/Hero";
+import { HeroShowcase } from "@/components/home/HeroShowcase";
 import { Occasions } from "@/components/home/Occasions";
 import { Reels } from "@/components/home/Reels";
 import { Signup } from "@/components/home/Signup";
@@ -24,9 +24,7 @@ export default function Home() {
       <Nav />
       <Ticker />
 
-      <div className="shell">
-        <Hero />
-      </div>
+      <HeroShowcase />
 
       <Stats />
 

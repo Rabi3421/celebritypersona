@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s · CelebrityPersona",
   },
   description:
-    "Every piece decoded, with buy links and affordable swaps. Alia's ₹4,43,500 airport look, for ₹5,489.",
+    "Discover Indian celebrity outfits, occasion edits, trending style, identified pieces, and accessible ways to make every look your own.",
 };
 
 export const viewport: Viewport = {
