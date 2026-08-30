@@ -30,6 +30,9 @@ export const outfitItemSchema = z
     swapBrand: z.string().trim().optional(),
     swap: z.string().trim().optional(),
     swapUrl: z.string().trim().optional(),
+    note: z.string().trim().optional(),
+    hotspotX: z.string().trim().optional(),
+    hotspotY: z.string().trim().optional(),
   })
   .transform((item) => ({
     ...item,
@@ -38,6 +41,9 @@ export const outfitItemSchema = z
     swapBrand: item.swapBrand || undefined,
     swap: item.swap || undefined,
     swapUrl: item.swapUrl || undefined,
+    note: item.note || undefined,
+    hotspotX: item.hotspotX || undefined,
+    hotspotY: item.hotspotY || undefined,
   }))
   .superRefine((item, ctx) => {
     if (item.swapBrand && !item.swap) {
@@ -65,8 +71,12 @@ export const outfitItemSchema = z
   .transform((item) => ({
     name: item.name,
     wornBrand: item.wornBrand,
+    ...(item.note ? { note: item.note } : {}),
     ...(item.worn ? { worn: Number(item.worn) } : {}),
     ...(item.wornUrl ? { wornUrl: item.wornUrl } : {}),
+    ...(item.hotspotX && item.hotspotY
+      ? { hotspot: { x: Number(item.hotspotX), y: Number(item.hotspotY) } }
+      : {}),
     ...(item.swapBrand && item.swap
       ? {
           swapBrand: item.swapBrand,
@@ -92,6 +102,16 @@ export const outfitSchema = z.object({
   occasion: required("Occasion"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
   isNew: z.boolean().default(false),
+  // The slug is the public URL segment and the storage folder, so it has to be
+  // safe in both places: lowercase words joined by single hyphens.
+  slug: required("Slug").regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "Use lowercase letters, numbers and single hyphens, e.g. amyra-dastur-savanna-co-ord",
+  ),
+  images: z
+    .array(z.object({ url: z.string().trim().min(1), path: z.string().trim().min(1) }))
+    .default([]),
+  notes: z.array(z.string().trim().min(1)).default([]),
   items: z.array(outfitItemSchema).min(1, "Add at least one piece"),
 });
 

@@ -6,7 +6,7 @@ import { outfitOccasions } from "@/lib/filters";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/budget/budget.module.css";
-import { isFullySwapped } from "@/lib/types";
+import { outfitPhoto, isFullySwapped } from "@/lib/types";
 
 const inr=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
 const kits=[
@@ -40,4 +40,4 @@ export function BudgetExplorer({ outfits }: { outfits: Outfit[] }){
 
 function SectionHeading({eyebrow,title,body,total}:{eyebrow:string;title:ReactNode;body?:string;total?:string}){return <div className={styles.sectionHeading}><div><p>{eyebrow}</p><h2>{title}</h2>{body&&<span>{body}</span>}</div>{total&&<b>{total}</b>}</div>;}
 function compactPrice(value:number){return value>=100000?`${(value/100000).toFixed(1).replace(/\.0$/,"")} lakh`:inr.format(value);}
-function BudgetCard({outfit,budget,saved,onSave}:{outfit:Outfit;budget:number;saved:boolean;onSave:()=>void}){return <article className={styles.card}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><Image src={`https://picsum.photos/seed/cpo${outfit.id}/600/750`} alt={`${outfit.celebrity} ${outfit.occasion} look`} fill sizes="(max-width:520px) 50vw, 25vw"/><span>{outfit.occasion}</span><b>fits {inr.format(budget)}</b></div><section><h3>{outfit.celebrity}</h3><p>{outfit.event}</p><span><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;}
+function BudgetCard({outfit,budget,saved,onSave}:{outfit:Outfit;budget:number;saved:boolean;onSave:()=>void}){return <article className={styles.card}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/600/750`} alt={`${outfit.celebrity} ${outfit.occasion} look`} fill sizes="(max-width:520px) 50vw, 25vw"/><span>{outfit.occasion}</span><b>fits {inr.format(budget)}</b></div><section><h3>{outfit.celebrity}</h3><p>{outfit.event}</p><span><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;}

@@ -8,11 +8,14 @@ import {
   FormError,
   SaveButton,
   SelectField,
+  TextAreaField,
   TextField,
 } from "@/components/admin/form/Fields";
 import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
+import { OutfitImageEditor } from "@/components/admin/OutfitImageEditor";
 import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(panel)/outfits/actions";
-import type { Outfit } from "@/lib/types";
+import { outfitPhotos, type Outfit } from "@/lib/types";
+import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 
 export function OutfitForm({
@@ -66,7 +69,32 @@ export function OutfitForm({
             errors={errors}
             required
           />
+          <TextField
+            name="slug"
+            label="Slug"
+            hint="The look's URL segment, and the folder its photos are uploaded into"
+            defaultValue={draft?.slug ?? (outfit ? outfitSlug(outfit) : undefined)}
+            placeholder="amyra-dastur-savanna-co-ord"
+            errors={errors}
+            required
+          />
           <CheckField name="isNew" label="Flag as new" defaultChecked={draft?.isNew ?? outfit?.isNew} />
+
+          <OutfitImageEditor
+            key={`photo-${state.attempt ?? 0}`}
+            initialImages={draft?.images ?? (outfit ? outfitPhotos(outfit) : [])}
+            initialItems={outfit?.items ?? []}
+          />
+
+          <TextAreaField
+            name="notes"
+            label="About this look"
+            rows={6}
+            hint="One paragraph per line. Your own words on the styling, the fabric, the occasion — this is what a search engine cannot get from the brand's product page, and without it the look stays out of Google."
+            defaultValue={draft?.notes ?? outfit?.notes?.join("\n")}
+            placeholder={"Amyra wore the Savanna Gypsy co-ord for Label Monik's campaign — a hand-blocked cotton set cut as a bralette and a draped sarong skirt.\nThe print is Kalamkari-inspired, which is why it reads as festive even though the fabric is everyday cotton."}
+            errors={errors}
+          />
 
           <RepeatableRows
             key={`items-${state.attempt ?? 0}`}
@@ -79,6 +107,11 @@ export function OutfitForm({
             addLabel="Add a piece"
             fields={[
               { key: "name", label: "Piece", placeholder: "Ivory kurta" },
+              {
+                key: "note",
+                label: "Note (optional)",
+                placeholder: "Chikankari on cotton mul, elbow sleeves",
+              },
               { key: "wornBrand", label: "Worn brand", placeholder: "Anita Dongre" },
               { key: "worn", label: "Worn ₹", type: "number" },
               {

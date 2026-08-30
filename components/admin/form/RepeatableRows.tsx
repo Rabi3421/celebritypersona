@@ -29,7 +29,8 @@ export function RepeatableRows({
   title: string;
   hint?: ReactNode;
   fields: RowField[];
-  initial: readonly Record<string, string | number>[];
+  /** Extra keys are ignored, so a row object may carry richer values too. */
+  initial: readonly Record<string, unknown>[];
   /** Grid template for one row, excluding the remove button. */
   columns: string;
   addLabel?: string;
@@ -38,13 +39,13 @@ export function RepeatableRows({
   const [rows, setRows] = useState(() =>
     (initial.length ? initial : [{}]).map((values, i) => ({
       id: i,
-      values: values as Record<string, string | number>,
+      values: values as Record<string, unknown>,
     })),
   );
   const [nextId, setNextId] = useState(rows.length);
 
   const add = () => {
-    setRows((current) => [...current, { id: nextId, values: {} }]);
+    setRows((current) => [...current, { id: nextId, values: {} as Record<string, unknown> }]);
     setNextId((n) => n + 1);
   };
   const remove = (id: number) =>
@@ -74,7 +75,12 @@ export function RepeatableRows({
                 name={`${name}.${index}.${field.key}`}
                 type={field.type ?? "text"}
                 placeholder={field.placeholder}
-                defaultValue={row.values[field.key] ?? ""}
+                defaultValue={
+                  typeof row.values[field.key] === "string" ||
+                  typeof row.values[field.key] === "number"
+                    ? (row.values[field.key] as string | number)
+                    : ""
+                }
               />
             </div>
           ))}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { outfitCelebrities, outfitOccasions, savingThresholds } from "@/lib/filters";
 import { outfitSlug } from "@/lib/slugs";
-import { pricing } from "@/lib/types";
+import { outfitPhoto, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
 
@@ -136,7 +136,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 aria-label={`View ${outfit.celebrity}, ${outfit.event}`}
               >
                 <Image
-                  src={`https://picsum.photos/seed/cpo${outfit.id}/360/480`}
+                  src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/360/480`}
                   alt=""
                   fill
                   sizes="180px"
@@ -347,7 +347,7 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
     >
       <div className={styles.cardImage}>
         <Image
-          src={`https://picsum.photos/seed/cpo${outfit.id}/${featured ? "900/760" : "600/750"}`}
+          src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/${featured ? "900/760" : "600/750"}`}
           alt={`${outfit.celebrity} at ${outfit.event}`}
           fill
           sizes={featured ? "(max-width: 1023px) 100vw, 55vw" : "(max-width: 700px) 50vw, 30vw"}
@@ -400,7 +400,7 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
   return (
     <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-view-title">
       <div className={styles.modalImage}>
-        <Image src={`https://picsum.photos/seed/cpo${outfit.id}/700/900`} alt={`${outfit.celebrity} at ${outfit.event}`} fill sizes="(max-width: 800px) 94vw, 540px" />
+        <Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/700/900`} alt={`${outfit.celebrity} at ${outfit.event}`} fill sizes="(max-width: 800px) 94vw, 540px" />
         <button type="button" onClick={onClose} aria-label="Close quick view">×</button>
       </div>
       <div className={styles.modalBody}>

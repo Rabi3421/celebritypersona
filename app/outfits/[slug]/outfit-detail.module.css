@@ -14,6 +14,19 @@
 .hint { right: var(--s4); top: var(--s4); }
 .hotspot { position: absolute; z-index: 4; width: 26px; height: 26px; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .9); background: rgba(255, 255, 255, .16); backdrop-filter: blur(4px); cursor: pointer; display: grid; place-items: center; font-family: var(--mono); font-size: 10px; font-weight: 600; color: white; transition: transform var(--base) var(--ease), background var(--base) var(--ease); }
 .hotspot::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .34); animation: pulse 2.6s var(--ease) infinite; }
+.thumbs { display: flex; gap: var(--s3); margin-top: var(--s3); overflow-x: auto; scrollbar-width: none; }
+.thumbs::-webkit-scrollbar { display: none; }
+.thumb { position: relative; flex: none; width: 72px; aspect-ratio: 4 / 5; border-radius: var(--r-md); overflow: hidden; border: 1px solid rgba(255, 255, 255, .14); background: #20242d; cursor: pointer; padding: 0; opacity: .62; transition: opacity var(--base) var(--ease), border-color var(--base) var(--ease); }
+.thumb > img { object-fit: cover; }
+.thumb:hover, .thumb:focus-visible { opacity: 1; outline: none; }
+.thumbOn { opacity: 1; border-color: var(--rani); }
+
+/* the editor's own writing — the part no merchant page can supply */
+.notes { margin: var(--s5) 0; padding-top: var(--s5); border-top: 1px solid var(--line); }
+.notes h2 { font-family: var(--display); font-weight: 700; font-size: 19px; margin-bottom: var(--s3); }
+.notes p { font-size: 15.5px; line-height: 1.72; color: var(--ink-80); }
+.notes p + p { margin-top: var(--s3); }
+.lineNote { display: block; margin-top: 6px; font-style: normal; font-size: 13.5px; line-height: 1.6; color: var(--ash); }
 @keyframes pulse { 0% { transform: scale(.86); opacity: .9; } 70%, 100% { transform: scale(1.25); opacity: 0; } }
 .hotspot:hover, .hotspot:focus-visible { transform: translate(-50%, -50%) scale(1.18); background: var(--rani); border-color: var(--rani); outline: none; }
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { outfitSlug } from "@/lib/slugs";
-import { isFullySwapped, pricing } from "@/lib/types";
+import { outfitPhoto, outfitPhotos, isFullySwapped, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
@@ -40,9 +40,18 @@ export function OutfitDetail({
   const [mode, setMode] = useState<PriceMode>("worn");
   const [highlighted, setHighlighted] = useState<number | null>(null);
   const [mobileBarVisible, setMobileBarVisible] = useState(false);
+  const [shot, setShot] = useState(0);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const published = new Date(`${outfit.date}T00:00:00`);
+  // Was a hardcoded "2 days ago" on every look, whatever the truth.
+  const checked = outfit.pricesCheckedAt
+    ? new Date(`${outfit.pricesCheckedAt}T00:00:00`)
+    : null;
   const money = pricing(outfit);
+  // The dots were placed on the cover, so they only belong on the cover.
+  const photos = outfitPhotos(outfit);
+  const shown = photos[shot];
+  const onCover = shot === 0;
   const pieceWord = (count: number) => (count === 1 ? "piece" : "pieces");
 
   useEffect(() => {
@@ -87,33 +96,68 @@ export function OutfitDetail({
           <div className={styles.photoColumn}>
             <figure className={styles.frame}>
               <Image
-                src={`https://picsum.photos/seed/cpo${outfit.id}/900/1125`}
+                src={shown?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/900/1125`}
                 alt={`${outfit.celebrity} at ${outfit.event}`}
                 fill
                 priority
                 sizes="(max-width: 1023px) 100vw, 58vw"
               />
               <figcaption>Photo · Editorial archive</figcaption>
-              <span className={styles.hint}>Tap a dot</span>
-              {outfit.items.map((item, index) => (
-                <button
-                  type="button"
-                  className={styles.hotspot}
-                  style={{ left: `${[47, 70, 50, 52][index % 4]}%`, top: `${[38, 56, 86, 15][index % 4]}%` }}
-                  key={item.name}
-                  aria-label={`Jump to ${item.name}`}
-                  onClick={() => jumpToItem(index)}
-                >{index + 1}</button>
-              ))}
+              {onCover && outfit.items.some((item) => item.hotspot) ? (
+                <span className={styles.hint}>Tap a dot</span>
+              ) : null}
+              {onCover
+                ? outfit.items.map((item, index) =>
+                    item.hotspot ? (
+                      <button
+                        type="button"
+                        className={styles.hotspot}
+                        style={{ left: `${item.hotspot.x}%`, top: `${item.hotspot.y}%` }}
+                        key={item.name}
+                        aria-label={`Jump to ${item.name}`}
+                        onClick={() => jumpToItem(index)}
+                      >
+                        {index + 1}
+                      </button>
+                    ) : null,
+                  )
+                : null}
             </figure>
+
+            {photos.length > 1 ? (
+              <div className={styles.thumbs} role="tablist" aria-label="Photos of this look">
+                {photos.map((photo, index) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={index === shot}
+                    aria-label={`Photo ${index + 1} of ${photos.length}`}
+                    className={index === shot ? `${styles.thumb} ${styles.thumbOn}` : styles.thumb}
+                    key={photo.path || photo.url}
+                    onClick={() => setShot(index)}
+                  >
+                    <Image src={photo.url} alt="" fill sizes="90px" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className={styles.ledger}>
             <header className={styles.title}>
-              <p>Decoded · {outfit.items.length} pieces</p>
+              <p>Decoded · {outfit.items.length} {pieceWord(outfit.items.length)}</p>
               <h1>{outfit.celebrity} at {outfit.event}</h1>
               <div>{longDate.format(published)} · <Link href={`/occasions/${outfit.occasion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.occasion} looks</Link> · <Link href={`/celebrities/${outfit.celebrity.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.celebrity} archive</Link></div>
             </header>
+
+            {outfit.notes?.length ? (
+              <section className={styles.notes}>
+                <h2>About this look</h2>
+                {outfit.notes.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </section>
+            ) : null}
 
             {money.anySwapped ? (
               <div className={`${styles.toggle} ${mode === "swap" ? styles.swapMode : ""}`} role="tablist" aria-label="Price mode">
@@ -142,6 +186,7 @@ export function OutfitDetail({
                             ? "Exact · buy it"
                             : "Exact · link pending"}
                     </span>
+                    {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
                   </div>
                   <div className={styles.linePrice}>
                     <b>{(mode === "worn" ? item.worn : item.swap) === undefined
@@ -184,7 +229,7 @@ export function OutfitDetail({
               </b>
             </div>
             <div className={styles.purchaseBox}>
-              <p>◷ Prices checked 2 days ago</p>
+              <p>◷ {checked ? `Prices checked ${shortDate.format(checked)}` : "Prices not yet re-checked"}</p>
 
               {money.anySwapped ? (
                 <>
@@ -233,7 +278,10 @@ export function OutfitDetail({
 
         <div className={styles.byline}>
           <div className={styles.authorAvatar}>R</div>
-          <div><p>Decoded by Rabi</p><span>Published {shortDate.format(published)} · Prices re-checked 2 days ago</span></div>
+          <div><p>Decoded by Rabi</p><span>
+            Published {shortDate.format(published)}
+            {checked ? ` · Prices last checked ${shortDate.format(checked)}` : ""}
+          </span></div>
           <button type="button">Report a wrong price</button>
         </div>
       </div>
@@ -266,7 +314,7 @@ function RelatedRail({ title, outfits }: { title: string; outfits: Outfit[] }) {
       <div className={styles.relatedRail}>
         {outfits.map((outfit) => (
           <Link className={styles.relatedCard} href={`/outfits/${outfitSlug(outfit)}`} key={outfit.id}>
-            <div><Image src={`https://picsum.photos/seed/cpo${outfit.id}/380/475`} alt="" fill sizes="220px" /></div>
+            <div><Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/380/475`} alt="" fill sizes="220px" /></div>
             <section>
               <h3>{outfit.celebrity}</h3>
               <p>{outfit.event} · {shortDate.format(new Date(`${outfit.date}T00:00:00`))}</p>

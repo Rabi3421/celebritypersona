@@ -2,8 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
+import { getOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
-import { flag, rows, text } from "@/lib/form-data";
+import { flag, lines, rows, text } from "@/lib/form-data";
+import { outfitSlug } from "@/lib/slugs";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 
 /** Exactly what the form posted, echoed back so a rejected save keeps the
@@ -14,10 +16,15 @@ export type OutfitDraft = {
   occasion: string;
   date: string;
   isNew: boolean;
+  slug: string;
+  images: { url: string; path: string }[];
+  notes: string;
   items: Record<string, string>[];
 };
 
 export type OutfitFormState = { attempt?: number; errors?: FieldErrors; values?: OutfitDraft };
+
+const IMAGE_FIELDS = ["url", "path"];
 
 const ITEM_FIELDS = [
   "name",
@@ -27,6 +34,9 @@ const ITEM_FIELDS = [
   "swapBrand",
   "swap",
   "swapUrl",
+  "note",
+  "hotspotX",
+  "hotspotY",
 ];
 
 export async function saveOutfit(
@@ -41,10 +51,14 @@ export async function saveOutfit(
     occasion: text(form, "occasion"),
     date: text(form, "date"),
     isNew: flag(form, "isNew"),
+    slug: text(form, "slug"),
+    images: rows(form, "images", IMAGE_FIELDS) as { url: string; path: string }[],
+    notes: text(form, "notes"),
     items: rows(form, "items", ITEM_FIELDS),
   };
 
-  const parsed = outfitSchema.safeParse(draft);
+  // The textarea is one paragraph per line; everything else posts as typed.
+  const parsed = outfitSchema.safeParse({ ...draft, notes: lines(form, "notes") });
   if (!parsed.success) return {
       attempt: (previous.attempt ?? 0) + 1,
       errors: fieldErrors(parsed.error),
@@ -52,6 +66,20 @@ export async function saveOutfit(
     };
 
   const id = Number(form.get("id"));
+
+  // Two looks sharing a slug would share a URL and a photo folder, and one of
+  // them would become unreachable.
+  const taken = (await getOutfits()).some(
+    (outfit) => outfit.id !== id && outfitSlug(outfit) === parsed.data.slug,
+  );
+  if (taken) {
+    return {
+      attempt: (previous.attempt ?? 0) + 1,
+      errors: { slug: "Another look already uses this slug" },
+      values: draft,
+    };
+  }
+
   if (Number.isFinite(id) && id > 0) {
     await updateOutfit(id, parsed.data);
   } else {

@@ -12,7 +12,36 @@ export type OutfitItem = {
   swap?: number;
   /** Where to buy the swap. */
   swapUrl?: string;
+  /** One line the merchant cannot supply: fabric, fit, why it works. This is
+   *  the difference between a listing and a decoded piece. */
+  note?: string;
+  /** Where this piece sits on the outfit photo, as percentages of width and
+   *  height, so the dot stays put at any image size. */
+  hotspot?: { x: number; y: number };
 };
+
+export type OutfitImage = {
+  url: string;
+  /** Storage path, kept so the file can be deleted when it is replaced. */
+  path: string;
+  credit?: string;
+};
+
+/**
+ * Photos of a look, newest shape first. `image` is the single-photo shape
+ * older documents were written with; reading through here means nothing has
+ * to be migrated before the gallery works.
+ */
+export const outfitPhotos = (outfit: {
+  image?: OutfitImage;
+  images?: OutfitImage[];
+}): OutfitImage[] =>
+  outfit.images?.length ? outfit.images : outfit.image ? [outfit.image] : [];
+
+/** The photo every card and the detail hero lead with, and the one the
+ *  hotspot dots are placed on. */
+export const outfitPhoto = (outfit: { image?: OutfitImage; images?: OutfitImage[] }) =>
+  outfitPhotos(outfit)[0];
 
 /** A piece we have actually found an alternative for. */
 export type SwappedItem = OutfitItem & { swapBrand: string; swap: number };
@@ -83,8 +112,30 @@ export type Outfit = {
   worn: number;
   swap: number;
   isNew?: boolean;
+  /** Editor-chosen URL segment. Also names the storage folder its photos are
+   *  uploaded into. Absent on older looks, which fall back to a derived slug. */
+  slug?: string;
+  /** Superseded by `images`. Still read, so older documents keep their photo. */
+  image?: OutfitImage;
+  images?: OutfitImage[];
+  /** The editor's own writing about the look, one paragraph per entry. */
+  notes?: string[];
+  /** When the prices on this look were last put in front of a person, set on
+   *  every save. The page used to claim "2 days ago" no matter what. */
+  pricesCheckedAt?: string;
   items: OutfitItem[];
 };
+
+/**
+ * Whether a look offers anything a shopper could not get from the brand's own
+ * product page. Without either, the page is a product name and a buy link —
+ * what Google's spam policy calls thin affiliation — so it stays out of the
+ * index until there is a reason for it to be there.
+ */
+export const hasSubstance = (outfit: Outfit) =>
+  Boolean(outfit.notes?.length) ||
+  outfit.items.some(hasSwap) ||
+  outfit.items.some((item) => item.note?.trim());
 
 export type Celebrity = {
   id: number;

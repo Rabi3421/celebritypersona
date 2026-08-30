@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { isFullySwapped } from "@/lib/types";
+import { outfitPhoto, isFullySwapped } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -299,7 +299,7 @@ function LookCard({ outfit }: { outfit: Outfit }) {
       <Link href={`/outfits/${outfitSlug(outfit)}`}>
         <div className={styles.lookImage}>
           <Image
-            src={`https://picsum.photos/seed/cpo${outfit.id}/600/750`}
+            src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/600/750`}
             alt={`${outfit.celebrity} at ${outfit.event}`}
             fill
             sizes="(max-width:520px) 100vw, (max-width:1023px) 50vw, 25vw"

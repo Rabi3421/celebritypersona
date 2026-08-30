@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { celebrityBio } from "@/lib/celebrity-bio";
 import { celebritySlug } from "@/lib/slugs";
+import { outfitPhoto } from "@/lib/types";
 import type { Celebrity } from "@/lib/types";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
@@ -114,5 +115,5 @@ function ExtremeCard({ celebrity, outfit, label, seed, fallbackPrice }: { celebr
 }
 
 function ProfileOutfitCard({ outfit, saved, onSave }: { outfit:Outfit; saved:boolean; onSave:()=>void }) {
-  return <article className={styles.outfitCard}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><Image src={`https://picsum.photos/seed/cpo${outfit.id}/600/750`} alt={`${outfit.celebrity} at ${outfit.event}`} fill sizes="(max-width:560px) 50vw, 25vw" /><span>{shortDate.format(new Date(`${outfit.date}T00:00:00`))}</span><em>{outfit.occasion}</em><b>−{saving(outfit)}%</b></div><section><h3>{outfit.event}</h3><p>{outfit.occasion}</p><span><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;
+  return <article className={styles.outfitCard}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/600/750`} alt={`${outfit.celebrity} at ${outfit.event}`} fill sizes="(max-width:560px) 50vw, 25vw" /><span>{shortDate.format(new Date(`${outfit.date}T00:00:00`))}</span><em>{outfit.occasion}</em><b>−{saving(outfit)}%</b></div><section><h3>{outfit.event}</h3><p>{outfit.occasion}</p><span><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;
 }
