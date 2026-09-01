@@ -1,6 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import asWornImage from "@/public/images/home/swap-demo/as-worn.png";
+import theSwapImage from "@/public/images/home/swap-demo/the-swap.png";
 import { inr } from "@/lib/format";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { HomeContent } from "@/lib/types";
@@ -162,7 +165,7 @@ export function SwapDemo({
   const shownSaving = reduced ? mode === "swap" : savingShown;
 
   return (
-    <section className="sec alt">
+    <section className="sec alt" id="how-swaps-work">
       <div className="shell">
         <div className="demo">
           <div className="demo-vis rv">
@@ -186,20 +189,42 @@ export function SwapDemo({
               </button>
             </div>
 
-            <div>
-              {ITEMS.map((item, i) => (
-                <div className="drow" key={item.name}>
-                  <div className="l">
-                    <div className="n">{item.name}</div>
-                    <div className="b" style={{ opacity: shownBrandOpacity }}>
-                      {shownBrandMode === "worn"
-                        ? item.wornBrand
-                        : item.swapBrand}
+            <div className="demo-body">
+              <div className="demo-data">
+                {ITEMS.map((item, i) => (
+                  <div className="drow" key={item.name}>
+                    <div className="l">
+                      <div className="n">{item.name}</div>
+                      <div className="b" style={{ opacity: shownBrandOpacity }}>
+                        {shownBrandMode === "worn"
+                          ? item.wornBrand
+                          : item.swapBrand}
+                      </div>
                     </div>
+                    <div className="p mono">{inr(shownPrices[i])}</div>
                   </div>
-                  <div className="p mono">{inr(shownPrices[i])}</div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              <div className="demo-art" aria-hidden="true">
+                <Image
+                  className={mode === "worn" ? "is-active" : ""}
+                  src={asWornImage}
+                  alt=""
+                  fill
+                  sizes="(max-width: 520px) calc(100vw - 64px), (max-width: 1023px) 38vw, 19vw"
+                  placeholder="blur"
+                />
+                <Image
+                  className={mode === "swap" ? "is-active" : ""}
+                  src={theSwapImage}
+                  alt=""
+                  fill
+                  sizes="(max-width: 520px) calc(100vw - 64px), (max-width: 1023px) 38vw, 19vw"
+                  placeholder="blur"
+                />
+                <span>{mode === "worn" ? "Original edit" : "Smart swap"}</span>
+              </div>
             </div>
 
             <div className="dtot">

@@ -19,6 +19,11 @@ import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
 import { getHomeContent } from "@/lib/db/content";
 
+/** The rail labels looks "2 days ago", so a page prerendered once and never
+ *  rebuilt would keep saying it. An hour is finer than the labels' own
+ *  resolution, and content edits still revalidate immediately. */
+export const revalidate = 3600;
+
 export default async function Home() {
   const { stats, heroLook, swapSteps } = await getHomeContent();
 

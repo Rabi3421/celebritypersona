@@ -160,7 +160,6 @@ export const priceReportStatusSchema = z.object({
   status: z.enum(["New", "Checked", "Fixed", "No change needed"]),
 });
 
-const peekEntry = z.object({ label: required("Label"), price: rupees });
 
 export const homeContentSchema = z.object({
   heroLook: z.object({
@@ -193,19 +192,6 @@ export const homeContentSchema = z.object({
       }),
     )
     .min(1, "Add at least one stat"),
-  thisWeek: z
-    .array(
-      z.object({
-        celebrity: required("Celebrity"),
-        occasion: required("Occasion"),
-        posted: required("Posted"),
-        tone: z.enum(["", "v2", "v3", "v4", "v5"]),
-        worn: rupees,
-        swap: rupees,
-        peek: z.array(peekEntry).default([]),
-      }),
-    )
-    .min(1, "Add at least one card"),
   swapSteps: z
     .array(z.object({ n: required("Number"), title: required("Title"), body: required("Body") }))
     .min(1, "Add at least one step"),

@@ -8,18 +8,6 @@ import { fieldErrors, homeContentSchema, type FieldErrors } from "@/lib/validati
 
 export type HomeFormState = { errors?: FieldErrors; saved?: boolean };
 
-/** "Kurta:1799, Tote:1499" becomes the peek list on a card. */
-function parsePeek(value: string) {
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => {
-      const [label, price = "0"] = part.split(":");
-      return { label: label.trim(), price: price.trim() };
-    });
-}
-
 export async function saveHome(
   _previous: HomeFormState,
   form: FormData,
@@ -45,15 +33,6 @@ export async function saveHome(
     },
     tickerEntries: rows(form, "ticker", ["celebrity", "occasion", "worn", "swap"]),
     stats: rows(form, "stats", ["value", "suffix", "label"], ["suffix"]),
-    thisWeek: rows(form, "thisWeek", [
-      "celebrity",
-      "occasion",
-      "posted",
-      "tone",
-      "worn",
-      "swap",
-      "peek",
-    ]).map((row) => ({ ...row, peek: parsePeek(String(row.peek ?? "")) })),
     swapSteps: rows(form, "swapSteps", ["n", "title", "body"]),
     budgetTiers: rows(form, "budgetTiers", ["cap", "looks"]),
     dupeOfTheWeek: {

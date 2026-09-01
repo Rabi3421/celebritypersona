@@ -207,16 +207,6 @@ export type LookItem = SwappedItem & {
   worn: number;
 };
 
-export type OutfitCard = {
-  celebrity: string;
-  occasion: string;
-  posted: string;
-  tone: "" | "v2" | "v3" | "v4" | "v5";
-  worn: number;
-  swap: number;
-  peek: { label: string; price: number }[];
-};
-
 /** Everything the homepage renders that is editorial rather than navigation. */
 export type HomeContent = {
   heroLook: {
@@ -230,7 +220,6 @@ export type HomeContent = {
   };
   tickerEntries: TickerEntry[];
   stats: { value: number; suffix: string; label: string }[];
-  thisWeek: OutfitCard[];
   swapSteps: { n: string; title: string; body: string }[];
   budgetTiers: { cap: number; looks: number }[];
   dupeOfTheWeek: {

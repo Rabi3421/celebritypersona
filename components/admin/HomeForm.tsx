@@ -13,9 +13,6 @@ import { saveHome, type HomeFormState } from "@/app/admin/(panel)/home/actions";
 import type { HomeContent } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
 
-const peekText = (peek: { label: string; price: number }[]) =>
-  peek.map((entry) => `${entry.label}:${entry.price}`).join(", ");
-
 export function HomeForm({ home, saved }: { home: HomeContent; saved?: boolean }) {
   const [state, action] = useActionState<HomeFormState, FormData>(saveHome, {});
   const errors = state.errors;
@@ -72,15 +69,6 @@ export function HomeForm({ home, saved }: { home: HomeContent; saved?: boolean }
             <RepeatableRows name="stats" title="Stats bar" columns="140px 120px minmax(0,1fr)"
               error={errors?.stats} initial={home.stats} addLabel="Add a stat"
               fields={[{ key: "value", label: "Value", type: "number" }, { key: "suffix", label: "Suffix" }, { key: "label", label: "Label" }]} />
-            <RepeatableRows name="thisWeek" title="Decoded this week"
-              hint="Peek format: Kurta:1799, Tote:1499"
-              columns="minmax(0,1fr) minmax(0,1fr) 120px 90px 110px 110px minmax(0,1.4fr)"
-              error={errors?.thisWeek} initial={home.thisWeek.map((c) => ({ ...c, peek: peekText(c.peek) }))}
-              addLabel="Add a card"
-              fields={[{ key: "celebrity", label: "Celebrity" }, { key: "occasion", label: "Occasion" },
-                       { key: "posted", label: "Posted" }, { key: "tone", label: "Tone" },
-                       { key: "worn", label: "Worn ₹", type: "number" }, { key: "swap", label: "Swap ₹", type: "number" },
-                       { key: "peek", label: "Peek" }]} />
             <RepeatableRows name="swapSteps" title="How it works" columns="70px minmax(0,1fr) minmax(0,2fr)"
               error={errors?.swapSteps} initial={home.swapSteps} addLabel="Add a step"
               fields={[{ key: "n", label: "No." }, { key: "title", label: "Title" }, { key: "body", label: "Body" }]} />
