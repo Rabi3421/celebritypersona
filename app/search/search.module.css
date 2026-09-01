@@ -1,0 +1,60 @@
+/* Search results. Same band and card vocabulary as the other directories. */
+
+.page {
+  --ink-dark: #0e1014;
+  --rani-light: #ff2d8a;
+  background: var(--bone);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.shell { max-width: 1460px; margin: 0 auto; padding: 0 var(--s6); }
+
+.band { background: var(--ink-dark); color: var(--bone); position: relative; overflow: hidden; padding: var(--s8) 0 var(--s7); }
+.band::before { content: ""; position: absolute; top: -40%; right: -8%; width: 46%; height: 180%; background: radial-gradient(circle, rgba(224, 0, 108, .2), transparent 66%); }
+.bandInner { position: relative; z-index: 2; }
+.crumb { font-family: var(--mono); font-size: 11px; color: rgba(251, 249, 245, .44); margin-bottom: var(--s5); }
+.crumb i { font-style: normal; margin: 0 7px; color: rgba(255, 255, 255, .2); }
+.crumb a:hover { color: var(--rani-light); }
+.band h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 5vw, 62px); letter-spacing: -.04em; line-height: .96; }
+.band h1 em { font-style: normal; color: var(--rani-light); }
+.lede { font-size: 16px; color: rgba(251, 249, 245, .68); margin-top: var(--s4); max-width: 56ch; }
+
+.form { position: relative; max-width: 620px; margin-top: var(--s6); }
+.form span { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: rgba(255, 255, 255, .44); font-size: 18px; z-index: 2; }
+.form input { width: 100%; font-family: var(--body); font-size: 16.5px; padding: 18px 120px 18px 52px; border-radius: var(--r-pill); border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .07); color: var(--bone); }
+.form input::placeholder { color: rgba(251, 249, 245, .4); }
+.form input:focus { outline: none; border-color: var(--rani); background: rgba(255, 255, 255, .11); box-shadow: 0 0 0 4px rgba(224, 0, 108, .16); }
+.form button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-family: inherit; font-weight: 600; font-size: 14px; color: #fff; background: var(--rani); border: 0; border-radius: var(--r-pill); padding: 12px 22px; cursor: pointer; }
+.form button:hover { background: var(--rani-press); }
+
+.section { padding: var(--s8) 0 0; }
+.section:last-of-type { padding-bottom: var(--s9); }
+.heading { display: flex; align-items: baseline; gap: var(--s3); margin-bottom: var(--s5); }
+.heading h2 { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: -.03em; }
+.heading span { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
+.hit { display: flex; align-items: center; gap: var(--s4); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s4) var(--s3) var(--s3); transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.hit:hover { border-color: var(--rani); transform: translateY(-2px); }
+.hitImage { flex: none; width: 56px; height: 56px; border-radius: var(--r-md); overflow: hidden; background: var(--line-soft); position: relative; }
+.hitImage img { object-fit: cover; }
+.hit > div { min-width: 0; }
+.hit b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hit small { display: block; font-family: var(--mono); font-size: 11px; color: var(--ash); margin-top: 3px; }
+
+.empty { border: 1px dashed var(--line); border-radius: var(--r-xl); padding: var(--s9) var(--s6); text-align: center; background: var(--paper); margin: var(--s8) 0; }
+.empty span { font-size: 30px; color: var(--stone); display: block; }
+.empty h2 { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.03em; margin: var(--s4) 0 var(--s3); }
+.empty p { font-size: 15px; color: var(--ash); max-width: 52ch; margin: 0 auto var(--s5); line-height: 1.66; }
+.suggestions { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; }
+.suggestions a { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: var(--r-pill); padding: 8px 16px; background: var(--bone); }
+.suggestions a:hover { border-color: var(--rani); color: var(--rani); }
+
+@media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) {
+  .shell { padding: 0 var(--s5); }
+  .grid { grid-template-columns: 1fr; }
+  .form input { padding-right: var(--s5); }
+  .form button { position: static; transform: none; display: block; width: 100%; margin-top: var(--s3); }
+}

@@ -1,0 +1,86 @@
+/* Saved library. Built from the same tokens and card shapes as the outfits
+   explorer, so a saved look reads exactly as it does everywhere else. */
+
+.page {
+  --ink-dark: #0e1014;
+  --rani-light: #ff2d8a;
+  --out: cubic-bezier(.16, 1, .3, 1);
+  background: var(--bone);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.shell { max-width: 1460px; margin: 0 auto; padding: 0 var(--s6); }
+
+.band { background: var(--ink-dark); color: var(--bone); position: relative; overflow: hidden; padding: var(--s8) 0 var(--s7); }
+.band::before { content: ""; position: absolute; top: -40%; right: -8%; width: 46%; height: 180%; background: radial-gradient(circle, rgba(224, 0, 108, .2), transparent 66%); }
+.bandInner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr auto; gap: var(--s6); align-items: end; }
+.crumb { font-family: var(--mono); font-size: 11px; color: rgba(251, 249, 245, .44); margin-bottom: var(--s5); }
+.crumb i { font-style: normal; margin: 0 7px; color: rgba(255, 255, 255, .2); }
+.crumb a:hover { color: var(--rani-light); }
+.band h1 { font-family: var(--display); font-weight: 800; font-size: clamp(38px, 5.6vw, 68px); letter-spacing: -.04em; line-height: .94; }
+.lede { font-size: 17px; color: rgba(251, 249, 245, .68); margin-top: var(--s4); max-width: 54ch; }
+
+.tally { display: flex; gap: var(--s6); }
+.tally div { text-align: right; }
+.tally b { display: block; font-family: var(--mono); font-size: 28px; color: var(--bone); line-height: 1; }
+.tally span { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: rgba(251, 249, 245, .44); }
+
+.section { padding: var(--s8) 0; }
+.heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s5); flex-wrap: wrap; }
+.heading p { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--rani); }
+.heading h2 { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 2.6vw, 32px); letter-spacing: -.03em; margin-top: 6px; }
+.heading span { font-size: 14px; color: var(--ash); }
+.clear { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); background: none; border: 0; cursor: pointer; padding: 6px 0; }
+.clear:hover { color: var(--rani); }
+
+.total { background: var(--ink); color: var(--bone); border-radius: var(--r-lg); padding: var(--s5) var(--s6); display: flex; align-items: baseline; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s6); }
+.total span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(251, 249, 245, .5); }
+.total b { font-family: var(--mono); font-size: clamp(22px, 3vw, 30px); }
+.total small { display: block; font-size: 13px; color: rgba(251, 249, 245, .56); margin-top: 4px; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s5) var(--s4); }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; position: relative; transition: transform var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base); }
+.card:hover { transform: translateY(-6px); box-shadow: var(--e3); border-color: transparent; }
+.cardImage { aspect-ratio: 4 / 5; position: relative; overflow: hidden; background: var(--line-soft); display: block; }
+.cardImage img { object-fit: cover; }
+.cardImage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, .6), transparent 46%); }
+.cardImage em { position: absolute; left: 10px; bottom: 10px; z-index: 2; font-style: normal; font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(0, 0, 0, .42); backdrop-filter: blur(6px); border-radius: var(--r-pill); padding: 4px 9px; }
+.cardBody { padding: var(--s4); }
+.cardBody h3 { font-size: 15px; font-weight: 600; }
+.cardBody p { font-family: var(--mono); font-size: 10.5px; color: var(--ash); margin-top: 3px; }
+.prices { display: flex; align-items: baseline; gap: 8px; margin-top: var(--s3); font-family: var(--mono); font-size: 13px; }
+.prices s { color: var(--stone); font-size: 11.5px; }
+.prices b { color: var(--jade); }
+.prices em { font-style: normal; font-size: 11px; color: var(--ash); }
+.heart { position: absolute; top: 10px; right: 10px; z-index: 3; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; font-size: 15px; color: var(--rani); background: rgba(255, 255, 255, .9); backdrop-filter: blur(6px); box-shadow: var(--e1); transition: transform var(--fast) var(--ease); }
+.heart:hover { transform: scale(1.12); }
+
+.people { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.person { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 16px 6px 6px; transition: border-color var(--fast) var(--ease); }
+.person:hover { border-color: var(--rani); }
+.person img { border-radius: 50%; object-fit: cover; }
+.person b { font-size: 14px; font-weight: 600; }
+.person span { font-family: var(--mono); font-size: 10.5px; color: var(--ash); margin-left: 4px; }
+.person button { border: 0; background: none; cursor: pointer; color: var(--stone); font-size: 15px; line-height: 1; padding: 2px; }
+.person button:hover { color: var(--rani); }
+
+.empty { border: 1px dashed var(--line); border-radius: var(--r-xl); padding: var(--s9) var(--s6); text-align: center; background: var(--paper); }
+.empty span { font-size: 30px; color: var(--stone); display: block; }
+.empty h2 { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.03em; margin: var(--s4) 0 var(--s3); }
+.empty p { font-size: 15px; color: var(--ash); max-width: 48ch; margin: 0 auto var(--s5); line-height: 1.66; }
+.empty a { display: inline-block; font-weight: 600; font-size: 14px; color: #fff; background: var(--ink); border-radius: var(--r-sm); padding: 12px 22px; }
+.empty a:hover { background: var(--rani); }
+
+.note { font-size: 13px; color: var(--ash); text-align: center; padding: 0 0 var(--s8); line-height: 1.7; }
+
+@media (max-width: 1023px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+  .bandInner { grid-template-columns: 1fr; align-items: start; }
+  .tally { justify-content: flex-start; }
+  .tally div { text-align: left; }
+}
+@media (max-width: 620px) {
+  .shell { padding: 0 var(--s5); }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: var(--s4) var(--s3); }
+}

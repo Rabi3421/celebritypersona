@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
+import { requestCelebrity, type AudienceState } from "@/app/actions/audience";
 import { celebritySlug } from "@/lib/slugs";
+import { useSavedList } from "@/lib/saved";
 import type { ArchiveTotals, CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/celebrities.module.css";
 
@@ -40,15 +42,22 @@ export function CelebrityDirectory({
   const [letter, setLetter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("looks");
   const [followingOnly, setFollowingOnly] = useState(false);
-  const [following, setFollowing] = useState<number[]>([]);
-  const [requested, setRequested] = useState(false);
+  // Follows are kept in the browser and shared with the profile page, so the
+  // list survives a refresh instead of emptying on every visit.
+  const following = useSavedList("people");
+  // Requests are stored and ranked by how often a name is asked for, which is
+  // what the copy below promises.
+  const [request, requestAction, requesting] = useActionState<AudienceState, FormData>(
+    requestCelebrity,
+    {},
+  );
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filtered = celebrities.filter((celebrity) => {
       if (letter && !celebrity.name.toUpperCase().startsWith(letter)) return false;
       if (normalizedQuery && !celebrity.name.toLowerCase().includes(normalizedQuery)) return false;
-      if (followingOnly && !following.includes(celebrity.id)) return false;
+      if (followingOnly && !following.has(celebritySlug(celebrity))) return false;
       return true;
     });
 
@@ -66,19 +75,10 @@ export function CelebrityDirectory({
     : [];
   const availableLetters = new Set(celebrities.map((celebrity) => celebrity.name[0].toUpperCase()));
 
-  function toggleFollow(id: number) {
-    setFollowing(following.includes(id) ? following.filter((value) => value !== id) : [...following, id]);
-  }
-
   function resetFilters() {
     setQuery("");
     setLetter(null);
     setFollowingOnly(false);
-  }
-
-  function submitRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setRequested(true);
   }
 
   return (
@@ -142,7 +142,7 @@ export function CelebrityDirectory({
               <option value="looks">Most decoded</option><option value="trend">Trending now</option>
               <option value="new">Recently added</option><option value="save">Biggest savings</option><option value="az">A–Z</option>
             </select>
-            <button type="button" aria-pressed={followingOnly} onClick={() => setFollowingOnly(!followingOnly)}>♡ Following{following.length ? ` (${following.length})` : ""}</button>
+            <button type="button" aria-pressed={followingOnly} onClick={() => setFollowingOnly(!followingOnly)}>♡ Following{following.count ? ` (${following.count})` : ""}</button>
           </div>
           <div className={styles.alphabet}>
             <button type="button" className={styles.allLetter} aria-pressed={!letter} onClick={() => setLetter(null)}>All</button>
@@ -157,7 +157,7 @@ export function CelebrityDirectory({
         {results.length ? (
           <div className={styles.grid}>
             {results.map((celebrity) => (
-              <CelebrityCard celebrity={celebrity} following={following.includes(celebrity.id)} onFollow={() => toggleFollow(celebrity.id)} key={celebrity.id} />
+              <CelebrityCard celebrity={celebrity} following={following.has(celebritySlug(celebrity))} onFollow={() => following.toggle(celebritySlug(celebrity))} key={celebrity.id} />
             ))}
           </div>
         ) : (
@@ -169,11 +169,36 @@ export function CelebrityDirectory({
         )}
 
         <section className={styles.request}>
-          <div><h2>Not seeing someone?</h2><p>Tell us who to decode next. We work through requests weekly — the most-asked-for names get done first.</p></div>
-          <form onSubmit={submitRequest}>
-            <input required placeholder="Who should we decode?" aria-label="Request a celebrity" />
-            <button type="submit">{requested ? "Request received ✓" : "Request"}</button>
-          </form>
+          <div>
+            <h2>Not seeing someone?</h2>
+            <p>
+              {request.done
+                ? "Noted — your request is in the queue. The most-asked-for names get done first."
+                : request.errors?.name ?? request.errors?.form ?? "Tell us who to decode next. We work through requests weekly — the most-asked-for names get done first."}
+            </p>
+          </div>
+          {request.done ? null : (
+            <form action={requestAction}>
+              <input
+                required
+                name="name"
+                maxLength={80}
+                placeholder="Who should we decode?"
+                aria-label="Request a celebrity"
+                aria-invalid={request.errors?.name ? true : undefined}
+              />
+              {/* Invisible to a person, irresistible to a bot. */}
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }}
+              />
+              <button type="submit" disabled={requesting}>{requesting ? "Sending…" : "Request"}</button>
+            </form>
+          )}
         </section>
       </div>
     </main>

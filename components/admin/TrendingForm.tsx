@@ -49,7 +49,13 @@ export function TrendingForm({ search }: { search?: TrendingSearch }) {
         </div>
       </form>
       {search ? (
-        <form action={removeTrendingSearch} className={styles.formBar}>
+        <form
+          action={removeTrendingSearch}
+          className={styles.formBar}
+          onSubmit={(event) => {
+            if (!window.confirm("Remove this row from the public leaderboard?")) event.preventDefault();
+          }}
+        >
           <input type="hidden" name="term" value={search.term} />
           <button className={styles.danger} type="submit">Delete this term</button>
         </form>

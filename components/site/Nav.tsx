@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
-import { HeartIcon, SearchIcon } from "./Icons";
+import { SavedBadge } from "./SavedBadge";
+import { SiteSearch } from "./SiteSearch";
 import { navLinks } from "@/lib/navigation";
 
 /** Sticky top bar. The `stuck` class is toggled on scroll by ScrollEffects. */
-export function Nav({
-  savedCount = 3,
-  active,
-}: {
-  savedCount?: number;
-  active?: string;
-}) {
+export function Nav({ active }: { active?: string }) {
   return (
     <nav className="nav" id="nav">
       <Brand />
@@ -25,17 +20,8 @@ export function Nav({
           </Link>
         ))}
       </div>
-      <div className="navsearch">
-        <SearchIcon className="ic" />
-        <input
-          placeholder="Search a celebrity, occasion or brand"
-          aria-label="Search"
-        />
-      </div>
-      <button className="navsave" aria-label={`Saved looks (${savedCount})`}>
-        <HeartIcon />
-        <b aria-hidden="true">{savedCount}</b>
-      </button>
+      <SiteSearch />
+      <SavedBadge />
     </nav>
   );
 }

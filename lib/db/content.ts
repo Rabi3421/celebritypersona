@@ -5,10 +5,12 @@ import { celebrityViews, occasionViews } from "@/lib/archive";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
+  CelebrityRequest,
   HomeContent,
   Occasion,
   Outfit,
   PriceReport,
+  Subscriber,
   TrendingSearch,
 } from "@/lib/types";
 
@@ -103,6 +105,25 @@ export const getHomeContent = cache(async () => {
 
 export const getTrendingFaqs = cache(async () => {
   return (await siteContent<{ q: string; a: string }[]>("trendingFaqs")) ?? [];
+});
+
+export const getCelebrityRequests = cache(async (): Promise<CelebrityRequest[]> => {
+  const db = await getDb();
+  return db
+    .collection<CelebrityRequest>("celebrityRequests")
+    .find({}, NO_ID)
+    // Most-wanted first, then whoever has been waiting longest.
+    .sort({ votes: -1, firstAskedAt: 1 })
+    .toArray();
+});
+
+export const getSubscribers = cache(async (): Promise<Subscriber[]> => {
+  const db = await getDb();
+  return db
+    .collection<Subscriber>("subscribers")
+    .find({}, NO_ID)
+    .sort({ joinedAt: -1 })
+    .toArray();
 });
 
 export const getPriceReports = cache(async (): Promise<PriceReport[]> => {

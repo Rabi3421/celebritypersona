@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ReportPriceForm } from "./ReportPriceForm";
+import { ReportPriceForm, type ReportPrefill } from "./ReportPriceForm";
 import { grievanceOfficer } from "@/lib/site-config";
 import styles from "./editorial.module.css";
 
-export function ReportPricePage() {
+export function ReportPricePage({ prefill }: { prefill?: ReportPrefill }) {
   return (
     <main className={styles.page}>
       <header className={styles.band}>
@@ -26,7 +26,7 @@ export function ReportPricePage() {
       <div className={styles.shell}>
         <section className={styles.section}>
           <div className={styles.narrow}>
-            <ReportPriceForm />
+            <ReportPriceForm prefill={prefill} />
           </div>
         </section>
 

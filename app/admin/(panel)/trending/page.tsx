@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { trendingBrands } from "@/lib/trending";
+import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getOutfits, getTrendingSearches } from "@/lib/db/content";
+import { ListFilters } from "@/components/admin/ListFilters";
+import { allOption, anyFilter, matchesQuery, matchesValue } from "@/lib/admin-filters";
+import { getCelebrityViews, getOccasionViews } from "@/lib/db/content";
+import { celebritySlug, occasionSlug } from "@/lib/slugs";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -9,9 +14,40 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export default async function AdminTrending() {
-  const trendingSearches = await getTrendingSearches();
-  const outfits = await getOutfits();
+type Query = { q?: string; intent?: string };
+
+const INTENTS = ["Celebrity", "Occasion", "Budget", "Brand", "How to"];
+
+export default async function AdminTrending({
+  searchParams,
+}: {
+  searchParams: Promise<Query>;
+}) {
+  const [allSearches, outfits, celebrities, occasions, query] = await Promise.all([
+    getTrendingSearches(),
+    getOutfits(),
+    getCelebrityViews(),
+    getOccasionViews(),
+    searchParams,
+  ]);
+
+  const trendingSearches = allSearches.filter(
+    (search) =>
+      matchesQuery(query.q, search.term, search.answer, search.href) &&
+      matchesValue(query.intent, search.intent),
+  );
+  const active = anyFilter(query, ["q", "intent"]);
+
+  // A leaderboard row promising an answer and landing on a 404 is worse than
+  // no row, so the table says which destinations the site actually serves.
+  const routes = new Set<string>([
+    "/", "/outfits", "/celebrities", "/occasions", "/budget", "/trending", "/saved",
+    ...celebrities.map((celebrity) => `/celebrities/${celebritySlug(celebrity)}`),
+    ...occasions.map((occasion) => `/occasions/${occasionSlug(occasion)}`),
+    ...outfits.map((outfit) => `/outfits/${outfitSlug(outfit)}`),
+  ]);
+  const resolves = (href: string) =>
+    !href.startsWith("/") || routes.has(href.split(/[?#]/)[0].replace(/\/$/, "") || "/");
 
   return (
     <>
@@ -27,7 +63,11 @@ export default async function AdminTrending() {
 
       <section>
         <div className={styles.listTop}>
-          <p>{trendingSearches.length} leaderboard rows.</p>
+          <p>
+            {active
+              ? `${trendingSearches.length} of ${allSearches.length} rows match.`
+              : `${allSearches.length} leaderboard rows.`}
+          </p>
           <Link className={styles.newButton} href="/admin/trending/new">
             New search term
           </Link>
@@ -38,6 +78,37 @@ export default async function AdminTrending() {
             View public page ↗
           </Link>
         </div>
+        {allSearches.length > 0 ? (
+          <ListFilters
+            action="/admin/trending"
+            active={active}
+            fields={[
+              { kind: "search", name: "q", label: "Search", value: query.q, placeholder: "Term, answer or destination" },
+              { kind: "select", name: "intent", label: "Intent", value: query.intent, options: allOption("Any intent", INTENTS) },
+            ]}
+          />
+        ) : null}
+        {trendingSearches.length === 0 ? (
+          <div className={styles.empty}>
+            <strong>
+              {allSearches.length === 0 ? "The leaderboard is empty" : "Nothing matches those filters"}
+            </strong>
+            <p>
+              {allSearches.length === 0 ? (
+                <>
+                  The public trending page renders its leaderboard from these
+                  rows. Everything below it is computed from the archive and
+                  still works.{" "}
+                  <Link href="/admin/trending/new">Add the first row →</Link>
+                </>
+              ) : (
+                <>
+                  Try a broader search, or <Link href="/admin/trending">clear the filters</Link>.
+                </>
+              )}
+            </p>
+          </div>
+        ) : (
         <div className={styles.tableWrap}>
           <div className={styles.scroll}>
             <table className={styles.table}>
@@ -72,9 +143,13 @@ export default async function AdminTrending() {
                         <Link href={`/admin/trending/${encodeURIComponent(search.term)}`}>
                           Edit
                         </Link>
-                        <Link href={search.href} target="_blank">
-                          {search.href} ↗
-                        </Link>
+                        {resolves(search.href) ? (
+                          <Link href={search.href} target="_blank">
+                            {search.href} ↗
+                          </Link>
+                        ) : (
+                          <span className={styles.chip}>dead end: {search.href}</span>
+                        )}
                       </span>
                     </td>
                   </tr>
@@ -83,6 +158,7 @@ export default async function AdminTrending() {
             </table>
           </div>
         </div>
+        )}
       </section>
 
       <section className={styles.section}>

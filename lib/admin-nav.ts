@@ -13,6 +13,8 @@ export type AdminIconKey =
   | "occasions"
   | "trending"
   | "reports"
+  | "requests"
+  | "subscribers"
   | "settings";
 
 export type AdminGroup = "Panel" | "Content" | "Operations" | "System";
@@ -26,7 +28,7 @@ export type AdminRoute = {
   /** One short line, shown beside the page name. */
   description: string;
   /** Which count to show beside the sidebar link, if any. */
-  countKey?: "outfits" | "celebrities" | "occasions" | "reports";
+  countKey?: "outfits" | "celebrities" | "occasions" | "reports" | "requests" | "subscribers";
 };
 
 export const adminRoutes: AdminRoute[] = [
@@ -35,14 +37,14 @@ export const adminRoutes: AdminRoute[] = [
     label: "Overview",
     icon: "overview",
     group: "Panel",
-    description: "What the public site is serving",
+    description: "Archive health and what the public site is serving",
   },
   {
     href: "/admin/home",
     label: "Homepage",
     icon: "overview",
     group: "Content",
-    description: "Hero, ticker, stats and the editorial tiles",
+    description: "The copy the archive cannot write for itself",
   },
   {
     href: "/admin/outfits",
@@ -58,7 +60,7 @@ export const adminRoutes: AdminRoute[] = [
     icon: "celebrities",
     group: "Content",
     countKey: "celebrities",
-    description: "Style archives and decode counts",
+    description: "Names and bios; the counts come from the outfits",
   },
   {
     href: "/admin/occasions",
@@ -66,7 +68,7 @@ export const adminRoutes: AdminRoute[] = [
     icon: "occasions",
     group: "Content",
     countKey: "occasions",
-    description: "Events, grouped as the site groups them",
+    description: "Groups, guide copy and the countdown dates",
   },
   {
     href: "/admin/trending",
@@ -81,7 +83,23 @@ export const adminRoutes: AdminRoute[] = [
     icon: "reports",
     group: "Operations",
     countKey: "reports",
-    description: "Wrong prices and dead links from readers",
+    description: "Corrections and swap suggestions from readers",
+  },
+  {
+    href: "/admin/requests",
+    label: "Requests",
+    icon: "requests",
+    group: "Operations",
+    countKey: "requests",
+    description: "Who readers want decoded next, ranked by demand",
+  },
+  {
+    href: "/admin/subscribers",
+    label: "Subscribers",
+    icon: "subscribers",
+    group: "Operations",
+    countKey: "subscribers",
+    description: "WhatsApp numbers collected by the homepage form",
   },
   {
     href: "/admin/settings",
@@ -97,9 +115,9 @@ export const adminDetailRoutes: { href: string; group: AdminGroup; label: string
   { href: "/admin/outfits/new", group: "Content", label: "New outfit", description: "Add a decoded look" },
   { href: "/admin/outfits", group: "Content", label: "Edit outfit", description: "Totals are calculated from the pieces" },
   { href: "/admin/celebrities/new", group: "Content", label: "New celebrity", description: "Add a style archive" },
-  { href: "/admin/celebrities", group: "Content", label: "Edit celebrity", description: "Archive details and brands" },
+  { href: "/admin/celebrities", group: "Content", label: "Edit celebrity", description: "Name and bio; her figures are counted for you" },
   { href: "/admin/occasions/new", group: "Content", label: "New occasion", description: "Add an event category" },
-  { href: "/admin/occasions", group: "Content", label: "Edit occasion", description: "Colours, garments and timing" },
+  { href: "/admin/occasions", group: "Content", label: "Edit occasion", description: "Group, palette, guide copy and next date" },
   { href: "/admin/trending/new", group: "Operations", label: "New search term", description: "Add a leaderboard row" },
   { href: "/admin/trending", group: "Operations", label: "Edit search term", description: "Leaderboard row" },
 ];

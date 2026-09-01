@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { celebrityBio } from "@/lib/celebrity-bio";
 import { celebritySlug, outfitSlug } from "@/lib/slugs";
+import { useSavedList } from "@/lib/saved";
 import { outfitPhoto, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import type { CelebrityView } from "@/lib/archive";
@@ -28,13 +29,15 @@ function agoLabel(value: string | null) {
 }
 
 export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: CelebrityView; outfits: Outfit[]; similar: CelebrityView[] }) {
-  const [following, setFollowing] = useState(false);
+  // Both lists live in the browser, shared with the header badge and /saved.
+  const saved = useSavedList("looks");
+  const followed = useSavedList("people");
   const [occasion, setOccasion] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("new");
-  const [saved, setSaved] = useState<number[]>([]);
   const bio = celebrityBio(celebrity);
   const stats = celebrity.stats;
   const checked = formatDay(stats.lastChecked);
+  const isFollowed = followed.has(celebritySlug(celebrity));
 
   const results = useMemo(() => {
     const filtered = outfits.filter((outfit) => !occasion || outfit.occasion === occasion);
@@ -69,14 +72,14 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
             <div className={styles.heroCopy}>
               <h1>{celebrity.name}</h1><p className={styles.subtitle}>Style archive · {agoLabel(stats.lastDecoded)}</p>
               {bio.map((paragraph) => <p className={styles.bio} key={paragraph}>{paragraph}</p>)}
-              <p className={styles.byline}>Written by <b>Rabi</b>{checked ? <> · Prices re-checked <b>{checked}</b></> : null} · <button type="button">Report a correction</button></p>
+              <p className={styles.byline}>Written by <b>Rabi</b>{checked ? <> · Prices re-checked <b>{checked}</b></> : null} · <Link href={`/report-a-price?piece=${encodeURIComponent(celebrity.name)}`}>Report a correction</Link></p>
               <div className={styles.heroStats}>
                 <div><b>{stats.looks}</b><span>Looks decoded</span></div><div><b>{stats.pieces}</b><span>Pieces identified</span></div>
                 {stats.averageSaving === null ? null : <div><b className={styles.green}>{stats.averageSaving}%</b><span>Avg saving</span></div>}
                 {stats.low === null || stats.high === null ? null : <div><b>{compactPrice(stats.low)}–{compactPrice(stats.high)}</b><span>Typical range</span></div>}
               </div>
               <div className={styles.actions}>
-                <button type="button" aria-pressed={following} onClick={() => setFollowing(!following)}>{following ? `✓ Following ${firstName(celebrity.name)}` : `♡ Follow ${firstName(celebrity.name)}`}</button>
+                <button type="button" aria-pressed={isFollowed} onClick={() => followed.toggle(celebritySlug(celebrity))}>{isFollowed ? `✓ Following ${firstName(celebrity.name)}` : `♡ Follow ${firstName(celebrity.name)}`}</button>
                 <button type="button">Get her looks on WhatsApp</button>
               </div>
             </div>
@@ -118,7 +121,7 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
             <div><button type="button" aria-pressed={!occasion} onClick={() => setOccasion(null)}>All <b>{outfits.length}</b></button>{stats.occasions.map((entry) => <button type="button" aria-pressed={occasion === entry.name} onClick={() => setOccasion(entry.name)} key={entry.name}>{entry.name} <b>{entry.count}</b></button>)}</div>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="Sort looks"><option value="new">Newest</option><option value="saving">Biggest saving</option><option value="cheap">Cheapest swap</option><option value="lux">Priciest worn</option></select>
           </div>
-          {results.length ? <div className={styles.outfitGrid}>{results.map((outfit) => <ProfileOutfitCard outfit={outfit} saved={saved.includes(outfit.id)} onSave={() => setSaved(saved.includes(outfit.id) ? saved.filter((id) => id !== outfit.id) : [...saved,outfit.id])} key={outfit.id} />)}</div> : <div className={styles.empty}><h3>{occasion ? `No ${occasion.toLowerCase()} looks in this archive yet` : "Nothing decoded here yet"}</h3><p>Looks published in the panel appear here the moment they are saved.</p>{occasion && <button type="button" onClick={() => setOccasion(null)}>Show all</button>}</div>}
+          {results.length ? <div className={styles.outfitGrid}>{results.map((outfit) => <ProfileOutfitCard outfit={outfit} saved={saved.has(outfitSlug(outfit))} onSave={() => saved.toggle(outfitSlug(outfit))} key={outfit.id} />)}</div> : <div className={styles.empty}><h3>{occasion ? `No ${occasion.toLowerCase()} looks in this archive yet` : "Nothing decoded here yet"}</h3><p>Looks published in the panel appear here the moment they are saved.</p>{occasion && <button type="button" onClick={() => setOccasion(null)}>Show all</button>}</div>}
         </div>
       </section>
 

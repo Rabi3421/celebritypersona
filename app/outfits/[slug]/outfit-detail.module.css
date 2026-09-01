@@ -12,6 +12,10 @@
 .frame figcaption, .hint { position: absolute; z-index: 3; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .78); background: rgba(0, 0, 0, .38); backdrop-filter: blur(6px); padding: 5px 10px; border-radius: var(--r-sm); }
 .frame figcaption { left: var(--s4); bottom: var(--s4); }
 .hint { right: var(--s4); top: var(--s4); }
+.keep { position: absolute; z-index: 4; right: var(--s4); bottom: var(--s4); width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; font-size: 17px; line-height: 1; color: var(--rani); background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); box-shadow: var(--e2); transition: transform var(--fast) var(--ease); }
+.keep:hover { transform: scale(1.1); }
+.keep[aria-pressed="false"] { color: var(--ink); }
+
 .hotspot { position: absolute; z-index: 4; width: 26px; height: 26px; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .9); background: rgba(255, 255, 255, .16); backdrop-filter: blur(4px); cursor: pointer; display: grid; place-items: center; font-family: var(--mono); font-size: 10px; font-weight: 600; color: white; transition: transform var(--base) var(--ease), background var(--base) var(--ease); }
 .hotspot::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .34); animation: pulse 2.6s var(--ease) infinite; }
 .thumbs { display: flex; gap: var(--s3); margin-top: var(--s3); overflow-x: auto; scrollbar-width: none; }
@@ -89,8 +93,8 @@
 .authorAvatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(140deg, var(--rani), #7b0040); color: white; display: grid; place-items: center; font-family: var(--display); font-weight: 800; }
 .byline p { font-size: 14px; font-weight: 600; }
 .byline span { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ash); margin-top: 2px; }
-.byline > button { margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); border: 0; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
-.byline > button:hover { color: var(--rani); border-bottom-color: var(--rani); }
+.byline > button, .byline > a { margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); border: 0; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
+.byline > button:hover, .byline > a:hover { color: var(--rani); border-bottom-color: var(--rani); }
 .mobileBar { display: none; }
 
 @media (max-width: 1023px) {

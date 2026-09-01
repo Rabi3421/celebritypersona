@@ -3,10 +3,12 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
-  getCelebrities,
-  getOccasions,
+  getCelebrityRequests,
+  getCelebrityViews,
+  getOccasionViews,
   getOutfits,
   getPriceReports,
+  getSubscribers,
 } from "@/lib/db/content";
 import styles from "@/app/admin/panel.module.css";
 
@@ -20,12 +22,17 @@ import styles from "@/app/admin/panel.module.css";
  */
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   const session = await requireAdmin();
-  const [outfits, celebrities, occasions, priceReports] = await Promise.all([
-    getOutfits(),
-    getCelebrities(),
-    getOccasions(),
-    getPriceReports(),
-  ]);
+  // The views, not the raw documents, so a sidebar count and the list it opens
+  // never disagree: both include names the outfits mention with no record yet.
+  const [outfits, celebrities, occasions, priceReports, requests, subscribers] =
+    await Promise.all([
+      getOutfits(),
+      getCelebrityViews(),
+      getOccasionViews(),
+      getPriceReports(),
+      getCelebrityRequests(),
+      getSubscribers(),
+    ]);
 
   return (
     <div className={styles.shell}>
@@ -40,6 +47,8 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             celebrities: celebrities.length,
             occasions: occasions.length,
             reports: priceReports.length,
+            requests: requests.length,
+            subscribers: subscribers.filter((row) => row.status === "Active").length,
           }}
         />
       </aside>

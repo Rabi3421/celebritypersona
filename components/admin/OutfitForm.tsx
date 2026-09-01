@@ -141,7 +141,13 @@ export function OutfitForm({
       </form>
 
       {outfit ? (
-        <form action={removeOutfit} className={styles.formBar}>
+        <form
+          action={removeOutfit}
+          className={styles.formBar}
+          onSubmit={(event) => {
+            if (!window.confirm("Delete this look? Its photos are removed too, and this cannot be undone.")) event.preventDefault();
+          }}
+        >
           <input type="hidden" name="id" value={outfit.id} />
           <button className={styles.danger} type="submit">
             Delete this outfit

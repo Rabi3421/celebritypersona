@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { archiveTotals, budgetRange, celebrityNames, occasionNames, savingThresholds } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
+import { useSavedList } from "@/lib/saved";
 import { outfitPhoto, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
@@ -63,7 +64,9 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   const [sort, setSort] = useState<SortMode>("new");
   const [shown, setShown] = useState(9);
   const [dense, setDense] = useState(false);
-  const [saved, setSaved] = useState<number[]>([]);
+  // Hearts persist in the visitor's browser and are shared with every other
+  // surface on the site, so a save survives navigating away.
+  const saved = useSavedList("looks");
   const [quickView, setQuickView] = useState<Outfit | null>(null);
   const [priceMode, setPriceMode] = useState<PriceMode>("worn");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -264,8 +267,8 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                     <OutfitCard
                       outfit={outfit}
                       featured={index === 0 && sort === "new" && occasions.length === 0}
-                      saved={saved.includes(outfit.id)}
-                      onSave={() => setSaved(saved.includes(outfit.id) ? saved.filter((id) => id !== outfit.id) : [...saved, outfit.id])}
+                      saved={saved.has(outfitSlug(outfit))}
+                      onSave={() => saved.toggle(outfitSlug(outfit))}
                       onNavigate={() => router.push(`/outfits/${outfitSlug(outfit)}`)}
                       onQuickView={() => openQuickView(outfit)}
                     />

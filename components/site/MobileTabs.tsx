@@ -13,14 +13,14 @@ export function MobileTabs({ active }: { active?: string }) {
         <CalendarIcon />
         Occasions
       </Link>
-      <a href="#">
+      <Link href="/search" aria-current={active === "search" ? "page" : undefined}>
         <SearchIcon />
         Search
-      </a>
-      <a href="#">
+      </Link>
+      <Link href="/saved" aria-current={active === "saved" ? "page" : undefined}>
         <HeartIcon />
         Saved
-      </a>
+      </Link>
     </nav>
   );
 }

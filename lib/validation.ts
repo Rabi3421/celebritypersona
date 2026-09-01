@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  PRICE_REPORT_ISSUES,
+  PRICE_REPORT_STATUSES,
+  REQUEST_STATUSES,
+  SUBSCRIBER_STATUSES,
+} from "@/lib/types";
 
 /** Shapes the admin forms are allowed to submit. Numbers arrive as strings. */
 
@@ -142,7 +148,56 @@ export const trendingSearchSchema = z.object({
 
 export const priceReportStatusSchema = z.object({
   id: required("Report"),
-  status: z.enum(["New", "Checked", "Fixed", "No change needed"]),
+  status: z.enum(PRICE_REPORT_STATUSES),
+  note: z.string().trim().max(500, "Keep the note under 500 characters").optional(),
+});
+
+/** A link a reader pasted. Anything that is not an http(s) URL is a mistake or
+ *  an injection attempt, and neither belongs in the inbox. */
+const optionalUrl = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(500, `${label} is too long`)
+    .optional()
+    .transform((value) => value || undefined)
+    .refine(
+      (value) => !value || /^https?:\/\/\S+$/i.test(value),
+      `${label} must start with http:// or https://`,
+    );
+
+const optionalText = (label: string, max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `${label} is too long`)
+    .optional()
+    .transform((value) => value || undefined);
+
+/**
+ * What the public report form is allowed to post. Everything is capped, so a
+ * single submission cannot fill a document, and the only free-form field a
+ * reader must give is the one that makes the report worth reading.
+ */
+export const priceReportSchema = z.object({
+  outfitSlug: optionalText("Page", 200),
+  issue: z.enum(PRICE_REPORT_ISSUES),
+  piece: optionalText("Piece", 120),
+  detail: required("A short description")
+    .max(1200, "Keep the description under 1200 characters"),
+  sourceUrl: optionalUrl("Link"),
+  reporterEmail: z
+    .string()
+    .trim()
+    .max(200, "Email is too long")
+    .optional()
+    .transform((value) => value || undefined)
+    .refine(
+      (value) => !value || /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(value),
+      "That does not look like an email address",
+    ),
+  /** Hidden field a person never fills in. Bots do. */
+  website: z.string().max(0, "Rejected").optional(),
 });
 
 
@@ -167,6 +222,48 @@ export const homeContentSchema = z.object({
     cta: required("Campaign button"),
     href: required("Campaign link"),
   }),
+});
+
+/**
+ * A name a reader typed. Capped and stripped of anything that is not part of a
+ * person's name, so the requests table stays readable and cannot be used to
+ * smuggle markup into the panel.
+ */
+export const celebrityRequestSchema = z.object({
+  name: required("A name")
+    .max(80, "Keep the name under 80 characters")
+    .transform((value) => value.replace(/\s+/g, " "))
+    .refine(
+      (value) => /^[\p{L}\p{N}][\p{L}\p{N}\s.'-]*$/u.test(value),
+      "Use letters, numbers, spaces, apostrophes and hyphens",
+    ),
+  website: z.string().max(0, "Rejected").optional(),
+});
+
+/**
+ * An Indian mobile number, however it was typed: with +91, with spaces, with a
+ * leading zero. Stored as the bare ten digits so one person cannot subscribe
+ * five times by punctuating it differently.
+ */
+export const subscriberSchema = z.object({
+  number: required("Your WhatsApp number")
+    .transform((value) => value.replace(/\D/g, ""))
+    .transform((digits) => digits.replace(/^(?:91|0)(?=\d{10}$)/, ""))
+    .refine(
+      (digits) => /^[6-9]\d{9}$/.test(digits),
+      "Enter a 10-digit Indian mobile number",
+    ),
+  website: z.string().max(0, "Rejected").optional(),
+});
+
+export const requestStatusSchema = z.object({
+  id: required("Request"),
+  status: z.enum(REQUEST_STATUSES),
+});
+
+export const subscriberStatusSchema = z.object({
+  id: required("Subscriber"),
+  status: z.enum(SUBSCRIBER_STATUSES),
 });
 
 export type FieldErrors = Record<string, string>;

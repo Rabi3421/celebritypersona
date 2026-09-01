@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
@@ -6,11 +7,15 @@ import { getDb } from "@/lib/mongodb";
 import { hasSwap, hasWornPrice, outfitPhotos } from "@/lib/types";
 import type {
   Celebrity,
+  CelebrityRequest,
   HomeContent,
   Occasion,
   Outfit,
   OutfitItem,
   PriceReport,
+  RequestStatus,
+  Subscriber,
+  SubscriberStatus,
   TrendingSearch,
 } from "@/lib/types";
 
@@ -191,12 +196,44 @@ export async function deleteTrendingSearch(term: string) {
 
 /* ---------------------------------------------------------- price reports */
 
+/**
+ * A reader's report. Written straight to the collection the panel reads, so a
+ * correction lands in the inbox rather than in an email nobody triages. The id
+ * is generated here so the action never has to trust the client for one.
+ */
+export async function createPriceReport(
+  input: Omit<PriceReport, "id" | "receivedAt" | "status">,
+) {
+  const db = await getDb();
+  // The driver writes an absent optional as null, which then reads back as a
+  // value the type says cannot be there. Drop them instead.
+  const given = Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined && value !== ""),
+  ) as typeof input;
+  const report: PriceReport = {
+    ...given,
+    id: randomUUID(),
+    receivedAt: new Date().toISOString(),
+    status: "New",
+  };
+  await db.collection<PriceReport>("priceReports").insertOne(report);
+  // Only the panel changes; no public page renders reports.
+  revalidatePath("/admin/reports");
+  return report.id;
+}
+
 export async function setPriceReportStatus(
   id: string,
   status: PriceReport["status"],
+  note?: string,
 ) {
   const db = await getDb();
-  await db.collection<PriceReport>("priceReports").updateOne({ id }, { $set: { status } });
+  await db
+    .collection<PriceReport>("priceReports")
+    .updateOne(
+      { id },
+      note === undefined ? { $set: { status } } : { $set: { status, note } },
+    );
   revalidatePath("/admin/reports");
 }
 
@@ -204,6 +241,72 @@ export async function deletePriceReport(id: string) {
   const db = await getDb();
   await db.collection<PriceReport>("priceReports").deleteOne({ id });
   revalidatePath("/admin/reports");
+}
+
+/* ------------------------------------------------- requests & subscribers */
+
+/**
+ * Asking for someone already in the queue adds a vote instead of a row, so the
+ * panel can rank by demand — which is what the public page promises.
+ */
+export async function recordCelebrityRequest(name: string) {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  // Matched case-insensitively on the whole string; "alia bhatt" and "Alia
+  // Bhatt" are one request, not two.
+  const key = new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+  await db.collection<CelebrityRequest>("celebrityRequests").updateOne(
+    { name: key },
+    {
+      $inc: { votes: 1 },
+      $set: { lastAskedAt: now },
+      $setOnInsert: { id: randomUUID(), name, firstAskedAt: now, status: "New" },
+    },
+    { upsert: true },
+  );
+  revalidatePath("/admin/requests");
+}
+
+export async function setCelebrityRequestStatus(id: string, status: RequestStatus) {
+  const db = await getDb();
+  await db.collection<CelebrityRequest>("celebrityRequests").updateOne({ id }, { $set: { status } });
+  revalidatePath("/admin/requests");
+}
+
+export async function deleteCelebrityRequest(id: string) {
+  const db = await getDb();
+  await db.collection<CelebrityRequest>("celebrityRequests").deleteOne({ id });
+  revalidatePath("/admin/requests");
+}
+
+/**
+ * Signing up twice is not two people. The number is the key, and re-subscribing
+ * after unsubscribing simply makes them active again.
+ */
+export async function recordSubscriber(number: string) {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.collection<Subscriber>("subscribers").updateOne(
+    { number },
+    {
+      $set: { status: "Active" },
+      $setOnInsert: { id: randomUUID(), number, joinedAt: now },
+    },
+    { upsert: true },
+  );
+  revalidatePath("/admin/subscribers");
+}
+
+export async function setSubscriberStatus(id: string, status: SubscriberStatus) {
+  const db = await getDb();
+  await db.collection<Subscriber>("subscribers").updateOne({ id }, { $set: { status } });
+  revalidatePath("/admin/subscribers");
+}
+
+export async function deleteSubscriber(id: string) {
+  const db = await getDb();
+  await db.collection<Subscriber>("subscribers").deleteOne({ id });
+  revalidatePath("/admin/subscribers");
 }
 
 /* ------------------------------------------------------------ home content */

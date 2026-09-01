@@ -102,7 +102,13 @@ export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
         </div>
       </form>
       {occasion ? (
-        <form action={removeOccasion} className={styles.formBar}>
+        <form
+          action={removeOccasion}
+          className={styles.formBar}
+          onSubmit={(event) => {
+            if (!window.confirm("Delete this occasion? Its looks stay, but the guide copy and palette are gone for good.")) event.preventDefault();
+          }}
+        >
           <input type="hidden" name="id" value={occasion.id} />
           <button className={styles.danger} type="submit">Delete this occasion</button>
         </form>

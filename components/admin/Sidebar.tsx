@@ -26,6 +26,8 @@ const ICONS: Record<AdminIconKey, (props: { className?: string }) => React.React
   occasions: CalendarIcon,
   trending: TrendIcon,
   reports: InboxIcon,
+  requests: PersonIcon,
+  subscribers: InboxIcon,
   settings: SlidersIcon,
 };
 

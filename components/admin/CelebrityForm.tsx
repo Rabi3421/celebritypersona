@@ -92,7 +92,13 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
         </div>
       </form>
       {celebrity ? (
-        <form action={removeCelebrity} className={styles.formBar}>
+        <form
+          action={removeCelebrity}
+          className={styles.formBar}
+          onSubmit={(event) => {
+            if (!window.confirm("Delete this archive? Her looks stay, but the bio and record are gone for good.")) event.preventDefault();
+          }}
+        >
           <input type="hidden" name="id" value={celebrity.id} />
           <button className={styles.danger} type="submit">Delete this celebrity</button>
         </form>

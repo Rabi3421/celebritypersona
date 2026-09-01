@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { outfitSlug } from "@/lib/slugs";
+import { useSavedList } from "@/lib/saved";
 import { outfitPhoto, outfitPhotos, isFullySwapped, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
@@ -53,6 +54,11 @@ export function OutfitDetail({
   const shown = photos[shot];
   const onCover = shot === 0;
   const pieceWord = (count: number) => (count === 1 ? "piece" : "pieces");
+  // Reports link back to this exact look, so the reader never has to find its
+  // address and the panel always knows which page a correction is about.
+  const slug = outfitSlug(outfit);
+  const saved = useSavedList("looks");
+  const isSaved = saved.has(slug);
 
   useEffect(() => {
     const target = ctaRef.current;
@@ -103,6 +109,15 @@ export function OutfitDetail({
                 sizes="(max-width: 1023px) 100vw, 58vw"
               />
               <figcaption>Photo · Editorial archive</figcaption>
+              <button
+                type="button"
+                className={styles.keep}
+                aria-pressed={isSaved}
+                aria-label={isSaved ? "Remove this look from saved" : "Save this look"}
+                onClick={() => saved.toggle(slug)}
+              >
+                {isSaved ? "♥" : "♡"}
+              </button>
               {onCover && outfit.items.some((item) => item.hotspot) ? (
                 <span className={styles.hint}>Tap a dot</span>
               ) : null}
@@ -260,7 +275,10 @@ export function OutfitDetail({
                     We have identified {money.pieces === 1 ? "this piece" : `all ${money.pieces} pieces`}, but
                     have not found an alternative worth recommending yet.
                   </div>
-                  <Link className={styles.pendingAction} href="/report-a-price">
+                  <Link
+                    className={styles.pendingAction}
+                    href={`/report-a-price?outfit=${encodeURIComponent(slug)}&issue=${encodeURIComponent("Swap suggestion")}`}
+                  >
                     Know a good match? Tell us
                   </Link>
                   <small>
@@ -282,7 +300,9 @@ export function OutfitDetail({
             Published {shortDate.format(published)}
             {checked ? ` · Prices last checked ${shortDate.format(checked)}` : ""}
           </span></div>
-          <button type="button">Report a wrong price</button>
+          <Link href={`/report-a-price?outfit=${encodeURIComponent(slug)}&issue=${encodeURIComponent("Price is wrong")}`}>
+            Report a wrong price
+          </Link>
         </div>
       </div>
 

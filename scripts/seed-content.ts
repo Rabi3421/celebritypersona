@@ -68,9 +68,16 @@ async function main() {
     "key",
   );
 
-  // Reader reports arrive at runtime; only make sure the collection is queryable.
+  // Reader-supplied collections arrive at runtime; only make sure they are
+  // queryable, and that the natural keys that de-duplicate them are enforced.
   await db.collection("priceReports").createIndex({ receivedAt: -1 });
-  console.log(`  priceReports       ${await db.collection("priceReports").countDocuments()} documents`);
+  await db.collection("celebrityRequests").createIndex({ votes: -1, firstAskedAt: 1 });
+  await db.collection("celebrityRequests").createIndex({ id: 1 }, { unique: true });
+  await db.collection("subscribers").createIndex({ number: 1 }, { unique: true });
+  await db.collection("subscribers").createIndex({ joinedAt: -1 });
+  for (const name of ["priceReports", "celebrityRequests", "subscribers"]) {
+    console.log(`  ${name.padEnd(18)} ${await db.collection(name).countDocuments()} documents`);
+  }
 
   console.log("Done.");
   await client.close();

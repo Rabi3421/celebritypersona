@@ -41,7 +41,7 @@ export async function OccasionsDirectory() {
       <section className={styles.section}>{nextWedding ? <div className={styles.weddingFeature}><div><p>{nextWedding.peak}</p><h2>Wedding season is coming</h2><span>Sangeet, mehendi, haldi, reception — the five events everyone panics about. All decoded, all with swaps you can order in time.</span></div><strong>{nextWedding.daysAway}<small>Days until season starts</small></strong></div> : null}<GroupSection occasions={occasions} group="Wedding" eyebrow="The five" title="Wedding occasions" body="Ranked by how many looks we've decoded for each." /></section>
       <GroupSection occasions={occasions} group="Festival" eyebrow="Around the year" title="Festival looks" body="Dressing for the dates that actually move the needle in India." section />
       <GroupSection occasions={occasions} group="Everyday" eyebrow="The rest of the time" title="Everyday and events" body="Airport looks are the most-searched category on this site by a wide margin." section />
-      <section className={styles.planner}><div><h2>Got an event in the diary?</h2><p>Save looks into a collection for it. We&apos;ll nudge you when something new lands that fits — and warn you if a piece is about to sell out.</p></div><button type="button">Start a collection →</button></section>
+      <section className={styles.planner}><div><h2>Got an event in the diary?</h2><p>Tap the heart on any look and it is kept in this browser, ready to compare side by side with what the whole outfit would cost to rebuild.</p></div><Link href="/saved">Open your saved looks →</Link></section>
     </div>
   </main>;
 }

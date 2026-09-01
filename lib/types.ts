@@ -184,14 +184,72 @@ export type TrendingSearch = {
   answer: string;
 };
 
+/** What a reader can tell us about a look. "Swap suggestion" is the one that
+ *  adds something rather than correcting something. */
+export const PRICE_REPORT_ISSUES = [
+  "Price is wrong",
+  "Link is dead",
+  "Sold out",
+  "Wrong brand or piece",
+  "Swap suggestion",
+] as const;
+
+export type PriceReportIssue = (typeof PRICE_REPORT_ISSUES)[number];
+
+export const PRICE_REPORT_STATUSES = [
+  "New",
+  "Checked",
+  "Fixed",
+  "No change needed",
+] as const;
+
+export type PriceReportStatus = (typeof PRICE_REPORT_STATUSES)[number];
+
 export type PriceReport = {
   id: string;
+  /** ISO timestamp. Older rows carry a plain YYYY-MM-DD, which still sorts. */
   receivedAt: string;
+  /** The look it is about. Empty when the reader could not name one. */
   outfitSlug: string;
-  issue: "Price is wrong" | "Link is dead" | "Sold out" | "Wrong brand or piece";
+  issue: PriceReportIssue;
   detail: string;
+  /** Which piece on the look, when the reader named one. */
+  piece?: string;
+  /** The retailer page backing the report, or the suggested swap. */
+  sourceUrl?: string;
   reporterEmail?: string;
-  status: "New" | "Checked" | "Fixed" | "No change needed";
+  status: PriceReportStatus;
+  /** What the editor did about it. */
+  note?: string;
+};
+
+export const REQUEST_STATUSES = ["New", "Queued", "Decoded", "Declined"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
+/**
+ * Someone the readers want decoded. The public page promises the most-asked-for
+ * names get done first, so repeats add a vote rather than a duplicate row.
+ */
+export type CelebrityRequest = {
+  id: string;
+  name: string;
+  votes: number;
+  firstAskedAt: string;
+  lastAskedAt: string;
+  status: RequestStatus;
+};
+
+export const SUBSCRIBER_STATUSES = ["Active", "Unsubscribed"] as const;
+export type SubscriberStatus = (typeof SUBSCRIBER_STATUSES)[number];
+
+/** A WhatsApp number that asked for the weekly messages. */
+export type Subscriber = {
+  id: string;
+  /** Digits only, no country code. Also the natural key, so signing up twice
+   *  reactivates rather than duplicating. */
+  number: string;
+  joinedAt: string;
+  status: SubscriberStatus;
 };
 
 export type TickerEntry = {

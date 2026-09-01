@@ -1,106 +1,195 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import { submitPriceReport, type ReportState } from "@/app/actions/reports";
 import { contacts } from "@/lib/site-config";
+import { PRICE_REPORT_ISSUES, type PriceReportIssue } from "@/lib/types";
 import styles from "./editorial.module.css";
 
-const issues = [
-  { value: "Price is wrong", hint: "The number does not match the shop" },
-  { value: "Link is dead", hint: "It 404s or goes to the wrong product" },
-  { value: "Sold out", hint: "Listed as available but it is gone" },
-  { value: "Wrong brand or piece", hint: "We identified it incorrectly" },
-];
+const HINTS: Record<PriceReportIssue, string> = {
+  "Price is wrong": "The number does not match the shop",
+  "Link is dead": "It 404s or goes to the wrong product",
+  "Sold out": "Listed as available but it is gone",
+  "Wrong brand or piece": "We identified it incorrectly",
+  "Swap suggestion": "You know a better alternative than ours",
+};
+
+export type ReportPrefill = {
+  /** The look the reader came from, so they never have to find its address. */
+  outfit?: string;
+  outfitLabel?: string;
+  issue?: PriceReportIssue;
+  piece?: string;
+};
 
 /**
- * Composes the report as an email and hands it to the visitor's mail client.
- * There is no backend yet, and pretending otherwise would silently drop
- * reports. Swap this for a server action once an endpoint exists.
+ * Posts straight to the price-reports collection the panel reads. It used to
+ * compose a mailto: link, which meant a report only arrived if the reader had
+ * a mail client configured and somebody was watching that inbox.
+ *
+ * It is a real form with a server action, so it submits without JavaScript
+ * too; the email address stays on the page as a fallback, not as the mechanism.
  */
-export function ReportPriceForm() {
-  const [issue, setIssue] = useState(issues[0].value);
-  const [sent, setSent] = useState(false);
+export function ReportPriceForm({ prefill }: { prefill?: ReportPrefill }) {
+  const [state, action, pending] = useActionState<ReportState, FormData>(
+    submitPriceReport,
+    {},
+  );
+  const [issue, setIssue] = useState<PriceReportIssue>(
+    prefill?.issue ?? PRICE_REPORT_ISSUES[0],
+  );
+  const errors = state.errors;
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const body = [
-      `Issue: ${issue}`,
-      `Page: ${data.get("page") || "not given"}`,
-      `What it should say: ${data.get("correct") || "not given"}`,
-      `Where you saw it: ${data.get("source") || "not given"}`,
-      `Reply to: ${data.get("email") || "no reply wanted"}`,
-    ].join("\n");
-
-    window.location.href = `mailto:${contacts.corrections}?subject=${encodeURIComponent(
-      `Price report: ${issue}`,
-    )}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+  if (state.sent) {
+    return (
+      <div className={styles.form}>
+        <div className={styles.heading}>
+          <p>Received</p>
+          <h2>Thank you — it is in the queue</h2>
+        </div>
+        <p className={styles.formNote}>
+          Your report is in front of us now. We check reports against the shop
+          itself, usually the same day, and the page changes rather than
+          quietly disappearing. If you left an email we will tell you what we
+          found.
+        </p>
+        <p className={styles.formNote}>
+          <Link href="/outfits">Back to the looks →</Link>
+        </p>
+      </div>
+    );
   }
 
+  const suggesting = issue === "Swap suggestion";
+
   return (
-    <form className={styles.form} onSubmit={onSubmit}>
+    <form className={styles.form} action={action}>
+      {errors?.form ? <p className={styles.formNote}>{errors.form}</p> : null}
+
       <div className={styles.field}>
-        <label htmlFor="page">Which page?</label>
-        <small>Paste the address of the outfit page, or describe the look.</small>
+        <label htmlFor="outfitSlug">Which page?</label>
+        <small>
+          Paste the address of the outfit page, or describe the look. Leave it
+          empty if it is not about one look.
+        </small>
         <input
-          id="page"
-          name="page"
-          required
+          id="outfitSlug"
+          name="outfitSlug"
+          defaultValue={prefill?.outfit ?? ""}
           placeholder="celebritypersona.com/outfits/..."
+          aria-invalid={errors?.outfitSlug ? true : undefined}
         />
+        {prefill?.outfitLabel ? (
+          <small>Reporting on: {prefill.outfitLabel}</small>
+        ) : null}
+        {errors?.outfitSlug ? <small>{errors.outfitSlug}</small> : null}
       </div>
 
       <div className={styles.field}>
         <label htmlFor="issue-0">What is wrong?</label>
         <div className={styles.choices}>
-          {issues.map((option, index) => (
-            <label className={styles.choice} key={option.value}>
+          {PRICE_REPORT_ISSUES.map((option, index) => (
+            <label className={styles.choice} key={option}>
               <input
                 type="radio"
                 name="issue"
                 id={`issue-${index}`}
-                value={option.value}
-                checked={issue === option.value}
-                onChange={() => setIssue(option.value)}
+                value={option}
+                checked={issue === option}
+                onChange={() => setIssue(option)}
               />
               <span>
-                <strong>{option.value}</strong>
+                <strong>{option}</strong>
                 <br />
-                {option.hint}
+                {HINTS[option]}
               </span>
             </label>
           ))}
         </div>
+        {errors?.issue ? <small>{errors.issue}</small> : null}
       </div>
 
       <div className={styles.field}>
-        <label htmlFor="correct">What should it say?</label>
+        <label htmlFor="piece">Which piece?</label>
+        <small>Optional. The kurta, the bag, the earrings — whichever it is.</small>
+        <input
+          id="piece"
+          name="piece"
+          defaultValue={prefill?.piece ?? ""}
+          placeholder="Ivory cotton kurta"
+          aria-invalid={errors?.piece ? true : undefined}
+        />
+        {errors?.piece ? <small>{errors.piece}</small> : null}
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="detail">
+          {suggesting ? "What should we swap it for?" : "What should it say?"}
+        </label>
         <small>
-          If it is a price, the figure you can see right now. If it is a piece,
-          the brand you think it actually is.
+          {suggesting
+            ? "The brand and the piece you would recommend instead, and why it is a better match."
+            : "If it is a price, the figure you can see right now. If it is a piece, the brand you think it actually is."}
         </small>
-        <input id="correct" name="correct" placeholder="₹1,499 on Myntra" />
+        <textarea
+          id="detail"
+          name="detail"
+          required
+          placeholder={
+            suggesting
+              ? "The Libas embroidered kurta is a much closer cut, and it is ₹1,299."
+              : "₹1,499 on Myntra"
+          }
+          aria-invalid={errors?.detail ? true : undefined}
+        />
+        {errors?.detail ? <small>{errors.detail}</small> : null}
       </div>
 
       <div className={styles.field}>
-        <label htmlFor="source">Where did you see that?</label>
-        <small>A link to the retailer page helps us confirm it in seconds.</small>
-        <input id="source" name="source" placeholder="Link to the product page" />
+        <label htmlFor="sourceUrl">
+          {suggesting ? "Link to the piece you mean" : "Where did you see that?"}
+        </label>
+        <small>A link to the product page lets us confirm it in seconds.</small>
+        <input
+          id="sourceUrl"
+          name="sourceUrl"
+          type="url"
+          placeholder="https://www.myntra.com/..."
+          aria-invalid={errors?.sourceUrl ? true : undefined}
+        />
+        {errors?.sourceUrl ? <small>{errors.sourceUrl}</small> : null}
       </div>
 
       <div className={styles.field}>
-        <label htmlFor="email">Your email, if you want a reply</label>
+        <label htmlFor="reporterEmail">Your email, if you want a reply</label>
         <small>Optional. Used only to answer this report, then deleted.</small>
-        <input id="email" name="email" type="email" placeholder="you@example.com" />
+        <input
+          id="reporterEmail"
+          name="reporterEmail"
+          type="email"
+          placeholder="you@example.com"
+          aria-invalid={errors?.reporterEmail ? true : undefined}
+        />
+        {errors?.reporterEmail ? <small>{errors.reporterEmail}</small> : null}
       </div>
 
-      <button className={styles.submit} type="submit">
-        Send the report
+      {/* Invisible to a person, irresistible to a bot. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }}
+      />
+
+      <button className={styles.submit} type="submit" disabled={pending}>
+        {pending ? "Sending…" : "Send the report"}
       </button>
       <p className={styles.formNote}>
-        {sent
-          ? `Your email app should have opened with the report ready to send. If nothing happened, email ${contacts.corrections} directly.`
-          : `This opens your email app with the report filled in, so you can see exactly what you are sending. Nothing is submitted from this page.`}
+        This goes straight to the person who maintains the page. Prefer email?{" "}
+        <a href={`mailto:${contacts.corrections}`}>{contacts.corrections}</a>.
       </p>
     </form>
   );
