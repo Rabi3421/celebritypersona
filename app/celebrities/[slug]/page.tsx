@@ -6,7 +6,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { celebritySlug } from "@/lib/slugs";
-import { getCelebrities, getCelebrityBySlug, getOutfits } from "@/lib/db/content";
+import { getCelebrityBySlug, getCelebrityViews, getOutfits } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -15,7 +15,7 @@ type Props = { params: Promise<{ slug: string }> };
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  const celebrities = await getCelebrities();
+  const celebrities = await getCelebrityViews();
   return celebrities.map((celebrity) => ({ slug: celebritySlug(celebrity) }));
 }
 
@@ -23,9 +23,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const celebrity = await getCelebrityBySlug(slug);
   if (!celebrity) return {};
+  const { looks } = celebrity.stats;
   return {
-    title: `${celebrity.name} Style Archive — ${celebrity.looks} looks decoded`,
-    description: `Explore ${celebrity.name}'s style archive with brands, original prices, affordable swaps, and ${celebrity.looks} decoded looks.`,
+    title: `${celebrity.name} Style Archive — ${looks} looks decoded`,
+    description: `Explore ${celebrity.name}'s style archive with brands, original prices, affordable swaps, and ${looks} decoded ${looks === 1 ? "look" : "looks"}.`,
   };
 }
 
@@ -34,12 +35,13 @@ export default async function CelebrityProfilePage({ params }: Props) {
   const [celebrity, outfits, celebrities] = await Promise.all([
     getCelebrityBySlug(slug),
     getOutfits(),
-    getCelebrities(),
+    getCelebrityViews(),
   ]);
   if (!celebrity) notFound();
 
   const celebrityOutfits = outfits.filter((outfit) => outfit.celebrity === celebrity.name);
-  const similar = celebrities.filter((item) => item.id !== celebrity.id).slice(0, 5);
+  // Nearest by size of archive, so the rail leads with names worth a click.
+  const similar = celebrities.filter((item) => item.id !== celebrity.id && item.stats.looks > 0).slice(0, 5);
 
   return (
     <>

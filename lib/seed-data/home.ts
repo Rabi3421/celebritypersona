@@ -1,157 +1,67 @@
-/** Seed source for the single `homeContent` document. Not read by the app. */
+/**
+ * Seed source for the single `home` site-content document. Not read by the app.
+ *
+ * Only what a person writes. Every figure the homepage shows — the stats bar,
+ * the ticker, the budget tiers, the occasion and archive tiles, the brand
+ * marquee, the dupe pick and the swap demo's pieces — is counted from the
+ * outfits collection at render time.
+ */
 import type { HomeContent } from "@/lib/types";
 
 export const homeContent: HomeContent = {
-  heroLook: {
-  date: "24 August 2026",
-  occasion: "Airport",
-  celebrity: "Alia Bhatt",
-  headline: "Alia Bhatt at Mumbai Airport",
-  summary:
-    "Ivory kurta, structured tote, flat sandals, oversized sunglasses. Every piece identified, every price checked.",
-  photoCredit: "Photo · Varinder Chawla",
-  items: [
+  swapSteps: [
     {
-      name: "Ivory cotton kurta",
-      short: "Kurta",
-      wornBrand: "Anita Dongre",
-      swapBrand: "Libas",
-      worn: 42000,
-      swap: 1799,
+      n: "01",
+      title: "We identify every piece",
+      body: "By hand, not scraped. Brand, item, exact product page.",
     },
     {
-      name: "Structured tote",
-      short: "Tote",
-      wornBrand: "Bottega Veneta",
-      swapBrand: "Lino Perros",
-      worn: 285000,
-      swap: 1499,
+      n: "02",
+      title: "We find the closest swap",
+      body: "Across Myntra, Ajio, Nykaa and more — matched on cut and fabric, not just colour.",
     },
     {
-      name: "Flat leather sandals",
-      short: "Sandals",
-      wornBrand: "Hermès",
-      swapBrand: "Mochi",
-      worn: 78000,
-      swap: 892,
-    },
-    {
-      name: "Oversized sunglasses",
-      short: "Sunglasses",
-      wornBrand: "Gucci",
-      swapBrand: "Lenskart",
-      worn: 38500,
-      swap: 1299,
+      n: "03",
+      title: "We test every link weekly",
+      body: "Sold out gets labelled. Dead links get removed, not hidden.",
     },
   ],
-},
-  tickerEntries: [
-  {
-    celebrity: "Deepika",
-    occasion: "Mumbai airport",
-    worn: 560000,
-    swap: 4780,
-  },
-  { celebrity: "Ananya", occasion: "Delhi promo", worn: 185000, swap: 2990 },
-  { celebrity: "Sara", occasion: "Jaipur sangeet", worn: 76000, swap: 1850 },
-  { celebrity: "Kiara", occasion: "Red carpet", worn: 340000, swap: 5210 },
-  { celebrity: "Janhvi", occasion: "Bandra casual", worn: 112000, swap: 2140 },
-],
-  stats: [
-  { value: 486, suffix: "", label: "Looks decoded" },
-  { value: 2140, suffix: "", label: "Pieces identified" },
-  { value: 94, suffix: "%", label: "Average saving" },
-  { value: 7, suffix: " days", label: "Prices re-checked every" },
-],
-  swapSteps: [
-  {
-    n: "01",
-    title: "We identify every piece",
-    body: "By hand, not scraped. Brand, item, exact product page.",
-  },
-  {
-    n: "02",
-    title: "We find the closest swap",
-    body: "Across Myntra, Ajio, Nykaa and more — matched on cut and fabric, not just colour.",
-  },
-  {
-    n: "03",
-    title: "We test every link weekly",
-    body: "Sold out gets labelled. Dead links get removed, not hidden.",
-  },
-],
-  budgetTiers: [
-  { cap: 2000, looks: 64 },
-  { cap: 5000, looks: 148 },
-  { cap: 10000, looks: 231 },
-],
-  dupeOfTheWeek: {
-  worn: { name: "Sabyasachi silk lehenga", price: 485000 },
-  swap: { name: "Libas embroidered lehenga", price: 4299 },
-},
-  occasions: [
-  { name: "Airport", looks: 142 },
-  { name: "Sangeet", looks: 58 },
-  { name: "Red carpet", looks: 91 },
-  { name: "Mehendi", looks: 44 },
-  { name: "Reception", looks: 37 },
-  { name: "Diwali", looks: 29 },
-  { name: "Promo tour", looks: 76 },
-  { name: "Casual", looks: 103 },
-],
-  celebrities: [
-  { name: "Alia Bhatt", looks: 47 },
-  { name: "Deepika Padukone", looks: 39 },
-  { name: "Ananya Panday", looks: 34 },
-  { name: "Sara Ali Khan", looks: 31 },
-  { name: "Kiara Advani", looks: 28 },
-  { name: "Janhvi Kapoor", looks: 22 },
-],
-  brands: [
-  "Sabyasachi",
-  "Anita Dongre",
-  "Manish Malhotra",
-  "Myntra",
-  "Ajio",
-  "Nykaa Fashion",
-  "Libas",
-  "Mochi",
-  "Lenskart",
-  "Gucci",
-  "Bottega Veneta",
-  "Hermès",
-  "Zara",
-  "H&M",
-  "Westside",
-],
   trustPoints: [
-  {
-    n: "01",
-    title: "A person, not a scraper",
-    body: "Every piece is identified by hand. If we can't confirm a brand, we mark it unidentified rather than guess.",
-  },
-  {
-    n: "02",
-    title: "Prices re-checked weekly",
-    body: "Each outfit page shows when its prices were last verified. If it's gone stale, you'll see that too.",
-  },
-  {
-    n: "03",
-    title: "Dead links removed",
-    body: "We test every link. Sold out is labelled sold out — we don't send you to an empty page.",
-  },
-  {
-    n: "04",
-    title: "Swaps are labelled swaps",
-    body: "A lookalike is never presented as the real piece. You always know which one you're buying.",
-  },
-],
+    {
+      n: "01",
+      title: "A person, not a scraper",
+      body: "Every piece is identified by hand. If we can't confirm a brand, we mark it unidentified rather than guess.",
+    },
+    {
+      n: "02",
+      title: "Prices re-checked weekly",
+      body: "Each outfit page shows when its prices were last verified. If it's gone stale, you'll see that too.",
+    },
+    {
+      n: "03",
+      title: "Dead links removed",
+      body: "We test every link. Sold out is labelled sold out — we don't send you to an empty page.",
+    },
+    {
+      n: "04",
+      title: "Swaps are labelled swaps",
+      body: "A lookalike is never presented as the real piece. You always know which one you're buying.",
+    },
+  ],
   reels: [
-  { views: "142k", caption: "Alia ka ₹4.4 lakh look → ₹5,489 mein" },
-  { views: "98k", caption: "Sangeet lehenga under ₹5,000" },
-  { views: "211k", caption: "Deepika airport look decode" },
-  { views: "76k", caption: "Yeh bag actually kitne ka hai?" },
-  { views: "134k", caption: "Diwali kurta sets — 5 dupes" },
-  { views: "89k", caption: "Red carpet vs Myntra" },
-],
+    { views: "142k", caption: "Alia ka ₹4.4 lakh look → ₹5,489 mein" },
+    { views: "98k", caption: "Sangeet lehenga under ₹5,000" },
+    { views: "211k", caption: "Deepika airport look decode" },
+    { views: "76k", caption: "Yeh bag actually kitne ka hai?" },
+    { views: "134k", caption: "Diwali kurta sets — 5 dupes" },
+    { views: "89k", caption: "Red carpet vs Myntra" },
+  ],
+  // The look count in front of `body` is filled in from the archive.
+  campaign: {
+    eyebrow: "Wedding season",
+    title: "Six weeks to the shaadi. Zero panic.",
+    body: "decoded across sangeet, mehendi and reception — with swaps you can actually order in time for the date.",
+    cta: "Open the wedding edit →",
+    href: "/occasions",
+  },
 };

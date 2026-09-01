@@ -9,14 +9,10 @@ import { fieldErrors, occasionSchema, type FieldErrors } from "@/lib/validation"
 export type OccasionDraft = {
   name: string;
   group: string;
-  looks: string;
-  swapFrom: string;
-  averageWorn: string;
-  averageSwap: string;
   peak: string;
   description: string;
+  nextDate: string;
   colours: Record<string, string>[];
-  garments: Record<string, string>[];
 };
 
 export type OccasionFormState = { attempt?: number; errors?: FieldErrors; values?: OccasionDraft };
@@ -30,14 +26,10 @@ export async function saveOccasion(
   const draft: OccasionDraft = {
     name: text(form, "name"),
     group: text(form, "group"),
-    looks: text(form, "looks"),
-    swapFrom: text(form, "swapFrom"),
-    averageWorn: text(form, "averageWorn"),
-    averageSwap: text(form, "averageSwap"),
     peak: text(form, "peak"),
     description: text(form, "description"),
+    nextDate: text(form, "nextDate"),
     colours: rows(form, "colours", ["name", "value"]),
-    garments: rows(form, "garments", ["name", "count"]),
   };
 
   const parsed = occasionSchema.safeParse(draft);

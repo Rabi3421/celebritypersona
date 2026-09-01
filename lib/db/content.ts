@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { getDb } from "@/lib/mongodb";
+import { celebrityViews, occasionViews } from "@/lib/archive";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
@@ -41,8 +42,18 @@ export const getCelebrities = cache(async (): Promise<Celebrity[]> => {
     .toArray();
 });
 
+/**
+ * Records joined to the numbers the archive computes for them. Every public
+ * page reads these rather than the raw documents: a card's look count and the
+ * looks behind it come from the same query, so they cannot drift apart.
+ */
+export const getCelebrityViews = cache(async () => {
+  const [celebrities, outfits] = await Promise.all([getCelebrities(), getOutfits()]);
+  return celebrityViews(celebrities, outfits);
+});
+
 export const getCelebrityBySlug = cache(async (slug: string) => {
-  const celebrities = await getCelebrities();
+  const celebrities = await getCelebrityViews();
   return celebrities.find((celebrity) => celebritySlug(celebrity) === slug);
 });
 
@@ -55,8 +66,13 @@ export const getOccasions = cache(async (): Promise<Occasion[]> => {
     .toArray();
 });
 
+export const getOccasionViews = cache(async () => {
+  const [occasions, outfits] = await Promise.all([getOccasions(), getOutfits()]);
+  return occasionViews(occasions, outfits);
+});
+
 export const getOccasionBySlug = cache(async (slug: string) => {
-  const occasions = await getOccasions();
+  const occasions = await getOccasionViews();
   return occasions.find((occasion) => occasionSlug(occasion) === slug);
 });
 

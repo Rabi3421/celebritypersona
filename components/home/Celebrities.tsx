@@ -2,10 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { revealClass } from "@/lib/reveal";
-import { getHomeContent } from "@/lib/db/content";
+import { nameSlug } from "@/lib/slugs";
+import { celebrityTiles } from "@/lib/archive";
+import { getOutfits } from "@/lib/db/content";
 
+/** The most-decoded archives, counted off the outfits rather than a list an
+ *  editor kept in step by hand. */
 export async function Celebrities() {
-  const { celebrities } = await getHomeContent();
+  const tiles = celebrityTiles(await getOutfits());
+  if (tiles.length === 0) return null;
 
   return (
     <section className="sec">
@@ -17,23 +22,25 @@ export async function Celebrities() {
         moreHref="/celebrities"
       />
       <div className="celebs">
-        {celebrities.map((celebrity, i) => (
+        {tiles.map((celebrity, i) => (
           <Link
-            href={`/celebrities/${celebrity.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            href={`/celebrities/${nameSlug(celebrity.name)}`}
             className={`ctile ${revealClass(i)}`}
             key={celebrity.name}
           >
             <div className="av">
               <Image
                 className="home-cover"
-                src={`https://picsum.photos/seed/cp-celebrity-${i + 1}/320/320`}
-                alt={`Sample portrait for ${celebrity.name}'s style archive`}
+                src={celebrity.image ?? `https://picsum.photos/seed/cp-celebrity-${i + 1}/320/320`}
+                alt={`${celebrity.name}'s style archive`}
                 fill
                 sizes="(max-width: 620px) 28vw, 15vw"
               />
             </div>
             <strong>{celebrity.name}</strong>
-            <span>{celebrity.looks} looks</span>
+            <span>
+              {celebrity.looks} {celebrity.looks === 1 ? "look" : "looks"}
+            </span>
           </Link>
         ))}
       </div>

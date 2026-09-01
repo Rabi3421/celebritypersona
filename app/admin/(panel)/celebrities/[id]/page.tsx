@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CelebrityForm } from "@/components/admin/CelebrityForm";
-import { getCelebrities } from "@/lib/db/content";
+import { getCelebrityViews } from "@/lib/db/content";
 
 export default async function EditCelebrityPage({
   params,
@@ -8,7 +8,7 @@ export default async function EditCelebrityPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const celebrity = (await getCelebrities()).find((item) => String(item.id) === id);
+  const celebrity = (await getCelebrityViews()).find((item) => String(item.id) === id);
   if (!celebrity) notFound();
   return <CelebrityForm celebrity={celebrity} />;
 }

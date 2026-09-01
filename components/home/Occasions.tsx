@@ -2,10 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { revealClass } from "@/lib/reveal";
-import { getHomeContent } from "@/lib/db/content";
+import { nameSlug } from "@/lib/slugs";
+import { occasionTiles } from "@/lib/archive";
+import { getOutfits } from "@/lib/db/content";
 
+/** Ranked by how many looks the archive actually holds for each event, and
+ *  illustrated with the newest photo from that group. */
 export async function Occasions() {
-  const { occasions } = await getHomeContent();
+  const tiles = occasionTiles(await getOutfits());
+  if (tiles.length === 0) return null;
 
   return (
     <section className="sec">
@@ -17,22 +22,24 @@ export async function Occasions() {
         moreHref="/occasions"
       />
       <div className="occ">
-        {occasions.map((occasion, i) => (
+        {tiles.map((occasion, i) => (
           <Link
-            href={`/occasions/${occasion.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            href={`/occasions/${nameSlug(occasion.name)}`}
             className={`otile ${revealClass(i, 4)}`}
             key={occasion.name}
           >
             <Image
               className="home-cover"
-              src={`https://picsum.photos/seed/cp-occasion-${i + 1}/600/800`}
-              alt={`Sample ${occasion.name} outfit inspiration`}
+              src={occasion.image ?? `https://picsum.photos/seed/cp-occasion-${i + 1}/600/800`}
+              alt={`${occasion.name} outfit decoded on CelebrityPersona`}
               fill
               sizes="(max-width: 620px) 50vw, 25vw"
             />
             <div className="lab">
               <strong>{occasion.name}</strong>
-              <span>{occasion.looks} looks</span>
+              <span>
+                {occasion.looks} {occasion.looks === 1 ? "look" : "looks"}
+              </span>
               <p className="go">View →</p>
             </div>
           </Link>

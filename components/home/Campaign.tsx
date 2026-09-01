@@ -1,17 +1,31 @@
-export function Campaign() {
+import Link from "next/link";
+import type { HomeContent } from "@/lib/types";
+
+/**
+ * Editorial copy from the panel, with the one number in it filled in from the
+ * archive. The band used to promise 184 wedding looks whatever was published.
+ */
+export function Campaign({
+  campaign,
+  looks,
+}: {
+  campaign: HomeContent["campaign"];
+  looks: number;
+}) {
+  if (looks === 0) return null;
+
   return (
     <section className="sec">
       <div className="camp rv">
         <div className="in">
-          <p className="eb">Wedding season 2026</p>
-          <h2>Six weeks to the shaadi. Zero panic.</h2>
+          <p className="eb">{campaign.eyebrow}</p>
+          <h2>{campaign.title}</h2>
           <p>
-            184 sangeet, mehendi and reception looks decoded — with swaps you can
-            actually order in time for the date.
+            {looks} {looks === 1 ? "look" : "looks"} {campaign.body}
           </p>
-          <button className="btn">
-            <span>Open the wedding edit →</span>
-          </button>
+          <Link className="btn" href={campaign.href}>
+            <span>{campaign.cta}</span>
+          </Link>
         </div>
       </div>
     </section>

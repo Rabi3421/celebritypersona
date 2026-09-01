@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { celebritySlug } from "@/lib/slugs";
-import type { Celebrity } from "@/lib/types";
+import type { ArchiveTotals, CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/celebrities.module.css";
 
 type SortMode = "looks" | "trend" | "new" | "save" | "az";
@@ -15,7 +15,26 @@ function compactPrice(value: number) {
   return `₹${value}`;
 }
 
-export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }) {
+/** A range only reads honestly once both ends are priced. */
+function priceRange(low: number | null, high: number | null) {
+  if (low === null || high === null) return "—";
+  return low === high ? compactPrice(low) : `${compactPrice(low)}–${compactPrice(high)}`;
+}
+
+/** Her own photo where the archive has one, so a card is never a stock seed
+ *  standing in for a person. */
+const portrait = (celebrity: CelebrityView, index = 0) =>
+  celebrity.stats.photos[index] ??
+  celebrity.stats.photos[0] ??
+  `https://picsum.photos/seed/cpc${celebrity.id}/300/300`;
+
+export function CelebrityDirectory({
+  celebrities,
+  totals,
+}: {
+  celebrities: CelebrityView[];
+  totals: ArchiveTotals;
+}) {
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [letter, setLetter] = useState<string | null>(null);
@@ -34,11 +53,11 @@ export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }
     });
 
     return filtered.sort((a, b) => {
-      if (sort === "trend") return Number(Boolean(b.trending)) - Number(Boolean(a.trending)) || b.looks - a.looks;
-      if (sort === "new") return Number(Boolean(b.newArchive)) - Number(Boolean(a.newArchive)) || b.id - a.id;
-      if (sort === "save") return b.averageSaving - a.averageSaving;
+      if (sort === "trend") return Number(b.trending) - Number(a.trending) || b.stats.looks - a.stats.looks;
+      if (sort === "new") return Number(b.stats.isNew) - Number(a.stats.isNew) || (b.stats.lastDecoded ?? "").localeCompare(a.stats.lastDecoded ?? "");
+      if (sort === "save") return (b.stats.averageSaving ?? -1) - (a.stats.averageSaving ?? -1);
       if (sort === "az") return a.name.localeCompare(b.name);
-      return b.looks - a.looks;
+      return b.stats.looks - a.stats.looks;
     });
   }, [celebrities, following, followingOnly, letter, query, sort]);
 
@@ -88,8 +107,8 @@ export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }
                     <p>{searchMatches.length} {searchMatches.length === 1 ? "match" : "matches"}</p>
                     {searchMatches.map((celebrity) => (
                       <Link href={`/celebrities/${celebritySlug(celebrity)}`} key={celebrity.id}>
-                        <Image src={`https://picsum.photos/seed/cpc${celebrity.id}/80/80`} width={34} height={34} alt="" />
-                        <b>{celebrity.name}</b><span>{celebrity.looks} looks</span>
+                        <Image src={portrait(celebrity)} width={34} height={34} alt="" />
+                        <b>{celebrity.name}</b><span>{celebrity.stats.looks} looks</span>
                       </Link>
                     ))}
                   </>
@@ -99,9 +118,9 @@ export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }
           </div>
 
           <div className={styles.stats}>
-            <div><b>18</b><span>Archives</span></div>
-            <div><b>486</b><span>Looks decoded</span></div>
-            <div><b>2,140</b><span>Pieces identified</span></div>
+            <div><b>{celebrities.length}</b><span>Archives</span></div>
+            <div><b>{totals.looks.toLocaleString("en-IN")}</b><span>Looks decoded</span></div>
+            <div><b>{totals.pieces.toLocaleString("en-IN")}</b><span>Pieces identified</span></div>
           </div>
         </div>
       </header>
@@ -118,7 +137,7 @@ export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }
       <div className={styles.toolbar}>
         <div className={styles.shell}>
           <div className={styles.toolbarRow}>
-            <p><b>{results.length}</b> archives · {celebrities.reduce((sum, celebrity) => sum + celebrity.looks, 0)} looks</p>
+            <p><b>{results.length}</b> archives · {celebrities.reduce((sum, celebrity) => sum + celebrity.stats.looks, 0)} looks</p>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="Sort celebrities">
               <option value="looks">Most decoded</option><option value="trend">Trending now</option>
               <option value="new">Recently added</option><option value="save">Biggest savings</option><option value="az">A–Z</option>
@@ -161,30 +180,30 @@ export function CelebrityDirectory({ celebrities }: { celebrities: Celebrity[] }
   );
 }
 
-function SpotlightCard({ celebrity, rank }: { celebrity: Celebrity; rank: number }) {
+function SpotlightCard({ celebrity, rank }: { celebrity: CelebrityView; rank: number }) {
   return (
     <Link className={styles.spotlightCard} href={`/celebrities/${celebritySlug(celebrity)}`}>
-      <div className={styles.spotlightImage}><Image src={`https://picsum.photos/seed/cpb${celebrity.id}/700/440`} alt="" fill sizes="(max-width: 1023px) 100vw, 33vw" /><span>#{rank}</span></div>
+      <div className={styles.spotlightImage}><Image src={portrait(celebrity, 1)} alt="" fill sizes="(max-width: 1023px) 100vw, 33vw" /><span>#{rank}</span></div>
       <div className={styles.spotlightBody}>
-        <Image src={`https://picsum.photos/seed/cpc${celebrity.id}/120/120`} alt="" width={58} height={58} />
-        <h2>{celebrity.name}</h2><p>{celebrity.looks} looks · {celebrity.brands[0]}</p>
-        <div><span><b>{celebrity.averageSaving}%</b><small>Avg saving</small></span><span><b>{compactPrice(celebrity.low)}–{compactPrice(celebrity.high)}</b><small>Typical range</small></span></div>
+        <Image src={portrait(celebrity)} alt="" width={58} height={58} />
+        <h2>{celebrity.name}</h2><p>{celebrity.stats.looks} looks{celebrity.stats.brands[0] ? ` · ${celebrity.stats.brands[0].name}` : ""}</p>
+        <div><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
       </div>
     </Link>
   );
 }
 
-function CelebrityCard({ celebrity, following, onFollow }: { celebrity: Celebrity; following: boolean; onFollow: () => void }) {
+function CelebrityCard({ celebrity, following, onFollow }: { celebrity: CelebrityView; following: boolean; onFollow: () => void }) {
   return (
     <article className={styles.card}>
       <Link className={styles.cardMain} href={`/celebrities/${celebritySlug(celebrity)}`}>
         <div className={styles.cardTop}>
-          <Image src={`https://picsum.photos/seed/cpc${celebrity.id}/140/140`} width={66} height={66} alt="" />
-          <div><h2>{celebrity.name}</h2><p>{celebrity.looks} looks decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.newArchive && <em>New archive</em>}</span></div>
+          <Image src={portrait(celebrity)} width={66} height={66} alt="" />
+          <div><h2>{celebrity.name}</h2><p>{celebrity.stats.looks} looks decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.stats.isNew && <em>New archive</em>}</span></div>
         </div>
-        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Image key={index} src={`https://picsum.photos/seed/cpt${celebrity.id}${index}/180/240`} width={180} height={240} alt="" />)}</div>
-        <div className={styles.cardMeta}><span><b>{celebrity.averageSaving}%</b><small>Avg saving</small></span><span><b>{compactPrice(celebrity.low)}–{compactPrice(celebrity.high)}</b><small>Typical range</small></span></div>
-        <p className={styles.brands}>{celebrity.brands.join(" · ")}</p>
+        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Image key={index} src={portrait(celebrity, index)} width={180} height={240} alt="" />)}</div>
+        <div className={styles.cardMeta}><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
+        <p className={styles.brands}>{celebrity.stats.brands.slice(0, 5).map((brand) => brand.name).join(" · ")}</p>
       </Link>
       <div className={styles.cardActions}>
         <button type="button" aria-pressed={following} onClick={onFollow}>{following ? "✓ Following" : "♡ Follow"}</button>

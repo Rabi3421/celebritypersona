@@ -1,12 +1,15 @@
 import { inr } from "@/lib/format";
-import { getHomeContent } from "@/lib/db/content";
+import { tickerEntries } from "@/lib/archive";
+import { getOutfits } from "@/lib/db/content";
 
-/** Infinite marquee of recent decodes. The list is rendered twice so the
- *  50%-translate keyframe loops seamlessly. */
+/** Infinite marquee of the most recent complete decodes, read off the outfits
+ *  themselves. The list is rendered twice so the 50%-translate keyframe loops
+ *  seamlessly. */
 export async function Ticker() {
-  const { tickerEntries } = await getHomeContent();
+  const entries = tickerEntries(await getOutfits());
+  if (entries.length === 0) return null;
 
-  const loop = [...tickerEntries, ...tickerEntries];
+  const loop = [...entries, ...entries];
 
   return (
     <div className="ticker">

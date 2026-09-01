@@ -18,8 +18,6 @@ const wholeNumber = (label: string) =>
         .min(0, `${label} cannot be negative`),
     );
 
-const rupees = wholeNumber("Price");
-
 /** A swap is optional, but a brand without a price is not a swap. */
 export const outfitItemSchema = z
   .object({
@@ -86,16 +84,6 @@ export const outfitItemSchema = z
       : {}),
   }));
 
-/** The hero demo compares two totals, so its pieces must have both halves. */
-export const heroItemSchema = z.object({
-  name: required("Piece name"),
-  short: required("Short label"),
-  wornBrand: required("Worn brand"),
-  swapBrand: required("Swap brand"),
-  worn: rupees,
-  swap: rupees,
-});
-
 export const outfitSchema = z.object({
   celebrity: required("Celebrity"),
   event: required("Event"),
@@ -115,33 +103,30 @@ export const outfitSchema = z.object({
   items: z.array(outfitItemSchema).min(1, "Add at least one piece"),
 });
 
+/** Only what an editor writes. Look counts, savings, price ranges and the
+ *  labels she repeats are counted from the outfits, so there is nothing here
+ *  to keep in step by hand. */
 export const celebritySchema = z.object({
   name: required("Name"),
-  looks: wholeNumber("Looks"),
-  averageSaving: wholeNumber("Average saving").pipe(z.number().max(100, "Average saving cannot exceed 100")),
-  low: rupees,
-  high: rupees,
-  brands: z.array(z.string().trim().min(1)).min(1, "Add at least one brand"),
-  trending: z.boolean().default(false),
-  newArchive: z.boolean().default(false),
   bio: z.array(z.string().trim().min(1)).default([]),
 });
 
+/** Counts, averages and the garment tally now come from the archive. What is
+ *  left is editorial, plus the one real-world date the countdown needs. */
 export const occasionSchema = z.object({
   name: required("Name"),
   group: z.enum(["Wedding", "Festival", "Everyday"]),
-  looks: wholeNumber("Looks"),
-  swapFrom: rupees,
-  averageWorn: rupees,
-  averageSwap: rupees,
   peak: required("Peak"),
   description: required("Description"),
+  nextDate: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), "Use YYYY-MM-DD"),
   colours: z
     .array(z.object({ name: required("Colour name"), value: required("Hex") }))
     .min(1, "Add at least one colour"),
-  garments: z
-    .array(z.object({ name: required("Garment"), count: wholeNumber("Count") }))
-    .min(1, "Add at least one garment"),
 });
 
 export const trendingSearchSchema = z.object({
@@ -161,60 +146,27 @@ export const priceReportStatusSchema = z.object({
 });
 
 
+/** Everything the homepage still asks a person for. Every figure it used to
+ *  ask for — the stats bar, the ticker, the budget tiers, the occasion and
+ *  archive tiles, the brand marquee, the dupe pick and the hero pieces — is
+ *  now counted from the outfits instead. */
 export const homeContentSchema = z.object({
-  heroLook: z.object({
-    date: required("Hero date"),
-    occasion: required("Hero occasion"),
-    celebrity: required("Hero celebrity"),
-    headline: required("Hero headline"),
-    summary: required("Hero summary"),
-    photoCredit: required("Photo credit"),
-    items: z
-      .array(heroItemSchema)
-      .min(1, "Add at least one hero piece"),
-  }),
-  tickerEntries: z
-    .array(
-      z.object({
-        celebrity: required("Celebrity"),
-        occasion: required("Occasion"),
-        worn: rupees,
-        swap: rupees,
-      }),
-    )
-    .min(1, "Add at least one ticker entry"),
-  stats: z
-    .array(
-      z.object({
-        value: wholeNumber("Stat value"),
-        suffix: z.string().default(""),
-        label: required("Stat label"),
-      }),
-    )
-    .min(1, "Add at least one stat"),
   swapSteps: z
     .array(z.object({ n: required("Number"), title: required("Title"), body: required("Body") }))
     .min(1, "Add at least one step"),
-  budgetTiers: z
-    .array(z.object({ cap: rupees, looks: wholeNumber("Looks") }))
-    .min(1, "Add at least one tier"),
-  dupeOfTheWeek: z.object({
-    worn: z.object({ name: required("Worn name"), price: rupees }),
-    swap: z.object({ name: required("Swap name"), price: rupees }),
-  }),
-  occasions: z
-    .array(z.object({ name: required("Name"), looks: wholeNumber("Looks") }))
-    .min(1, "Add at least one occasion"),
-  celebrities: z
-    .array(z.object({ name: required("Name"), looks: wholeNumber("Looks") }))
-    .min(1, "Add at least one celebrity"),
-  brands: z.array(z.string().trim().min(1)).min(1, "Add at least one brand"),
   trustPoints: z
     .array(z.object({ n: required("Number"), title: required("Title"), body: required("Body") }))
     .min(1, "Add at least one point"),
   reels: z
     .array(z.object({ views: required("Views"), caption: required("Caption") }))
     .min(1, "Add at least one reel"),
+  campaign: z.object({
+    eyebrow: required("Campaign eyebrow"),
+    title: required("Campaign title"),
+    body: required("Campaign body"),
+    cta: required("Campaign button"),
+    href: required("Campaign link"),
+  }),
 });
 
 export type FieldErrors = Record<string, string>;

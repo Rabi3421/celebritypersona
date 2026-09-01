@@ -17,7 +17,8 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
-import { getHomeContent } from "@/lib/db/content";
+import { heroLook, homeStats, looksInGroup } from "@/lib/archive";
+import { getHomeContent, getOccasions, getOutfits } from "@/lib/db/content";
 
 /** The rail labels looks "2 days ago", so a page prerendered once and never
  *  rebuilt would keep saying it. An hour is finer than the labels' own
@@ -25,7 +26,15 @@ import { getHomeContent } from "@/lib/db/content";
 export const revalidate = 3600;
 
 export default async function Home() {
-  const { stats, heroLook, swapSteps } = await getHomeContent();
+  const [{ swapSteps, campaign }, outfits, occasions] = await Promise.all([
+    getHomeContent(),
+    getOutfits(),
+    getOccasions(),
+  ]);
+
+  // The demo needs a look with two sides priced. Until one exists the section
+  // is left out rather than animated against invented totals.
+  const hero = heroLook(outfits);
 
   return (
     <>
@@ -34,13 +43,13 @@ export default async function Home() {
 
       <HeroShowcase />
 
-      <Stats stats={stats} />
+      <Stats stats={homeStats(outfits)} />
 
       <div className="shell">
         <DecodedThisWeek />
       </div>
 
-      <SwapDemo heroLook={heroLook} swapSteps={swapSteps} />
+      {hero ? <SwapDemo heroLook={hero} swapSteps={swapSteps} /> : null}
 
       <div className="shell">
         <Budget />
@@ -48,7 +57,10 @@ export default async function Home() {
         <Occasions />
         <Trending />
         <Celebrities />
-        <Campaign />
+        <Campaign
+          campaign={campaign}
+          looks={looksInGroup(occasions, outfits, "Wedding").length}
+        />
       </div>
 
       <BrandMarquee />

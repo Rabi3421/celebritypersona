@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { celebritySlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
-import { getCelebrities, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews } from "@/lib/db/content";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 
@@ -11,10 +11,9 @@ export default async function AdminCelebrities({
   searchParams: Promise<{ page?: string; per?: string }>;
 }) {
   const query = await searchParams;
-  const allCelebrities = await getCelebrities();
+  const allCelebrities = await getCelebrityViews();
   const paged = paginate(allCelebrities, query.page, readPerPage(query.per));
   const celebrities = paged.rows;
-  const outfits = await getOutfits();
 
   return (
     <>
@@ -32,33 +31,42 @@ export default async function AdminCelebrities({
               <tr>
                 <th>Name</th>
                 <th>Slug</th>
-                <th>Published looks</th>
-                <th>Decoded</th>
+                <th>Looks decoded</th>
+                <th>Avg saving</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {celebrities.map((celebrity) => {
-                const decoded = outfits.filter(
-                  (outfit) => outfit.celebrity === celebrity.name,
-                ).length;
+                const { looks, averageSaving } = celebrity.stats;
                 return (
                   <tr key={celebrity.name}>
-                    <td>{celebrity.name}</td>
+                    <td>
+                      {celebrity.name}
+                      {celebrity.record ? null : (
+                        <span className={styles.chip}>no record</span>
+                      )}
+                    </td>
                     <td className={`${styles.num} ${styles.muted}`}>
                       {celebritySlug(celebrity)}
                     </td>
-                    <td className={styles.num}>{celebrity.looks}</td>
                     <td className={styles.num}>
-                      {decoded === 0 ? (
+                      {looks === 0 ? (
                         <span className={styles.chip}>none yet</span>
                       ) : (
-                        decoded
+                        looks
                       )}
+                    </td>
+                    <td className={`${styles.num} ${styles.save}`}>
+                      {averageSaving === null ? "—" : `${averageSaving}%`}
                     </td>
                     <td className={styles.num}>
                       <span className={styles.rowActions}>
-                        <Link href={`/admin/celebrities/${celebrity.id}`}>Edit</Link>
+                        {celebrity.record ? (
+                          <Link href={`/admin/celebrities/${celebrity.id}`}>Edit</Link>
+                        ) : (
+                          <Link href="/admin/celebrities/new">Add record</Link>
+                        )}
                         <Link
                           href={`/celebrities/${celebritySlug(celebrity)}`}
                           target="_blank"

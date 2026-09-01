@@ -7,6 +7,7 @@ import theSwapImage from "@/public/images/home/swap-demo/the-swap.png";
 import { inr } from "@/lib/format";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { HomeContent } from "@/lib/types";
+import type { HeroLook } from "@/lib/archive";
 
 type Mode = "worn" | "swap";
 
@@ -21,7 +22,7 @@ export function SwapDemo({
   heroLook,
   swapSteps,
 }: {
-  heroLook: HomeContent["heroLook"];
+  heroLook: HeroLook;
   swapSteps: HomeContent["swapSteps"];
 }) {
   const ITEMS = heroLook.items;

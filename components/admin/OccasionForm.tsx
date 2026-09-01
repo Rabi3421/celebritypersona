@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ErrorSummary,
   FormError,
-  NumberField,
   SaveButton,
   SelectField,
   TextAreaField,
@@ -17,30 +16,69 @@ import {
   saveOccasion,
   type OccasionFormState,
 } from "@/app/admin/(panel)/occasions/actions";
-import type { Occasion } from "@/lib/types";
+import type { OccasionView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
 
 const GROUPS = ["Wedding", "Festival", "Everyday"] as const;
+const money = (value: number | null) =>
+  value === null ? "—" : `₹${value.toLocaleString("en-IN")}`;
 
-export function OccasionForm({ occasion }: { occasion?: Occasion }) {
+/** Look counts, price averages, the cheapest complete look and the garment
+ *  tally are all counted from the outfits filed under this occasion. */
+export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
   const [state, action] = useActionState<OccasionFormState, FormData>(saveOccasion, {});
   const errors = state.errors;
   const draft = state.values;
+  const stats = occasion?.stats;
 
   return (
     <>
       <FormError message={errors?.form} />
       <ErrorSummary errors={errors} />
+
+      {stats ? (
+        <section className={styles.section} style={{ marginTop: 0 }}>
+          <div className={styles.sectionHead}>
+            <h2>Counted from its looks</h2>
+            <span>Not editable — publish a look and these move</span>
+          </div>
+          <div className={styles.tiles}>
+            <div className={styles.tile}>
+              <span>Looks decoded</span>
+              <b>{stats.looks}</b>
+              <small>{stats.pieces} pieces identified</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Cheapest complete look</span>
+              <b className={styles.ok}>{money(stats.swapFrom)}</b>
+              <small>Every piece swapped</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Averages</span>
+              <b>{money(stats.averageWorn)}</b>
+              <small>Swaps average {money(stats.averageSwap)}</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Garments</span>
+              <b>{stats.garments.length}</b>
+              <small>
+                {stats.garments.slice(0, 3).map((garment) => garment.name).join(" · ") || "None yet"}
+              </small>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <form action={action} id="entity-form">
         {occasion ? <input type="hidden" name="id" value={occasion.id} /> : null}
         <div className={styles.formGrid}>
-          <TextField name="name" label="Name" defaultValue={draft?.name ?? occasion?.name} errors={errors} required />
+          <TextField name="name" label="Name" hint="Must match the occasion on its outfits exactly"
+            defaultValue={draft?.name ?? occasion?.name} errors={errors} required />
           <SelectField name="group" label="Group" options={GROUPS} defaultValue={draft?.group ?? occasion?.group} errors={errors} />
-          <NumberField name="looks" label="Published looks" defaultValue={draft?.looks ?? occasion?.looks ?? 0} errors={errors} />
-          <NumberField name="swapFrom" label="Swaps from ₹" defaultValue={draft?.swapFrom ?? occasion?.swapFrom ?? 0} errors={errors} />
-          <NumberField name="averageWorn" label="Average worn ₹" defaultValue={draft?.averageWorn ?? occasion?.averageWorn ?? 0} errors={errors} />
-          <NumberField name="averageSwap" label="Average swap ₹" defaultValue={draft?.averageSwap ?? occasion?.averageSwap ?? 0} errors={errors} />
           <TextField name="peak" label="Peak" defaultValue={draft?.peak ?? occasion?.peak} placeholder="Peaks Nov–Feb" errors={errors} />
+          <TextField name="nextDate" label="Next date" type="date"
+            hint="Drives the “Coming up” countdown. Leave empty for occasions with no fixed date."
+            defaultValue={draft?.nextDate ?? occasion?.nextDate ?? ""} errors={errors} />
           <TextAreaField name="description" label="Description" defaultValue={draft?.description ?? occasion?.description} errors={errors} rows={3} />
 
           <RepeatableRows
@@ -55,20 +93,6 @@ export function OccasionForm({ occasion }: { occasion?: Occasion }) {
             fields={[
               { key: "name", label: "Colour", placeholder: "Emerald" },
               { key: "value", label: "Hex", placeholder: "#0E5E45" },
-            ]}
-          />
-          <RepeatableRows
-            key={`garments-${state.attempt ?? 0}`}
-            name="garments"
-            title="Garments"
-            hint="Counts shown on the occasion page"
-            columns="minmax(0,1fr) 160px"
-            error={errors?.garments}
-            initial={draft?.garments ?? occasion?.garments ?? []}
-            addLabel="Add a garment"
-            fields={[
-              { key: "name", label: "Garment", placeholder: "Lehenga" },
-              { key: "count", label: "Count", type: "number" },
             ]}
           />
         </div>

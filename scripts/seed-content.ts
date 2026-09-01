@@ -22,6 +22,16 @@ async function main() {
   await client.connect();
   const db = client.db(dbName);
 
+  /**
+   * Fields these documents used to carry that are now counted from the outfits
+   * at render time. Dropped on every seed so an old document cannot keep a
+   * stale figure alive beside the derived one.
+   */
+  const RETIRED: Record<string, string[]> = {
+    celebrities: ["looks", "averageSaving", "low", "high", "brands", "trending", "newArchive"],
+    occasions: ["looks", "swapFrom", "averageWorn", "averageSwap", "garments"],
+  };
+
   async function upsertAll<T extends Record<string, unknown>>(
     name: string,
     rows: T[],
@@ -29,13 +39,18 @@ async function main() {
   ) {
     const collection = db.collection(name);
     await collection.createIndex({ [key]: 1 }, { unique: true });
+    const retired = RETIRED[name] ?? [];
+    const unset = Object.fromEntries(retired.map((field) => [field, ""]));
     for (const row of rows) {
       await collection.updateOne(
         { [key]: row[key] },
-        { $set: row },
+        retired.length ? { $set: row, $unset: unset } : { $set: row },
         { upsert: true },
       );
     }
+    // Rows added through the panel are left alone, but they carry the same
+    // retired fields, so clear those too.
+    if (retired.length) await collection.updateMany({}, { $unset: unset });
     console.log(`  ${name.padEnd(18)} ${await collection.countDocuments()} documents`);
   }
 

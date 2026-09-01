@@ -5,7 +5,7 @@ import {
   getOutfits,
   getPriceReports,
 } from "@/lib/db/content";
-import { isFullySwapped } from "@/lib/types";
+import { archiveTotals } from "@/lib/archive";
 import { getDb } from "@/lib/mongodb";
 import { grievanceOfficer, legalEntity, pending } from "@/lib/site-config";
 import styles from "@/app/admin/panel.module.css";
@@ -35,14 +35,9 @@ export default async function Overview() {
     getPriceReports(),
   ]);
 
-  const averageSaving = Math.round(
-    outfits.reduce((sum, o) => sum + (o.worn - o.swap) / o.worn, 0) /
-      outfits.length *
-      100,
-  );
-  const buyable = outfits.filter(isFullySwapped);
-  const cheapest = buyable.length ? Math.min(...buyable.map((o) => o.swap)) : 0;
-  const freshCount = outfits.filter((o) => o.isNew).length;
+  // The same figures the public pages compute, so the panel and the site can
+  // never disagree about what the archive holds.
+  const totals = archiveTotals(outfits);
 
   const unfilledLegal = [
     legalEntity.name,
@@ -76,18 +71,20 @@ export default async function Overview() {
         </div>
         <div className={styles.tile}>
           <span>Outfits</span>
-          <b>{outfits.length}</b>
-          <small>{freshCount} marked new</small>
+          <b>{totals.looks}</b>
+          <small>{totals.pieces} pieces identified</small>
         </div>
         <div className={styles.tile}>
           <span>Average saving</span>
-          <b className={styles.ok}>{averageSaving}%</b>
-          <small>Across every decoded look</small>
+          <b className={styles.ok}>
+            {totals.averageSavingPct === null ? "—" : `${totals.averageSavingPct}%`}
+          </b>
+          <small>Across looks priced on both sides</small>
         </div>
         <div className={styles.tile}>
           <span>Cheapest look</span>
-          <b>{inr.format(cheapest)}</b>
-          <small>Complete outfit, swapped</small>
+          <b>{totals.cheapestCompleteLook === null ? "—" : inr.format(totals.cheapestCompleteLook)}</b>
+          <small>{totals.buyable} complete, every piece swapped</small>
         </div>
       </div>
 
@@ -142,9 +139,6 @@ export default async function Overview() {
           </span>
         </div>
         <ul className={styles.todo}>
-          <li>Moving outfits, celebrities and occasions into MongoDB.</li>
-          <li>Create, edit and delete screens for each of those.</li>
-          <li>Image uploads, replacing the placeholder photo service.</li>
           <li>The weekly price re-check queue and its results.</li>
           <li>
             Posting the public report form to a collection so reports land in

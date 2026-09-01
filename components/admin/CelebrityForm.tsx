@@ -3,10 +3,8 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import {
-  CheckField,
   ErrorSummary,
   FormError,
-  NumberField,
   SaveButton,
   TextAreaField,
   TextField,
@@ -16,43 +14,73 @@ import {
   saveCelebrity,
   type CelebrityFormState,
 } from "@/app/admin/(panel)/celebrities/actions";
-import type { Celebrity } from "@/lib/types";
+import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
 
-export function CelebrityForm({ celebrity }: { celebrity?: Celebrity }) {
+/** Her look count, average saving, price range and repeated labels are counted
+ *  from the outfits, so the form only asks for what a person writes. */
+export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
   const [state, action] = useActionState<CelebrityFormState, FormData>(
     saveCelebrity,
     {},
   );
   const errors = state.errors;
   const draft = state.values;
+  const stats = celebrity?.stats;
 
   return (
     <>
       <FormError message={errors?.form} />
       <ErrorSummary errors={errors} />
+
+      {stats ? (
+        <section className={styles.section} style={{ marginTop: 0 }}>
+          <div className={styles.sectionHead}>
+            <h2>Counted from her looks</h2>
+            <span>Not editable — publish a look and these move</span>
+          </div>
+          <div className={styles.tiles}>
+            <div className={styles.tile}>
+              <span>Looks decoded</span>
+              <b>{stats.looks}</b>
+              <small>{stats.pieces} pieces identified</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Average saving</span>
+              <b className={styles.ok}>
+                {stats.averageSaving === null ? "—" : `${stats.averageSaving}%`}
+              </b>
+              <small>Across looks priced on both sides</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Typical range</span>
+              <b>
+                {stats.low === null || stats.high === null
+                  ? "—"
+                  : `₹${stats.low.toLocaleString("en-IN")}–₹${stats.high.toLocaleString("en-IN")}`}
+              </b>
+              <small>Cheapest to priciest, as worn</small>
+            </div>
+            <div className={styles.tile}>
+              <span>Repeated labels</span>
+              <b>{stats.brands.length}</b>
+              <small>
+                {stats.brands.slice(0, 3).map((brand) => brand.name).join(" · ") || "None yet"}
+              </small>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <form action={action} id="entity-form">
         {celebrity ? <input type="hidden" name="id" value={celebrity.id} /> : null}
         <div className={styles.formGrid}>
-          <TextField name="name" label="Name" defaultValue={draft?.name ?? celebrity?.name} errors={errors} required />
-          <NumberField name="looks" label="Published looks" defaultValue={draft?.looks ?? celebrity?.looks ?? 0} errors={errors} />
-          <NumberField name="averageSaving" label="Average saving %" defaultValue={draft?.averageSaving ?? celebrity?.averageSaving ?? 0} errors={errors} />
-          <NumberField name="low" label="Cheapest look ₹" defaultValue={draft?.low ?? celebrity?.low ?? 0} errors={errors} />
-          <NumberField name="high" label="Dearest look ₹" defaultValue={draft?.high ?? celebrity?.high ?? 0} errors={errors} />
-          <TextField
-            name="brands"
-            label="Brands"
-            hint="Comma separated"
-            defaultValue={draft?.brands ?? celebrity?.brands.join(", ")}
-            errors={errors}
-            wide
-          />
-          <CheckField name="trending" label="Trending" defaultChecked={draft?.trending ?? celebrity?.trending} />
-          <CheckField name="newArchive" label="New archive" defaultChecked={draft?.newArchive ?? celebrity?.newArchive} />
+          <TextField name="name" label="Name" hint="Must match the celebrity on her outfits exactly"
+            defaultValue={draft?.name ?? celebrity?.name} errors={errors} required wide />
           <TextAreaField
             name="bio"
             label="Bio"
-            hint="One paragraph per line. Leave empty to generate one."
+            hint="One paragraph per line. Leave empty to generate one from her archive."
             defaultValue={draft?.bio ?? celebrity?.bio?.join("\n")}
             errors={errors}
             rows={6}

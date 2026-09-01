@@ -4,26 +4,37 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { celebrityBio } from "@/lib/celebrity-bio";
-import { celebritySlug } from "@/lib/slugs";
-import { outfitPhoto } from "@/lib/types";
-import type { Celebrity } from "@/lib/types";
-import { outfitSlug } from "@/lib/slugs";
+import { celebritySlug, outfitSlug } from "@/lib/slugs";
+import { outfitPhoto, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
+import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/[slug]/celebrity-profile.module.css";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";
 const inr = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
 const shortDate = new Intl.DateTimeFormat("en-IN", { day:"numeric", month:"short", year:"2-digit" });
+const longDate = new Intl.DateTimeFormat("en-IN", { day:"numeric", month:"short", year:"numeric" });
 
 function saving(outfit: Outfit) { return outfit.worn > 0 ? Math.round((1 - outfit.swap / outfit.worn) * 100) : 0; }
+function formatDay(value: string | null) { return value ? longDate.format(new Date(`${value}T00:00:00`)) : null; }
 
-export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: Celebrity; outfits: Outfit[]; similar: Celebrity[] }) {
+/** "3 days ago" only once there is a day to count from. */
+function agoLabel(value: string | null) {
+  if (!value) return "No looks yet";
+  const days = Math.round((Date.now() - Date.parse(`${value}T00:00:00`)) / 86_400_000);
+  if (days <= 0) return "Updated today";
+  if (days === 1) return "Updated yesterday";
+  return `Updated ${days} days ago`;
+}
+
+export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: CelebrityView; outfits: Outfit[]; similar: CelebrityView[] }) {
   const [following, setFollowing] = useState(false);
   const [occasion, setOccasion] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("new");
   const [saved, setSaved] = useState<number[]>([]);
   const bio = celebrityBio(celebrity);
-  const occasions = [...new Set(outfits.map((outfit) => outfit.occasion))];
+  const stats = celebrity.stats;
+  const checked = formatDay(stats.lastChecked);
 
   const results = useMemo(() => {
     const filtered = outfits.filter((outfit) => !occasion || outfit.occasion === occasion);
@@ -35,9 +46,15 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
     });
   }, [occasion, outfits, sort]);
 
-  const affordable = outfits.length ? [...outfits].sort((a,b) => a.worn - b.worn)[0] : null;
-  const expensive = outfits.length ? [...outfits].sort((a,b) => b.worn - a.worn)[0] : null;
-  const brandCounts = celebrity.brands.map((brand, index) => ({ brand, type:index === celebrity.brands.length - 1 ? "High street" : "Designer", count:Math.max(12 - index * 3, 3) }));
+  // Her cheapest and priciest look, taken from the looks themselves rather
+  // than from two figures typed into the record.
+  const priced = outfits.filter((outfit) => pricing(outfit).anyPriced);
+  const affordable = priced.length ? [...priced].sort((a,b) => a.worn - b.worn)[0] : null;
+  const expensive = priced.length ? [...priced].sort((a,b) => b.worn - a.worn)[0] : null;
+  // Real counts: how often each label actually appears across her pieces.
+  const brandCounts = stats.brands.slice(0, 4);
+  const topBrandCount = brandCounts[0]?.count ?? 1;
+  const portrait = (index = 0) => stats.photos[index] ?? stats.photos[0] ?? `https://picsum.photos/seed/cpc${celebrity.id}/700/875`;
 
   return (
     <main className={styles.page}>
@@ -46,16 +63,17 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
           <nav className={styles.crumb} aria-label="Breadcrumb"><Link href="/">Home</Link><i>›</i><Link href="/celebrities">Celebrities</Link><i>›</i><span>{celebrity.name}</span></nav>
           <div className={styles.heroInner}>
             <figure className={styles.portrait}>
-              <Image src={`https://picsum.photos/seed/cpc${celebrity.id}/700/875`} alt={celebrity.name} fill priority sizes="(max-width:1023px) 220px, 340px" />
-              <span>{celebrity.looks} looks</span>
+              <Image src={portrait()} alt={celebrity.name} fill priority sizes="(max-width:1023px) 220px, 340px" />
+              <span>{stats.looks} looks</span>
             </figure>
             <div className={styles.heroCopy}>
-              <h1>{celebrity.name}</h1><p className={styles.subtitle}>Style archive · Updated 3 days ago</p>
+              <h1>{celebrity.name}</h1><p className={styles.subtitle}>Style archive · {agoLabel(stats.lastDecoded)}</p>
               {bio.map((paragraph) => <p className={styles.bio} key={paragraph}>{paragraph}</p>)}
-              <p className={styles.byline}>Written by <b>Rabi</b> · Prices re-checked <b>25 Aug 2026</b> · <button type="button">Report a correction</button></p>
+              <p className={styles.byline}>Written by <b>Rabi</b>{checked ? <> · Prices re-checked <b>{checked}</b></> : null} · <button type="button">Report a correction</button></p>
               <div className={styles.heroStats}>
-                <div><b>{celebrity.looks}</b><span>Looks decoded</span></div><div><b>{celebrity.looks * 4}</b><span>Pieces identified</span></div>
-                <div><b className={styles.green}>{celebrity.averageSaving}%</b><span>Avg saving</span></div><div><b>{compactPrice(celebrity.low)}–{compactPrice(celebrity.high)}</b><span>Typical range</span></div>
+                <div><b>{stats.looks}</b><span>Looks decoded</span></div><div><b>{stats.pieces}</b><span>Pieces identified</span></div>
+                {stats.averageSaving === null ? null : <div><b className={styles.green}>{stats.averageSaving}%</b><span>Avg saving</span></div>}
+                {stats.low === null || stats.high === null ? null : <div><b>{compactPrice(stats.low)}–{compactPrice(stats.high)}</b><span>Typical range</span></div>}
               </div>
               <div className={styles.actions}>
                 <button type="button" aria-pressed={following} onClick={() => setFollowing(!following)}>{following ? `✓ Following ${firstName(celebrity.name)}` : `♡ Follow ${firstName(celebrity.name)}`}</button>
@@ -66,41 +84,45 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
         </div>
       </header>
 
+      {stats.looks === 0 ? null : (
       <section className={styles.signature}>
         <div className={styles.shell}>
-          <SectionHeading eyebrow="The pattern" title="What she actually wears" body={`Counted across all ${celebrity.looks} decoded looks — not an impression, the actual tally.`} />
+          <SectionHeading eyebrow="The pattern" title="What she actually wears" body={`Counted across all ${stats.looks} decoded ${stats.looks === 1 ? "look" : "looks"} — not an impression, the actual tally.`} />
           <div className={styles.signatureGrid}>
-            <div className={styles.bars}><h3>Most repeated labels</h3>{brandCounts.map((item, index) => <div className={styles.bar} key={item.brand}><p><span>{item.brand}<em>{item.type}</em></span><b>{item.count}×</b></p><i><b style={{ width:`${100 - index * 23}%` }} /></i></div>)}</div>
+            <div className={styles.bars}><h3>Most repeated labels</h3>{brandCounts.map((item) => <div className={styles.bar} key={item.name}><p><span>{item.name}<em>{item.highStreet ? "High street" : "Designer"}</em></span><b>{item.count}×</b></p><i><b style={{ width:`${Math.round(item.count / topBrandCount * 100)}%` }} /></i></div>)}</div>
             <div className={styles.patternPanel}>
-              <div><h3>Palette she returns to</h3><div className={styles.palette}>{[["#F2EDE3","Ivory"],["#DCD2C0","Oatmeal"],["#C9A5A0","Dusty rose"],["#1C1C1C","Black"],["#6B7256","Olive"]].map(([color,label]) => <span key={label}><i style={{background:color}} /><small>{label}</small></span>)}</div></div>
-              <div><h3>Silhouettes she goes to</h3><p className={styles.tags}><span>Relaxed tailoring</span><span>Wide trousers</span><span>Statement layers</span><span>Flat shoes</span><span>Minimal jewellery</span></p></div>
-              <div><h3>What her looks cost</h3><div className={styles.range}><span>Cheapest</span><span>Priciest</span><i><b /></i><strong>{inr.format(celebrity.low)}</strong><strong>{inr.format(celebrity.high)}</strong></div></div>
+              {stats.palette.length === 0 ? null : <div><h3>Palette she returns to</h3><div className={styles.palette}>{stats.palette.map((colour) => <span key={colour.name}><i style={{background:colour.value}} /><small>{colour.name}</small></span>)}</div></div>}
+              {stats.garments.length === 0 ? null : <div><h3>Silhouettes she goes to</h3><p className={styles.tags}>{stats.garments.map((garment) => <span key={garment.name}>{garment.name}</span>)}</p></div>}
+              {stats.low === null || stats.high === null ? null : <div><h3>What her looks cost</h3><div className={styles.range}><span>Cheapest</span><span>Priciest</span><i><b /></i><strong>{inr.format(stats.low)}</strong><strong>{inr.format(stats.high)}</strong></div></div>}
             </div>
           </div>
         </div>
       </section>
+      )}
 
+      {affordable && expensive && affordable.id !== expensive.id ? (
       <section className={styles.extremes}>
         <div className={styles.shell}><SectionHeading eyebrow="The range" title="Her cheapest look, and her priciest" />
           <div className={styles.extremeGrid}>
-            <ExtremeCard celebrity={celebrity} outfit={affordable} label="Most affordable" seed={`cheap${celebrity.id}`} fallbackPrice={celebrity.low} />
+            <ExtremeCard outfit={affordable} label="Most affordable" />
             <span>VS</span>
-            <ExtremeCard celebrity={celebrity} outfit={expensive} label="Most expensive" seed={`lux${celebrity.id}`} fallbackPrice={celebrity.high} />
+            <ExtremeCard outfit={expensive} label="Most expensive" />
           </div>
         </div>
       </section>
+      ) : null}
 
       <section className={styles.archive}>
         <div className={styles.shell}><SectionHeading eyebrow="The archive" title="Every look, newest first" />
           <div className={styles.archiveBar}>
-            <div><button type="button" aria-pressed={!occasion} onClick={() => setOccasion(null)}>All <b>{outfits.length}</b></button>{occasions.map((value) => <button type="button" aria-pressed={occasion === value} onClick={() => setOccasion(value)} key={value}>{value} <b>{outfits.filter((outfit) => outfit.occasion === value).length}</b></button>)}</div>
+            <div><button type="button" aria-pressed={!occasion} onClick={() => setOccasion(null)}>All <b>{outfits.length}</b></button>{stats.occasions.map((entry) => <button type="button" aria-pressed={occasion === entry.name} onClick={() => setOccasion(entry.name)} key={entry.name}>{entry.name} <b>{entry.count}</b></button>)}</div>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="Sort looks"><option value="new">Newest</option><option value="saving">Biggest saving</option><option value="cheap">Cheapest swap</option><option value="lux">Priciest worn</option></select>
           </div>
-          {results.length ? <div className={styles.outfitGrid}>{results.map((outfit) => <ProfileOutfitCard outfit={outfit} saved={saved.includes(outfit.id)} onSave={() => setSaved(saved.includes(outfit.id) ? saved.filter((id) => id !== outfit.id) : [...saved,outfit.id])} key={outfit.id} />)}</div> : <div className={styles.empty}><h3>No loaded looks in this archive slice yet</h3><p>The full archive count is ready for CMS import; current local outfit records will appear here automatically.</p>{occasion && <button type="button" onClick={() => setOccasion(null)}>Show all</button>}</div>}
+          {results.length ? <div className={styles.outfitGrid}>{results.map((outfit) => <ProfileOutfitCard outfit={outfit} saved={saved.includes(outfit.id)} onSave={() => setSaved(saved.includes(outfit.id) ? saved.filter((id) => id !== outfit.id) : [...saved,outfit.id])} key={outfit.id} />)}</div> : <div className={styles.empty}><h3>{occasion ? `No ${occasion.toLowerCase()} looks in this archive yet` : "Nothing decoded here yet"}</h3><p>Looks published in the panel appear here the moment they are saved.</p>{occasion && <button type="button" onClick={() => setOccasion(null)}>Show all</button>}</div>}
         </div>
       </section>
 
-      <section className={styles.similar}><div className={styles.shell}><SectionHeading eyebrow="Nearby" title="Similar style archives" /><div className={styles.similarGrid}>{similar.map((item) => <Link href={`/celebrities/${celebritySlug(item)}`} key={item.id}><Image src={`https://picsum.photos/seed/cpc${item.id}/160/160`} alt="" width={78} height={78} /><b>{item.name}</b><span>{item.looks} looks</span></Link>)}</div></div></section>
+      {similar.length ? <section className={styles.similar}><div className={styles.shell}><SectionHeading eyebrow="Nearby" title="Similar style archives" /><div className={styles.similarGrid}>{similar.map((item) => <Link href={`/celebrities/${celebritySlug(item)}`} key={item.id}><Image src={item.stats.photos[0] ?? `https://picsum.photos/seed/cpc${item.id}/160/160`} alt="" width={78} height={78} /><b>{item.name}</b><span>{item.stats.looks} looks</span></Link>)}</div></div></section> : null}
     </main>
   );
 }
@@ -109,9 +131,11 @@ function SectionHeading({ eyebrow, title, body }: { eyebrow:string; title:string
 function firstName(name:string){ return name.split(" ")[0]; }
 function compactPrice(value:number){ return value >= 100000 ? `₹${(value/100000).toFixed(1).replace(/\.0$/,"")}L` : `₹${Math.round(value/1000)}k`; }
 
-function ExtremeCard({ celebrity, outfit, label, seed, fallbackPrice }: { celebrity:Celebrity; outfit:Outfit|null; label:string; seed:string; fallbackPrice:number }) {
-  const content = <><div><Image src={`https://picsum.photos/seed/${outfit ? `cpo${outfit.id}` : seed}/800/500`} alt="" fill sizes="(max-width:1023px) 100vw, 45vw" /></div><section><p>{label} · {outfit?.event ?? "Archive highlight"}</p><h3>{outfit?.items.map((item)=>item.name).slice(0,2).join(" and ") ?? `${celebrity.name} signature look`}</h3><span><s>{inr.format(outfit?.worn ?? fallbackPrice)}</s><b>{inr.format(outfit?.swap ?? Math.round(fallbackPrice * .05))}</b></span></section></>;
-  return outfit ? <Link className={styles.extremeCard} href={`/outfits/${outfitSlug(outfit)}`}>{content}</Link> : <article className={styles.extremeCard}>{content}</article>;
+/** Both ends of the range are real looks now, so the card always links
+ *  somewhere and never quotes a price the archive cannot show you. */
+function ExtremeCard({ outfit, label }: { outfit:Outfit; label:string }) {
+  const money = pricing(outfit);
+  return <Link className={styles.extremeCard} href={`/outfits/${outfitSlug(outfit)}`}><div><Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/800/500`} alt="" fill sizes="(max-width:1023px) 100vw, 45vw" /></div><section><p>{label} · {outfit.event}</p><h3>{outfit.items.map((item)=>item.name).slice(0,2).join(" and ")}</h3><span><s>{inr.format(money.wornTotal)}</s>{money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : null}</span></section></Link>;
 }
 
 function ProfileOutfitCard({ outfit, saved, onSave }: { outfit:Outfit; saved:boolean; onSave:()=>void }) {

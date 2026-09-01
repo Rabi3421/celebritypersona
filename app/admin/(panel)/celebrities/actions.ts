@@ -7,18 +7,11 @@ import {
   deleteCelebrity,
   updateCelebrity,
 } from "@/lib/db/mutations";
-import { csv, flag, lines, text } from "@/lib/form-data";
+import { lines, text } from "@/lib/form-data";
 import { celebritySchema, fieldErrors, type FieldErrors } from "@/lib/validation";
 
 export type CelebrityDraft = {
   name: string;
-  looks: string;
-  averageSaving: string;
-  low: string;
-  high: string;
-  brands: string;
-  trending: boolean;
-  newArchive: boolean;
   bio: string;
 };
 
@@ -32,21 +25,10 @@ export async function saveCelebrity(
 
   const draft: CelebrityDraft = {
     name: text(form, "name"),
-    looks: text(form, "looks"),
-    averageSaving: text(form, "averageSaving"),
-    low: text(form, "low"),
-    high: text(form, "high"),
-    brands: text(form, "brands"),
-    trending: flag(form, "trending"),
-    newArchive: flag(form, "newArchive"),
     bio: String(form.get("bio") ?? ""),
   };
 
-  const parsed = celebritySchema.safeParse({
-    ...draft,
-    brands: csv(form, "brands"),
-    bio: lines(form, "bio"),
-  });
+  const parsed = celebritySchema.safeParse({ ...draft, bio: lines(form, "bio") });
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: draft };
 
   const id = Number(form.get("id"));

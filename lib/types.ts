@@ -137,33 +137,34 @@ export const hasSubstance = (outfit: Outfit) =>
   outfit.items.some(hasSwap) ||
   outfit.items.some((item) => item.note?.trim());
 
+/**
+ * What an editor writes about a person. Everything countable — how many looks,
+ * what she wears, what her looks cost, whether the archive is fresh or
+ * trending — is derived from the outfits themselves in `lib/archive.ts`, so a
+ * record can never claim 47 looks while the archive holds three.
+ */
 export type Celebrity = {
   id: number;
   name: string;
-  looks: number;
-  averageSaving: number;
-  low: number;
-  high: number;
-  brands: string[];
-  trending?: boolean;
-  newArchive?: boolean;
   bio?: string[];
 };
 
 export type OccasionGroup = "Wedding" | "Festival" | "Everyday";
 
+/**
+ * The editorial half of an occasion. Its counts, price averages, cheapest
+ * complete look and garment tally all come from the archive.
+ */
 export type Occasion = {
   id: number;
   name: string;
   group: OccasionGroup;
-  looks: number;
-  swapFrom: number;
-  averageWorn: number;
-  averageSwap: number;
   peak: string;
   description: string;
   colours: { name: string; value: string }[];
-  garments: { name: string; count: number }[];
+  /** The next real-world date this occasion falls on, YYYY-MM-DD. Drives the
+   *  "Coming up" rail, whose countdown is calculated rather than typed. */
+  nextDate?: string;
 };
 
 export type SearchIntent =
@@ -200,35 +201,11 @@ export type TickerEntry = {
   swap: number;
 };
 
-export type LookItem = SwappedItem & {
-  /** Short label used on compact hero surfaces. */
-  short: string;
-  /** The hero compares two totals, so both sides must be priced. */
-  worn: number;
-};
-
-/** Everything the homepage renders that is editorial rather than navigation. */
+/** Everything on the homepage that is editorial rather than counted. */
 export type HomeContent = {
-  heroLook: {
-    date: string;
-    occasion: string;
-    celebrity: string;
-    headline: string;
-    summary: string;
-    photoCredit: string;
-    items: LookItem[];
-  };
-  tickerEntries: TickerEntry[];
-  stats: { value: number; suffix: string; label: string }[];
   swapSteps: { n: string; title: string; body: string }[];
-  budgetTiers: { cap: number; looks: number }[];
-  dupeOfTheWeek: {
-    worn: { name: string; price: number };
-    swap: { name: string; price: number };
-  };
-  occasions: { name: string; looks: number }[];
-  celebrities: { name: string; looks: number }[];
-  brands: string[];
   trustPoints: { n: string; title: string; body: string }[];
   reels: { views: string; caption: string }[];
+  /** The campaign band. Its look count is filled in from the archive. */
+  campaign: { eyebrow: string; title: string; body: string; cta: string; href: string };
 };

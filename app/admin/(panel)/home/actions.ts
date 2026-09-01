@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { saveHomeContent } from "@/lib/db/mutations";
-import { lines, rows, text } from "@/lib/form-data";
+import { rows, text } from "@/lib/form-data";
 import { fieldErrors, homeContentSchema, type FieldErrors } from "@/lib/validation";
 
 export type HomeFormState = { errors?: FieldErrors; saved?: boolean };
@@ -15,35 +15,16 @@ export async function saveHome(
   await requireAdmin();
 
   const parsed = homeContentSchema.safeParse({
-    heroLook: {
-      date: text(form, "hero.date"),
-      occasion: text(form, "hero.occasion"),
-      celebrity: text(form, "hero.celebrity"),
-      headline: text(form, "hero.headline"),
-      summary: text(form, "hero.summary"),
-      photoCredit: text(form, "hero.photoCredit"),
-      items: rows(form, "heroItems", [
-        "name",
-        "short",
-        "wornBrand",
-        "swapBrand",
-        "worn",
-        "swap",
-      ]),
-    },
-    tickerEntries: rows(form, "ticker", ["celebrity", "occasion", "worn", "swap"]),
-    stats: rows(form, "stats", ["value", "suffix", "label"], ["suffix"]),
     swapSteps: rows(form, "swapSteps", ["n", "title", "body"]),
-    budgetTiers: rows(form, "budgetTiers", ["cap", "looks"]),
-    dupeOfTheWeek: {
-      worn: { name: text(form, "dupe.wornName"), price: text(form, "dupe.wornPrice") },
-      swap: { name: text(form, "dupe.swapName"), price: text(form, "dupe.swapPrice") },
-    },
-    occasions: rows(form, "homeOccasions", ["name", "looks"]),
-    celebrities: rows(form, "homeCelebrities", ["name", "looks"]),
-    brands: lines(form, "brands"),
     trustPoints: rows(form, "trustPoints", ["n", "title", "body"]),
     reels: rows(form, "reels", ["views", "caption"]),
+    campaign: {
+      eyebrow: text(form, "campaign.eyebrow"),
+      title: text(form, "campaign.title"),
+      body: text(form, "campaign.body"),
+      cta: text(form, "campaign.cta"),
+      href: text(form, "campaign.href"),
+    },
   });
 
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };

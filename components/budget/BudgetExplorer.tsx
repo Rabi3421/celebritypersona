@@ -2,38 +2,41 @@
 import Image from "next/image";
 import Link from "next/link";
 import {useMemo,useState,type CSSProperties,type ReactNode} from "react";
-import { outfitOccasions } from "@/lib/filters";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/budget/budget.module.css";
 import { outfitPhoto, isFullySwapped } from "@/lib/types";
+import { budgetRange, budgetTiers, exampleKit, occasionCoverage, occasionNames } from "@/lib/archive";
 
 const inr=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
-const kits=[
- {max:2000,items:[["👗","Kurta set","Libas",1199],["👡","Juttis","Mochi",400],["💍","Jhumkas","Zaveri",299]]},
- {max:3500,items:[["👗","Printed lehenga","Libas",1799],["👡","Embellished flats","Mochi",649],["💍","Statement earrings","Zaveri",441],["👜","Potli bag","Accessorize",299]]},
- {max:6000,items:[["👗","Worked lehenga","Myntra",2899],["👡","Heels","Mochi",899],["💍","Kundan set","Zaveri",1221],["👜","Clutch","Accessorize",699],["🕶️","Sunglasses","Lenskart",282]]},
- {max:11000,items:[["👗","Designer-diffusion lehenga","Nykaa",5490],["👡","Embroidered juttis","Mochi",1199],["💍","Polki set","Tanishq",2150],["👜","Structured clutch","Westside",899],["🧣","Silk dupatta","Fabindia",762]]},
- {max:99999,items:[["👗","Raw silk lehenga","Nykaa",7890],["👡","Block heels","Mochi",1899],["💍","Temple jewellery set","Tanishq",3200],["👜","Beaded clutch","Accessorize",1299],["🧣","Banarasi dupatta","Fabindia",1512]]},
-] as const;
-const tierCollections: Array<{value:number;body:string}> = [
- {value:2000,body:"High-street pieces that read right from a few feet away. Best for casual and airport."},
- {value:5000,body:"The sweet spot. Better fabric, real embroidery, and most wedding events."},
- {value:10000,body:"Designer-diffusion territory. Reception and red carpet looks become possible."},
-];
 
-export function BudgetExplorer({ outfits }: { outfits: Outfit[] }){
- const [budget,setBudget]=useState(3000);const [saved,setSaved]=useState<number[]>([]);
+/** What a tier gets you, written from the looks inside it rather than from
+ *  three sentences someone typed once. */
+function tierBody(looks:number,cheapest:number,occasions:string[]){
+ const covers=occasions.length?` Best for ${occasions.slice(0,2).join(" and ").toLowerCase()}.`:"";
+ return `${looks} complete ${looks===1?"look":"looks"}, starting at ${inr.format(cheapest)}.${covers}`;
+}
+
+export function BudgetExplorer({ outfits, initialBudget }: { outfits: Outfit[]; initialBudget?: number }){
+ // Bounds, presets and tiers all follow the cheapest and dearest complete look
+ // in the archive, so the slider can never open on a range that buys nothing.
+ const range=useMemo(()=>budgetRange(outfits),[outfits]);
+ const tiers=useMemo(()=>budgetTiers(outfits),[outfits]);
+ const occasionList=useMemo(()=>occasionNames(outfits),[outfits]);
+ const [budget,setBudget]=useState(()=>Math.min(range.max,Math.max(range.min,initialBudget??range.presets[0]??range.max)));
+ const [saved,setSaved]=useState<number[]>([]);
  const eligible=useMemo(()=>outfits.filter(isFullySwapped).filter((outfit)=>outfit.swap<=budget).sort((a,b)=>b.worn-a.worn),[outfits,budget]);
- const occasions=useMemo(()=>Object.fromEntries(outfitOccasions.map((occasion)=>[occasion,eligible.filter((outfit)=>outfit.occasion===occasion).length])),[eligible]);
- const kit=kits.find((item)=>budget<=item.max)??kits[kits.length-1];const kitTotal=kit.items.reduce((sum,item)=>sum+item[3],0);const maxOccasion=Math.max(1,...Object.values(occasions));
- const biggestGap=eligible[0]?.worn;const progress=(budget-1000)/14000*100;
+ const coverage=useMemo(()=>occasionCoverage(outfits,budget),[outfits,budget]);
+ const kit=useMemo(()=>exampleKit(outfits,budget),[outfits,budget]);
+ const kitTotal=kit?.total??0;const maxOccasion=Math.max(1,...coverage.map((entry)=>entry.looks));
+ const biggestGap=eligible[0]?.worn;const progress=(budget-range.min)/Math.max(1,range.max-range.min)*100;
+ const cheapestOverall=useMemo(()=>{const totals=outfits.filter(isFullySwapped).map((outfit)=>outfit.swap);return totals.length?Math.min(...totals):null;},[outfits]);
  return <main className={styles.page}>
-  <header className={styles.dial}><div className={styles.shell}><nav><Link href="/">Home</Link><i>›</i><span>Budget</span></nav><h1>Everyone else starts with the celebrity.<br/>Start with your wallet.</h1><p>Set what you&apos;re willing to spend on a complete look. We&apos;ll show you exactly which ones you can copy.</p><div className={styles.knob}><div><p className={styles.amount}><span>₹</span>{budget.toLocaleString("en-IN")}</p><div className={styles.slider}><input type="range" min="1000" max="15000" step="250" value={budget} style={{"--progress":`${progress}%`} as CSSProperties} onChange={(event)=>setBudget(Number(event.target.value))} aria-label="Your budget"/><div><span>₹1,000</span><span>₹15,000</span></div></div><div className={styles.presets}>{[2000,3000,5000,10000,15000].map((value)=><button type="button" aria-pressed={budget===value} onClick={()=>setBudget(value)} key={value}>{value===15000?"No limit":inr.format(value)}</button>)}</div></div><div className={styles.readout}><p><span>Complete looks you can copy</span><b>{eligible.length}</b></p><p><span>Occasions covered</span><b>{Object.values(occasions).filter(Boolean).length} of {outfitOccasions.length}</b></p><p><span>Cheapest complete look</span><b>{eligible.length?inr.format(Math.min(...eligible.map((outfit)=>outfit.swap))):"—"}</b></p><div><span>◆ The biggest gap at this budget</span><p>You can copy a look that originally cost<b>{biggestGap?compactPrice(biggestGap):"—"}</b></p></div></div></div></div></header>
+  <header className={styles.dial}><div className={styles.shell}><nav><Link href="/">Home</Link><i>›</i><span>Budget</span></nav><h1>Everyone else starts with the celebrity.<br/>Start with your wallet.</h1><p>Set what you&apos;re willing to spend on a complete look. We&apos;ll show you exactly which ones you can copy.</p><div className={styles.knob}><div><p className={styles.amount}><span>₹</span>{budget.toLocaleString("en-IN")}</p><div className={styles.slider}><input type="range" min={range.min} max={range.max} step={range.step} value={budget} style={{"--progress":`${progress}%`} as CSSProperties} onChange={(event)=>setBudget(Number(event.target.value))} aria-label="Your budget"/><div><span>{inr.format(range.min)}</span><span>{inr.format(range.max)}</span></div></div><div className={styles.presets}>{range.presets.map((value)=><button type="button" aria-pressed={budget===value} onClick={()=>setBudget(value)} key={value}>{value===range.max?"No limit":inr.format(value)}</button>)}</div></div><div className={styles.readout}><p><span>Complete looks you can copy</span><b>{eligible.length}</b></p><p><span>Occasions covered</span><b>{coverage.filter((entry)=>entry.looks).length} of {occasionList.length}</b></p><p><span>Cheapest complete look</span><b>{eligible.length?inr.format(Math.min(...eligible.map((outfit)=>outfit.swap))):"—"}</b></p><div><span>◆ The biggest gap at this budget</span><p>You can copy a look that originally cost<b>{biggestGap?compactPrice(biggestGap):"—"}</b></p></div></div></div></div></header>
   <div className={styles.shell}>
-   <section className={styles.section}><SectionHeading eyebrow="Reality check" title={<>What <em>{inr.format(budget)}</em> actually buys</>} body="A real complete look from the archive at this budget — every piece, priced."/><div className={styles.reality}><div className={styles.kit}><h3>Example complete look</h3><ul>{kit.items.map((item)=><li key={item[1]}><span>{item[0]}</span><p><b>{item[1]}</b><small>{item[2]}</small></p><em>{inr.format(item[3])}</em></li>)}</ul><div><span>Total</span><b>{inr.format(kitTotal)}</b></div></div><div className={styles.occasionBars}><h3>Looks available by occasion</h3>{outfitOccasions.map((occasion)=><div key={occasion}><p><span>{occasion}</span><b className={occasions[occasion]?"":styles.zero}>{occasions[occasion]?`${occasions[occasion]} look${occasions[occasion]>1?"s":""}`:"none yet"}</b></p><i><b style={{width:`${occasions[occasion]/maxOccasion*100}%`}}/></i></div>)}</div></div></section>
-   <section className={styles.section}><SectionHeading eyebrow="In range" title="Looks you can afford" total={`${eligible.length} looks in range`}/>{eligible.length?<div className={styles.grid}>{eligible.slice(0,12).map((outfit)=><BudgetCard outfit={outfit} budget={budget} saved={saved.includes(outfit.id)} onSave={()=>setSaved(saved.includes(outfit.id)?saved.filter((id)=>id!==outfit.id):[...saved,outfit.id])} key={outfit.id}/>)}</div>:<div className={styles.empty}><h3>Nothing at {inr.format(budget)} yet</h3><p>Our cheapest complete look is {inr.format(Math.min(...outfits.map((outfit)=>outfit.swap)))}. Nudge the slider up a little.</p><button type="button" onClick={()=>setBudget(1500)}>Show me ₹1,500 looks</button></div>}</section>
-   <section className={styles.section}><SectionHeading eyebrow="Or jump straight in" title="Budget collections"/><div className={styles.tiers}>{tierCollections.map(({value,body})=><button type="button" onClick={()=>{setBudget(value);window.scrollTo({top:0,behavior:"smooth"});}} key={value}><span>Complete looks under</span><b>{inr.format(value)}</b><p>{body}</p><em>Browse →</em></button>)}</div></section>
+   <section className={styles.section}><SectionHeading eyebrow="Reality check" title={<>What <em>{inr.format(budget)}</em> actually buys</>} body="A real complete look from the archive at this budget — every piece, priced."/><div className={styles.reality}><div className={styles.kit}><h3>{kit?`${kit.outfit.celebrity} · ${kit.outfit.event}`:"Example complete look"}</h3>{kit?<><ul>{kit.pieces.map((piece)=><li key={piece.name}><span>{piece.emoji}</span><p><b>{piece.name}</b><small>{piece.brand}</small></p><em>{inr.format(piece.price)}</em></li>)}</ul><div><span>Total</span><b>{inr.format(kitTotal)}</b></div></>:<p>Nothing in the archive rebuilds for {inr.format(budget)} yet.</p>}</div><div className={styles.occasionBars}><h3>Looks available by occasion</h3>{coverage.map((entry)=><div key={entry.name}><p><span>{entry.name}</span><b className={entry.looks?"":styles.zero}>{entry.looks?`${entry.looks} look${entry.looks>1?"s":""}`:"none yet"}</b></p><i><b style={{width:`${entry.looks/maxOccasion*100}%`}}/></i></div>)}</div></div></section>
+   <section className={styles.section}><SectionHeading eyebrow="In range" title="Looks you can afford" total={`${eligible.length} looks in range`}/>{eligible.length?<div className={styles.grid}>{eligible.slice(0,12).map((outfit)=><BudgetCard outfit={outfit} budget={budget} saved={saved.includes(outfit.id)} onSave={()=>setSaved(saved.includes(outfit.id)?saved.filter((id)=>id!==outfit.id):[...saved,outfit.id])} key={outfit.id}/>)}</div>:<div className={styles.empty}><h3>Nothing at {inr.format(budget)} yet</h3>{cheapestOverall!==null?<><p>Our cheapest complete look is {inr.format(cheapestOverall)}. Nudge the slider up a little.</p><button type="button" onClick={()=>setBudget(Math.min(range.max,Math.max(range.min,cheapestOverall)))}>Show me {inr.format(cheapestOverall)} looks</button></>:<p>No look in the archive has every piece swapped yet. Check back once one does.</p>}</div>}</section>
+   {tiers.length?<section className={styles.section}><SectionHeading eyebrow="Or jump straight in" title="Budget collections"/><div className={styles.tiers}>{tiers.map((tier)=><button type="button" onClick={()=>{setBudget(Math.min(range.max,tier.cap));window.scrollTo({top:0,behavior:"smooth"});}} key={tier.cap}><span>Complete looks under</span><b>{inr.format(tier.cap)}</b><p>{tierBody(tier.looks,tier.cheapest,tier.occasions)}</p><em>Browse →</em></button>)}</div></section>:null}
   </div>
  </main>;
 }

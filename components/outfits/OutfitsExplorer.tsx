@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { outfitCelebrities, outfitOccasions, savingThresholds } from "@/lib/filters";
-import { outfitSlug } from "@/lib/slugs";
+import { archiveTotals, budgetRange, celebrityNames, occasionNames, savingThresholds } from "@/lib/archive";
+import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { outfitPhoto, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
@@ -40,7 +40,25 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   const router = useRouter();
   const [occasions, setOccasions] = useState<string[]>([]);
   const [celebrities, setCelebrities] = useState<string[]>([]);
-  const [budget, setBudget] = useState(8000);
+  // Every rail below is built from the outfits themselves: a chip is never
+  // offered for an occasion or a person the archive holds nothing for, and the
+  // slider stops where the dearest complete look does.
+  const totals = useMemo(() => archiveTotals(outfits), [outfits]);
+  const swapRange = useMemo(() => budgetRange(outfits), [outfits]);
+  const occasionOptions = useMemo(() => occasionNames(outfits), [outfits]);
+  const celebrityOptions = useMemo(() => celebrityNames(outfits), [outfits]);
+  // Her own newest photo, so the chip shows the person rather than a seed.
+  const celebrityAvatars = useMemo(() => {
+    const byName = new Map<string, string>();
+    for (const outfit of [...outfits].sort((a, b) => b.date.localeCompare(a.date))) {
+      const photo = outfitPhoto(outfit)?.url;
+      if (photo && !byName.has(outfit.celebrity)) byName.set(outfit.celebrity, photo);
+    }
+    return byName;
+  }, [outfits]);
+  const savingOptions = useMemo(() => savingThresholds(outfits), [outfits]);
+  const anyBudget = swapRange.max;
+  const [budget, setBudget] = useState(anyBudget);
   const [minimumSaving, setMinimumSaving] = useState<number | null>(null);
   const [sort, setSort] = useState<SortMode>("new");
   const [shown, setShown] = useState(9);
@@ -54,7 +72,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
     const filtered = outfits.filter((outfit) => {
       if (occasions.length && !occasions.includes(outfit.occasion)) return false;
       if (celebrities.length && !celebrities.includes(outfit.celebrity)) return false;
-      if (budget < 8000 && outfit.swap > budget) return false;
+      if (budget < anyBudget && outfit.swap > budget) return false;
       if (minimumSaving && saving(outfit) < minimumSaving) return false;
       return true;
     });
@@ -65,12 +83,12 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
       if (sort === "lux") return b.worn - a.worn;
       return b.date.localeCompare(a.date);
     });
-  }, [outfits, budget, celebrities, minimumSaving, occasions, sort]);
+  }, [outfits, anyBudget, budget, celebrities, minimumSaving, occasions, sort]);
 
   const activeFilterCount =
     occasions.length +
     celebrities.length +
-    (budget < 8000 ? 1 : 0) +
+    (budget < anyBudget ? 1 : 0) +
     (minimumSaving ? 1 : 0);
 
   useEffect(() => {
@@ -90,7 +108,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   function clearAll() {
     setOccasions([]);
     setCelebrities([]);
-    setBudget(8000);
+    setBudget(anyBudget);
     setMinimumSaving(null);
     resetShown();
   }
@@ -115,9 +133,11 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
             </p>
           </div>
           <div className={styles.bannerStats} aria-label="Outfit statistics">
-            <div><span>486</span><small>Looks</small></div>
-            <div><span>2,140</span><small>Pieces</small></div>
-            <div><span>94%</span><small>Avg saving</small></div>
+            <div><span>{totals.looks.toLocaleString("en-IN")}</span><small>Looks</small></div>
+            <div><span>{totals.pieces.toLocaleString("en-IN")}</span><small>Pieces</small></div>
+            {totals.averageSavingPct === null ? null : (
+              <div><span>{totals.averageSavingPct}%</span><small>Avg saving</small></div>
+            )}
           </div>
         </div>
       </header>
@@ -156,7 +176,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
         <div className={styles.layout}>
           <aside className={`${styles.sidebar} ${filtersOpen ? styles.sidebarOpen : ""}`} aria-label="Outfit filters">
             <FilterGroup title="Occasion" onClear={() => { setOccasions([]); resetShown(); }}>
-              {outfitOccasions.map((occasion) => (
+              {occasionOptions.map((occasion) => (
                 <FilterOption
                   key={occasion}
                   selected={occasions.includes(occasion)}
@@ -167,12 +187,15 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
             </FilterGroup>
 
             <FilterGroup title="Celebrity" onClear={() => { setCelebrities([]); resetShown(); }}>
-              {outfitCelebrities.map((celebrity, index) => (
+              {celebrityOptions.map((celebrity) => (
                 <FilterOption
                   key={celebrity}
                   selected={celebrities.includes(celebrity)}
                   count={outfits.filter((outfit) => outfit.celebrity === celebrity).length}
-                  avatar={`https://picsum.photos/seed/cpc${index}/60/60`}
+                  avatar={
+                    celebrityAvatars.get(celebrity) ??
+                    `https://picsum.photos/seed/${nameSlug(celebrity)}/60/60`
+                  }
                   onClick={() => { setCelebrities(toggleValue(celebrities, celebrity)); resetShown(); }}
                 >{celebrity}</FilterOption>
               ))}
@@ -183,19 +206,19 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
               <div className={styles.range}>
                 <input
                   type="range"
-                  min="1000"
-                  max="8000"
-                  step="500"
+                  min={swapRange.min}
+                  max={swapRange.max}
+                  step={swapRange.step}
                   value={budget}
                   aria-label="Maximum swap price"
                   onChange={(event) => { setBudget(Number(event.target.value)); resetShown(); }}
                 />
-                <div><span>₹1,000</span><b>{budget >= 8000 ? "Any" : inr.format(budget)}</b></div>
+                <div><span>{inr.format(swapRange.min)}</span><b>{budget >= anyBudget ? "Any" : inr.format(budget)}</b></div>
               </div>
             </div>
 
             <FilterGroup title="Minimum saving">
-              {savingThresholds.map((threshold) => (
+              {savingOptions.map((threshold) => (
                 <FilterOption
                   key={threshold}
                   selected={minimumSaving === threshold}

@@ -26,12 +26,13 @@ export async function TrendingBoard() {
   ]);
 
   const totalSearches = trendingSearches.reduce((sum, item) => sum + item.volume, 0);
-  const topVolume = Math.max(...trendingSearches.map((item) => item.volume));
+  // An empty leaderboard used to make these -Infinity and undefined.
+  const topVolume = Math.max(1, ...trendingSearches.map((item) => item.volume));
   const fastestRiser = [...trendingSearches].sort((a, b) => b.changePct - a.changePct)[0];
   const buyable = outfits.filter(isFullySwapped);
   const cheapestLook = buyable.length
     ? Math.min(...buyable.map((outfit) => outfit.swap))
-    : 0;
+    : null;
 
   return (
     <main className={styles.page}>
@@ -57,21 +58,25 @@ export async function TrendingBoard() {
               <span>Searches this week</span>
               <b>{totalSearches.toLocaleString("en-IN")}</b>
             </div>
-            <div>
-              <span>Fastest riser</span>
-              <b>
-                +{fastestRiser.changePct}
-                <em>%</em>
-              </b>
-            </div>
+            {fastestRiser ? (
+              <div>
+                <span>Fastest riser</span>
+                <b>
+                  +{fastestRiser.changePct}
+                  <em>%</em>
+                </b>
+              </div>
+            ) : null}
             <div>
               <span>Looks in the archive</span>
               <b>{outfits.length}</b>
             </div>
-            <div>
-              <span>Cheapest complete look</span>
-              <b>{inr.format(cheapestLook)}</b>
-            </div>
+            {cheapestLook === null ? null : (
+              <div>
+                <span>Cheapest complete look</span>
+                <b>{inr.format(cheapestLook)}</b>
+              </div>
+            )}
           </div>
         </div>
       </header>

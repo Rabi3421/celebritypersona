@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
-import type { HomeContent } from "@/lib/types";
+import type { HomeStat } from "@/lib/archive";
 
 function StatTile({
   value,
@@ -64,7 +64,7 @@ function StatTile({
   );
 }
 
-export function Stats({ stats }: { stats: HomeContent["stats"] }) {
+export function Stats({ stats }: { stats: HomeStat[] }) {
   return (
     <section className="stats">
       <div className="shell">
