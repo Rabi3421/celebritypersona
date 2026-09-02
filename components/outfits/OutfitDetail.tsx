@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { outfitSlug } from "@/lib/slugs";
+import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
+import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import { outfitPhoto, outfitPhotos, isFullySwapped, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
@@ -49,6 +50,12 @@ export function OutfitDetail({
     ? new Date(`${outfit.pricesCheckedAt}T00:00:00`)
     : null;
   const money = pricing(outfit);
+  // The look sheet beside the write-up. Every line is read off the pieces
+  // themselves, so a look with one label and no colour in its piece names
+  // simply shows fewer rows rather than an invented one.
+  const labels = wornBrands([outfit]);
+  const garments = garmentsIn([outfit], 6);
+  const palette = paletteIn([outfit], 5);
   // The dots were placed on the cover, so they only belong on the cover.
   const photos = outfitPhotos(outfit);
   const shown = photos[shot];
@@ -164,15 +171,6 @@ export function OutfitDetail({
               <h1>{outfit.celebrity} at {outfit.event}</h1>
               <div>{longDate.format(published)} · <Link href={`/occasions/${outfit.occasion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.occasion} looks</Link> · <Link href={`/celebrities/${outfit.celebrity.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.celebrity} archive</Link></div>
             </header>
-
-            {outfit.notes?.length ? (
-              <section className={styles.notes}>
-                <h2>About this look</h2>
-                {outfit.notes.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </section>
-            ) : null}
 
             {money.anySwapped ? (
               <div className={`${styles.toggle} ${mode === "swap" ? styles.swapMode : ""}`} role="tablist" aria-label="Price mode">
@@ -290,6 +288,53 @@ export function OutfitDetail({
             </div>
           </div>
         </div>
+
+        {outfit.notes?.length ? (
+          <section className={styles.notes}>
+            <div className={styles.notesRail}>
+              <h2>About this look</h2>
+              <dl className={styles.lookSheet}>
+                {labels.length ? (
+                  <div>
+                    <dt>{labels.length === 1 ? "The label" : "The labels"}</dt>
+                    {labels.map((brand) => <dd key={brand.name}>{brand.name}</dd>)}
+                  </div>
+                ) : null}
+                {garments.length ? (
+                  <div>
+                    <dt>{garments.length === 1 ? "The piece" : "The pieces"}</dt>
+                    <dd>{garments.map((garment) => garment.name).join(" · ")}</dd>
+                  </div>
+                ) : null}
+                {palette.length ? (
+                  <div>
+                    <dt>Palette</dt>
+                    <dd className={styles.swatches}>
+                      {palette.map((colour) => (
+                        <span key={colour.name}>
+                          <i style={{ background: colour.value }} />{colour.name}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Occasion</dt>
+                  <dd>
+                    <Link href={`/occasions/${nameSlug(outfit.occasion)}`}>
+                      {outfit.occasion} looks
+                    </Link>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+            <div className={styles.prose}>
+              {outfit.notes.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <RelatedRail title={`More from ${outfit.celebrity}`} outfits={sameCelebrity} />
         <RelatedRail title={`More ${outfit.occasion.toLowerCase()} looks`} outfits={sameOccasion} />

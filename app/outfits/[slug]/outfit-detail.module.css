@@ -3,8 +3,16 @@
 .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; color: var(--ash); padding: var(--s4) 0; white-space: nowrap; overflow-x: auto; }
 .crumb a:hover { color: var(--rani); }
 .crumb i { font-style: normal; margin: 0 6px; color: var(--line); }
-.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: var(--s8); align-items: start; }
+/* The photo column is sized by the height it has to fit into (see .frame
+   below), so the track is capped the same way rather than left at 1fr — a 1fr
+   track would keep the old width and open a void between the picture and the
+   ledger. Whatever is left over is split as page margin. */
+.split { display: grid; grid-template-columns: min(58%, max(360px, (100vh - 220px) * .8)) minmax(0, 620px); justify-content: center; gap: var(--s8); align-items: start; }
 
+/* The frame keeps its 4/5 crop, so its height follows the column width — wide
+   enough and the thumbnail strip below it falls off the screen. Capping the
+   width against the viewport height keeps the photo and its thumbnails in one
+   screen, without cropping the picture. */
 .photoColumn { position: sticky; top: calc(var(--nav-h) + var(--s4)); }
 .frame { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-lg); overflow: hidden; background: linear-gradient(158deg, #20242d, #343945 44%, #4c525f); box-shadow: var(--e2); }
 .frame > img { object-fit: cover; }
@@ -25,11 +33,28 @@
 .thumb:hover, .thumb:focus-visible { opacity: 1; outline: none; }
 .thumbOn { opacity: 1; border-color: var(--rani); }
 
-/* the editor's own writing — the part no merchant page can supply */
-.notes { margin: var(--s5) 0; padding-top: var(--s5); border-top: 1px solid var(--line); }
-.notes h2 { font-family: var(--display); font-weight: 700; font-size: 19px; margin-bottom: var(--s3); }
-.notes p { font-size: 15.5px; line-height: 1.72; color: var(--ink-80); }
-.notes p + p { margin-top: var(--s3); }
+/* the editor's own writing — the part no merchant page can supply. It runs
+   below the two columns now, so the paragraph keeps a readable measure rather
+   than stretching the width of the page. */
+.notes { margin-top: var(--s8); padding-top: var(--s6); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: min(58%, max(360px, (100vh - 220px) * .8)) minmax(0, 620px);
+  justify-content: center; column-gap: var(--s8); row-gap: var(--s5); align-items: start; }
+.notes h2 { font-family: var(--display); font-weight: 700; font-size: clamp(21px, 2vw, 27px); letter-spacing: -.024em; line-height: 1.1; }
+.prose p { font-size: 16px; line-height: 1.75; color: var(--ink-80); }
+.prose p + p { margin-top: var(--s4); }
+
+/* The look sheet: what the pieces themselves say about the outfit — who made
+   it, what it is made of, what colours it names. A row it has no answer for is
+   left out rather than filled in. */
+.lookSheet { margin-top: var(--s5); padding-top: var(--s5); border-top: 1px solid var(--line); display: grid; gap: var(--s4); }
+.lookSheet > div { display: grid; gap: 4px; }
+.lookSheet dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+.lookSheet dd { font-size: 15px; line-height: 1.5; }
+.lookSheet dd a { border-bottom: 1px solid var(--line); }
+.lookSheet dd a:hover { color: var(--rani); border-bottom-color: var(--rani); }
+.swatches { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); }
+.swatches span { display: inline-flex; align-items: center; gap: 7px; }
+.swatches i { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(22, 24, 29, .14); }
 .lineNote { display: block; margin-top: 6px; font-style: normal; font-size: 13.5px; line-height: 1.6; color: var(--ash); }
 @keyframes pulse { 0% { transform: scale(.86); opacity: .9; } 70%, 100% { transform: scale(1.25); opacity: 0; } }
 .hotspot:hover, .hotspot:focus-visible { transform: translate(-50%, -50%) scale(1.18); background: var(--rani); border-color: var(--rani); outline: none; }
@@ -110,6 +135,11 @@
   .toggle.swapMode > i { transform: translateX(calc(100% + 8px)); }
   .toggle button { background: var(--line-soft); }
   .toggle button[aria-selected="true"] { background: transparent; }
+  /* The rail dissolves, so the write-up follows the heading and the look
+     sheet closes the section rather than interrupting it. */
+  .notes { margin: var(--s7) var(--s4) 0; padding-top: var(--s6); grid-template-columns: 1fr; }
+  .notesRail { display: contents; }
+  .lookSheet { order: 1; }
   .related { margin-top: var(--s7); padding: var(--s6) var(--s4) 0; }
   .relatedRail { margin: 0 calc(var(--s4) * -1); padding: 0 var(--s4) var(--s3); }
   .byline { margin: var(--s7) var(--s4) 0; padding-bottom: 140px; }
