@@ -432,9 +432,35 @@ button{font-family:inherit}
 .titem p{font-size:14px;color:#A6AAB2;line-height:1.62}
 
 /* ────────── SOCIAL ────────── */
-.social{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(150px,1fr);gap:var(--s3);
-  overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:var(--s3)}
-.reel{scroll-snap-align:start;aspect-ratio:9/16;border-radius:var(--r-md);position:relative;overflow:hidden;
+/* Fixed slots rather than a scrolling row of equal shares: the account may
+   have two reels or six, and a column-flow grid stretched two of them to half
+   the page each. Empty slots simply stay empty, and nothing scrolls. */
+.social{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s3);padding-bottom:var(--s3)}
+/* A reel card is a button now, so it has to shed the browser's button skin. */
+button.reel{padding:0;border:0;font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+
+/* ── the player ── */
+.reel-stage{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:var(--s5);
+  background:rgba(10,11,14,.86);backdrop-filter:blur(10px);animation:reelin .18s var(--ease) both}
+@keyframes reelin{from{opacity:0}}
+.reel-stage-box{position:relative;width:min(420px,100%);max-height:100%;display:flex;flex-direction:column;gap:var(--s3)}
+.reel-stage video{width:100%;max-height:min(78vh,760px);aspect-ratio:9/16;object-fit:contain;
+  background:#000;border-radius:var(--r-lg);box-shadow:var(--e3);display:block}
+.reel-stage-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s4)}
+.reel-stage-foot p{font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.82);min-width:0}
+.reel-stage-foot a{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:#fff;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;white-space:nowrap}
+.reel-stage-foot a:hover{color:var(--rani);border-bottom-color:var(--rani)}
+.reel-stage-close{position:absolute;top:var(--s4);right:var(--s4);z-index:2;width:40px;height:40px;border-radius:50%;
+  border:0;cursor:pointer;font-size:24px;line-height:1;color:#fff;background:rgba(255,255,255,.14);
+  backdrop-filter:blur(6px);transition:background var(--fast) var(--ease)}
+.reel-stage-close:hover{background:rgba(255,255,255,.26)}
+@media(max-width:620px){.reel-stage{padding:var(--s3)}.reel-stage-close{top:var(--s2);right:var(--s2)}}
+
+@media(max-width:1180px){.social{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:900px){.social{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:620px){.social{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.reel{display:block;scroll-snap-align:start;aspect-ratio:9/16;border-radius:var(--r-md);position:relative;overflow:hidden;
   background:linear-gradient(160deg,#2A2E37,#4A505C);cursor:pointer;transition:transform var(--base) var(--ease)}
 .reel:nth-child(2n){background:linear-gradient(160deg,#3A2530,#6A4655)}
 .reel:nth-child(3n){background:linear-gradient(160deg,#1F2C2B,#425C5B)}
@@ -500,7 +526,6 @@ button{font-family:inherit}
   .signup{grid-template-columns:1fr;padding:var(--s7) var(--s5)}
   .sform{min-width:0;flex-direction:column}
   .camp{padding:var(--s8) var(--s5)}
-  .social{margin:0 calc(var(--s4) * -1);padding-left:var(--s4);padding-right:var(--s4)}
   body{padding-bottom:64px}
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:90;
     background:var(--paper);border-top:1px solid var(--line);height:64px;padding-bottom:env(safe-area-inset-bottom)}

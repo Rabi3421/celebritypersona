@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         hostname: "firebasestorage.googleapis.com",
         pathname: `/v0/b/${firebaseBucket}/o/**`,
       },
+      // Reel thumbnails. Instagram serves them from a rotating set of
+      // scontent hosts, so the subdomain has to be a wildcard.
+      { protocol: "https", hostname: "**.cdninstagram.com" },
+      { protocol: "https", hostname: "**.fbcdn.net" },
     ],
   },
 };

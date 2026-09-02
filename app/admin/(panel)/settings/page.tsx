@@ -41,6 +41,13 @@ function envRows() {
       value: process.env.NEXT_PUBLIC_SITE_URL ?? "not set",
       ok: Boolean(process.env.NEXT_PUBLIC_SITE_URL),
     },
+    {
+      label: "INSTAGRAM_ACCESS_TOKEN",
+      value: process.env.INSTAGRAM_ACCESS_TOKEN
+        ? "set · reels read live from the account"
+        : "not set · reels fall back to the homepage form",
+      ok: Boolean(process.env.INSTAGRAM_ACCESS_TOKEN),
+    },
   ];
 }
 
