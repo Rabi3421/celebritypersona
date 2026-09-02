@@ -217,9 +217,14 @@ button{font-family:inherit}
 .sec-h .more:hover{color:var(--rani);border-bottom-color:var(--rani);gap:11px}
 
 /* ────────── CARDS ────────── */
-.rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(212px,1fr);gap:var(--s4);
-  overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:var(--s4);scrollbar-width:thin}
-.card{scroll-snap-align:start;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);
+/* The week's looks, laid out rather than scrolled. A scrolling rail hid half
+   the cards behind a drag and — because `overflow-x:auto` forces the other
+   axis to `auto` too — the hover lift raised a second, vertical scrollbar
+   inside the section. The column count is fixed per width and the extra cards
+   are dropped, so every row is full and nothing needs scrolling; the rest of
+   the archive is one click away under the heading. */
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s4);padding-bottom:var(--s2)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);
   overflow:hidden;cursor:pointer;transition:transform var(--base) var(--ease),box-shadow var(--base) var(--ease),border-color var(--base)}
 .card:hover{transform:translateY(-5px);box-shadow:var(--e3);border-color:transparent}
 .card>a{display:block;color:inherit;text-decoration:none}
@@ -250,6 +255,12 @@ button{font-family:inherit}
 .card .was{text-decoration:line-through;color:var(--stone)}
 .card .now{color:var(--jade);font-weight:600;font-size:13.5px}
 .card .soon{color:var(--ash);font-size:11px}
+
+/* Bounded ranges rather than stacked max-widths, so exactly one rule decides
+   the column count and how many cards it can fill. */
+@media(min-width:901px) and (max-width:1180px){.rail{grid-template-columns:repeat(4,minmax(0,1fr))}.rail>*:nth-child(n+5){display:none}}
+@media(min-width:621px) and (max-width:900px){.rail{grid-template-columns:repeat(3,minmax(0,1fr))}.rail>*:nth-child(n+4){display:none}}
+@media(max-width:620px){.rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}.rail>*:nth-child(n+5){display:none}}
 
 /* ────────── SWAP DEMO ────────── */
 .demo{display:grid;grid-template-columns:1fr 1fr;gap:var(--s8);align-items:center}
@@ -489,7 +500,7 @@ button{font-family:inherit}
   .signup{grid-template-columns:1fr;padding:var(--s7) var(--s5)}
   .sform{min-width:0;flex-direction:column}
   .camp{padding:var(--s8) var(--s5)}
-  .rail,.social{margin:0 calc(var(--s4) * -1);padding-left:var(--s4);padding-right:var(--s4)}
+  .social{margin:0 calc(var(--s4) * -1);padding-left:var(--s4);padding-right:var(--s4)}
   body{padding-bottom:64px}
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:90;
     background:var(--paper);border-top:1px solid var(--line);height:64px;padding-bottom:env(safe-area-inset-bottom)}

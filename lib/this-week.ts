@@ -10,8 +10,9 @@ import { outfitSlug } from "@/lib/slugs";
 
 /** How recent a look has to be to count as this week's. */
 const WINDOW_DAYS = 7;
-/** The rail scrolls, but a card past this is one nobody reaches. */
-const MAX_CARDS = 8;
+/** The homepage lays these out in one row rather than scrolling them, so it
+ *  shows what fits and sends the reader to /outfits for the rest. */
+const MAX_CARDS = 5;
 /** A near-empty rail reads as a broken page, so a quiet week falls back to the
  *  newest looks regardless of their date. */
 const MIN_CARDS = 4;
