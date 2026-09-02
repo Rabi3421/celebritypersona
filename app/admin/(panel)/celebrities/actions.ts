@@ -13,6 +13,7 @@ import { celebritySchema, fieldErrors, type FieldErrors } from "@/lib/validation
 export type CelebrityDraft = {
   name: string;
   bio: string;
+  sameAs: string;
 };
 
 export type CelebrityFormState = { errors?: FieldErrors; values?: CelebrityDraft };
@@ -26,9 +27,14 @@ export async function saveCelebrity(
   const draft: CelebrityDraft = {
     name: text(form, "name"),
     bio: String(form.get("bio") ?? ""),
+    sameAs: String(form.get("sameAs") ?? ""),
   };
 
-  const parsed = celebritySchema.safeParse({ ...draft, bio: lines(form, "bio") });
+  const parsed = celebritySchema.safeParse({
+    ...draft,
+    bio: lines(form, "bio"),
+    sameAs: lines(form, "sameAs"),
+  });
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: draft };
 
   const id = Number(form.get("id"));

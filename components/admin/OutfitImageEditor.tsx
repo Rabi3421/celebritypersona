@@ -51,6 +51,17 @@ export function OutfitImageEditor({
    */
   const freshRef = useRef(new Set<string>());
 
+  /** Writes what a photo shows and who took it. Held on the image itself, so
+   *  reordering or making another photo the cover carries it along. */
+  const describe = useCallback(
+    (index: number, field: "alt" | "credit", value: string) => {
+      setImages((current) =>
+        current.map((image, i) => (i === index ? { ...image, [field]: value } : image)),
+      );
+    },
+    [],
+  );
+
   /** Mirror the Pieces rows so the dots and the list always agree. */
   const syncNames = useCallback(() => {
     const form = rootRef.current?.closest("form");
@@ -273,6 +284,41 @@ export function OutfitImageEditor({
             ))}
           </div>
 
+          {/* Uncontrolled, and keyed to the photo. The form listens for `input`
+              to mirror the piece names, and that re-render lands mid-keystroke:
+              a controlled box here reverts every character as it is typed.
+              The key remounts the box when another photo is selected, so it
+              still shows that photo's words. */}
+          <div className={styles.shotMeta}>
+            <label>
+              <span>Alt text · photo {shown + 1}</span>
+              <input
+                key={`alt-${images[shown]?.path ?? shown}`}
+                type="text"
+                maxLength={160}
+                defaultValue={images[shown]?.alt ?? ""}
+                placeholder="Ritika Nayak in a pink floral draped jumpsuit by Ewoke Studio"
+                onChange={(event) => describe(shown, "alt", event.target.value)}
+              />
+              <small>
+                What the photo shows, for a reader who cannot see it and for
+                image search. Empty falls back to the celebrity and the event.
+              </small>
+            </label>
+            <label>
+              <span>Photo credit</span>
+              <input
+                key={`credit-${images[shown]?.path ?? shown}`}
+                type="text"
+                maxLength={120}
+                defaultValue={images[shown]?.credit ?? ""}
+                placeholder="Instagram / @ritikanayak"
+                onChange={(event) => describe(shown, "credit", event.target.value)}
+              />
+              <small>Shown on the photo. Empty reads “Photo · Editorial archive”.</small>
+            </label>
+          </div>
+
           <p className={styles.dotHint}>
             {onCover ? (
               <>
@@ -347,6 +393,8 @@ export function OutfitImageEditor({
         <span key={image.path || image.url}>
           <input type="hidden" name={`images.${index}.url`} value={image.url} />
           <input type="hidden" name={`images.${index}.path`} value={image.path} />
+          <input type="hidden" name={`images.${index}.alt`} value={image.alt ?? ""} />
+          <input type="hidden" name={`images.${index}.credit`} value={image.credit ?? ""} />
         </span>
       ))}
       {names.map((_, index) => {

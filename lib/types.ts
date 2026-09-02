@@ -25,6 +25,10 @@ export type OutfitImage = {
   /** Storage path, kept so the file can be deleted when it is replaced. */
   path: string;
   credit?: string;
+  /** What the photo shows, for a reader who cannot see it and for image
+   *  search. Absent on photos saved before the field existed, which fall back
+   *  to a line built from the look. */
+  alt?: string;
 };
 
 /**
@@ -115,6 +119,10 @@ export type Outfit = {
   /** Editor-chosen URL segment. Also names the storage folder its photos are
    *  uploaded into. Absent on older looks, which fall back to a derived slug. */
   slug?: string;
+  /** What the search result says. Both optional: left empty, the page builds
+   *  them from the look itself, so a look is never untitled in a SERP. */
+  seoTitle?: string;
+  seoDescription?: string;
   /** Superseded by `images`. Still read, so older documents keep their photo. */
   image?: OutfitImage;
   images?: OutfitImage[];
@@ -147,6 +155,9 @@ export type Celebrity = {
   id: number;
   name: string;
   bio?: string[];
+  /** Her own profiles — Instagram, Wikipedia. Emitted as `sameAs` so a look
+   *  page names the person Google already knows rather than a string. */
+  sameAs?: string[];
 };
 
 export type OccasionGroup = "Wedding" | "Festival" | "Everyday";

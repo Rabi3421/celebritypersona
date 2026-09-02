@@ -17,14 +17,16 @@ export type OutfitDraft = {
   date: string;
   isNew: boolean;
   slug: string;
-  images: { url: string; path: string }[];
+  seoTitle: string;
+  seoDescription: string;
+  images: { url: string; path: string; alt?: string; credit?: string }[];
   notes: string;
   items: Record<string, string>[];
 };
 
 export type OutfitFormState = { attempt?: number; errors?: FieldErrors; values?: OutfitDraft };
 
-const IMAGE_FIELDS = ["url", "path"];
+const IMAGE_FIELDS = ["url", "path", "alt", "credit"];
 
 const ITEM_FIELDS = [
   "name",
@@ -52,7 +54,9 @@ export async function saveOutfit(
     date: text(form, "date"),
     isNew: flag(form, "isNew"),
     slug: text(form, "slug"),
-    images: rows(form, "images", IMAGE_FIELDS) as { url: string; path: string }[],
+    seoTitle: text(form, "seoTitle"),
+    seoDescription: text(form, "seoDescription"),
+    images: rows(form, "images", IMAGE_FIELDS) as OutfitDraft["images"],
     notes: text(form, "notes"),
     items: rows(form, "items", ITEM_FIELDS),
   };

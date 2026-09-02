@@ -94,7 +94,9 @@ export async function updateOutfit(
   );
 
   // `image` is the single-photo field older documents were saved with. Always
-  // clearing it keeps one look from carrying two competing photo fields.
+  // clearing it keeps one look from carrying two competing photo fields. The
+  // search overrides are cleared the same way: a field the editor emptied has
+  // to leave the document, or the page would keep serving the old title.
   await collection.updateOne(
     { id },
     {
@@ -104,7 +106,11 @@ export async function updateOutfit(
         ...outfitTotals(input.items),
         pricesCheckedAt: today(),
       },
-      $unset: { image: "" },
+      $unset: {
+        image: "",
+        ...(input.seoTitle ? {} : { seoTitle: "" }),
+        ...(input.seoDescription ? {} : { seoDescription: "" }),
+      },
     },
   );
 

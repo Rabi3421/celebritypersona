@@ -96,6 +96,26 @@ export function OutfitForm({
             errors={errors}
           />
 
+          <h3 className={styles.subhead}>Search appearance</h3>
+
+          <TextField
+            name="seoTitle"
+            label="Search title (optional)"
+            hint="Up to 60 characters — what Google shows as the blue link. Leave it empty and the page builds one from the lead piece and its label, e.g. “Ritika Nayak's Pink Floral Draped Jumpsuit — Ewoke Studio”."
+            defaultValue={draft?.seoTitle ?? outfit?.seoTitle}
+            placeholder="Ritika Nayak's Pink Floral Draped Jumpsuit — Ewoke Studio"
+            errors={errors}
+          />
+          <TextAreaField
+            name="seoDescription"
+            label="Search description (optional)"
+            rows={3}
+            hint="Up to 160 characters — the grey text under the link. Empty falls back to your first paragraph, or to a line built from the pieces and prices."
+            defaultValue={draft?.seoDescription ?? outfit?.seoDescription}
+            placeholder="Every piece Ritika Nayak wore, identified and priced — the Ewoke Studio jumpsuit at ₹9,891, with where to buy it."
+            errors={errors}
+          />
+
           <RepeatableRows
             key={`items-${state.attempt ?? 0}`}
             name="items"

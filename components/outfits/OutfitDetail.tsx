@@ -57,7 +57,18 @@ export function OutfitDetail({
   const garments = garmentsIn([outfit], 6);
   const palette = paletteIn([outfit], 5);
   // The dots were placed on the cover, so they only belong on the cover.
-  const photos = outfitPhotos(outfit);
+  const allPhotos = outfitPhotos(outfit);
+  /**
+   * The last photo is held back from the gallery and run beside the write-up
+   * instead, where the fact rail leaves room for it. It only leaves the strip
+   * when there is somewhere for it to go: with no write-up, or with a single
+   * photo, the gallery keeps everything.
+   */
+  const asidePhoto =
+    outfit.notes?.length && allPhotos.length > 1
+      ? allPhotos[allPhotos.length - 1]
+      : undefined;
+  const photos = asidePhoto ? allPhotos.slice(0, -1) : allPhotos;
   const shown = photos[shot];
   const onCover = shot === 0;
   const pieceWord = (count: number) => (count === 1 ? "piece" : "pieces");
@@ -110,10 +121,16 @@ export function OutfitDetail({
             <figure className={styles.frame}>
               <Image
                 src={shown?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/900/1125`}
-                alt={`${outfit.celebrity} at ${outfit.event}`}
+                // What the editor says the photo shows, when she has said it.
+                alt={shown?.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`}
                 fill
-                priority
-                sizes="(max-width: 1023px) 100vw, 58vw"
+                // `priority` is deprecated in Next 16; this hero is the LCP.
+                preload
+                // The frame is capped against the viewport height, so it is
+                // never wider than this however wide the window gets. Saying
+                // 58vw here had the browser fetching a candidate half again
+                // larger than anything it could display.
+                sizes="(max-width: 1023px) 100vw, 740px"
               />
               <figcaption>Photo · Editorial archive</figcaption>
               <button
@@ -291,8 +308,13 @@ export function OutfitDetail({
 
         {outfit.notes?.length ? (
           <section className={styles.notes}>
+            <h2>About this look</h2>
+            <div className={styles.prose}>
+              {outfit.notes.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
             <div className={styles.notesRail}>
-              <h2>About this look</h2>
               <dl className={styles.lookSheet}>
                 {labels.length ? (
                   <div>
@@ -327,11 +349,19 @@ export function OutfitDetail({
                   </dd>
                 </div>
               </dl>
-            </div>
-            <div className={styles.prose}>
-              {outfit.notes.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+              {asidePhoto ? (
+                <figure className={styles.asideShot}>
+                  <Image
+                    src={asidePhoto.url}
+                    alt={asidePhoto.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`}
+                    fill
+                    sizes="(max-width: 1023px) 100vw, 340px"
+                  />
+                  {asidePhoto.credit?.trim() ? (
+                    <figcaption>{asidePhoto.credit}</figcaption>
+                  ) : null}
+                </figure>
+              ) : null}
             </div>
           </section>
         ) : null}

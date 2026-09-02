@@ -85,6 +85,15 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
             errors={errors}
             rows={6}
           />
+          <TextAreaField
+            name="sameAs"
+            label="Official profiles (optional)"
+            hint="One URL per line — her Instagram, her Wikipedia page. These are published as structured data on every look she appears in, which is how a search engine tells this person from anyone with the same name."
+            defaultValue={draft?.sameAs ?? celebrity?.sameAs?.join("\n")}
+            placeholder={"https://www.instagram.com/…\nhttps://en.wikipedia.org/wiki/…"}
+            errors={errors}
+            rows={3}
+          />
         </div>
         <div className={styles.formBar}>
           <SaveButton>{celebrity ? "Save changes" : "Create celebrity"}</SaveButton>

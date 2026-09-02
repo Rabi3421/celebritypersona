@@ -90,6 +90,17 @@ export const outfitItemSchema = z
       : {}),
   }));
 
+/** What an editor may override for the search result. Both are optional: the
+ *  page builds its own when they are blank, so the caps are a guard against a
+ *  title Google will truncate, not a demand for one. */
+const seoText = (label: string, max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `${label} must be ${max} characters or fewer`)
+    .optional()
+    .transform((value) => value || undefined);
+
 export const outfitSchema = z.object({
   celebrity: required("Celebrity"),
   event: required("Event"),
@@ -102,12 +113,34 @@ export const outfitSchema = z.object({
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
     "Use lowercase letters, numbers and single hyphens, e.g. amyra-dastur-savanna-co-ord",
   ),
+  seoTitle: seoText("Search title", 60),
+  seoDescription: seoText("Search description", 160),
   images: z
-    .array(z.object({ url: z.string().trim().min(1), path: z.string().trim().min(1) }))
+    .array(
+      z.object({
+        url: z.string().trim().min(1),
+        path: z.string().trim().min(1),
+        alt: seoText("Alt text", 160),
+        credit: seoText("Photo credit", 120),
+      }),
+    )
     .default([]),
   notes: z.array(z.string().trim().min(1)).default([]),
   items: z.array(outfitItemSchema).min(1, "Add at least one piece"),
-});
+})
+  // An empty optional is dropped rather than stored as an empty string, so a
+  // cleared field reads the same as one that was never filled in.
+  .transform(({ seoTitle, seoDescription, images, ...outfit }) => ({
+    ...outfit,
+    images: images.map(({ url, path, alt, credit }) => ({
+      url,
+      path,
+      ...(alt ? { alt } : {}),
+      ...(credit ? { credit } : {}),
+    })),
+    ...(seoTitle ? { seoTitle } : {}),
+    ...(seoDescription ? { seoDescription } : {}),
+  }));
 
 /** Only what an editor writes. Look counts, savings, price ranges and the
  *  labels she repeats are counted from the outfits, so there is nothing here
@@ -115,6 +148,16 @@ export const outfitSchema = z.object({
 export const celebritySchema = z.object({
   name: required("Name"),
   bio: z.array(z.string().trim().min(1)).default([]),
+  // Her official profiles, one per line. They become `sameAs` on the Person a
+  // look page is about, which is what ties the page to the real person.
+  sameAs: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^https?:\/\/\S+$/i, "Each profile must start with http:// or https://"),
+    )
+    .default([]),
 });
 
 /** Counts, averages and the garment tally now come from the archive. What is
