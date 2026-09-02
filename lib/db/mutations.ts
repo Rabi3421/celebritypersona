@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
-import { hasSwap, hasWornPrice, outfitPhotos } from "@/lib/types";
+import { hasSwap, hasWornPrice, MAILABLE, outfitPhotos } from "@/lib/types";
 import type {
   Celebrity,
+  MailDelivery,
+  MailJob,
+  MailJobStatus,
+  OptInRecord,
   CelebrityRequest,
   HomeContent,
   Occasion,
@@ -289,16 +293,137 @@ export async function deleteCelebrityRequest(id: string) {
  * Signing up twice is not two people. The number is the key, and re-subscribing
  * after unsubscribing simply makes them active again.
  */
-export async function recordSubscriber(number: string) {
+/**
+ * Someone asked for the new looks. Nothing is mailed to them yet.
+ *
+ * The address starts `Pending` and stays there until the link is clicked,
+ * because anybody can type anybody else's address into a form. Returning to an
+ * address we already hold reuses the row — the email is the key — so signing
+ * up five times never makes five rows, and never mails five confirmations.
+ */
+export async function recordSubscriber(
+  email: string,
+  optIn: OptInRecord,
+): Promise<{ outcome: "confirm-sent" | "already-active" | "throttled"; token?: string }> {
   const db = await getDb();
+  const collection = db.collection<Subscriber>("subscribers");
+  const existing = await collection.findOne({ email });
   const now = new Date().toISOString();
-  await db.collection<Subscriber>("subscribers").updateOne(
-    { number },
+
+  // Already on the list: say so, and do not send anything.
+  if (existing?.status === "Active") return { outcome: "already-active" };
+
+  // A confirmation was sent moments ago. Resending on every submit is how a
+  // form becomes a way to flood somebody else's inbox.
+  if (existing?.confirmSentAt && Date.now() - Date.parse(existing.confirmSentAt) < 5 * 60_000) {
+    return { outcome: "throttled" };
+  }
+
+  const confirmToken = randomUUID();
+  await collection.updateOne(
+    { email },
     {
-      $set: { status: "Active" },
-      $setOnInsert: { id: randomUUID(), number, joinedAt: now },
+      $set: {
+        status: "Pending",
+        confirmToken,
+        confirmSentAt: now,
+        optIn,
+      },
+      $setOnInsert: {
+        id: randomUUID(),
+        email,
+        joinedAt: now,
+        // Minted once and never rotated: it has to keep working from a mail
+        // sent a year ago.
+        unsubscribeToken: randomUUID(),
+      },
+      // A previous ending no longer applies to an address asking again.
+      $unset: { unsubscribedAt: "", stoppedReason: "", confirmedAt: "" },
     },
     { upsert: true },
+  );
+
+  revalidatePath("/admin/subscribers");
+  return { outcome: "confirm-sent", token: confirmToken };
+}
+
+/** How long a confirmation link stays good. Long enough for a mail read the
+ *  next evening, short enough that a leaked link is worthless. */
+const CONFIRM_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+export type ConfirmResult = "confirmed" | "already" | "expired" | "unknown";
+
+/**
+ * The click that turns an address into a subscriber. Idempotent: a mail client
+ * that prefetches the link, or a reader who taps it twice, must not see an
+ * error the second time.
+ */
+export async function confirmSubscriber(token: string): Promise<ConfirmResult> {
+  const db = await getDb();
+  const collection = db.collection<Subscriber>("subscribers");
+  const subscriber = await collection.findOne({ confirmToken: token });
+
+  if (!subscriber) {
+    // Either never existed, or was confirmed already and the token cleared.
+    return "unknown";
+  }
+  if (subscriber.status === "Active") return "already";
+  if (
+    subscriber.confirmSentAt &&
+    Date.now() - Date.parse(subscriber.confirmSentAt) > CONFIRM_WINDOW_MS
+  ) {
+    return "expired";
+  }
+
+  await collection.updateOne(
+    { email: subscriber.email },
+    {
+      // The token is left in place rather than spent. Mail clients prefetch
+      // links to scan them, so the first "click" is often a machine — and the
+      // human who clicks a moment later must not be told their link is dead.
+      // Status is what confirms; a second click simply finds it already done.
+      $set: { status: "Active", confirmedAt: new Date().toISOString() },
+    },
+  );
+  revalidatePath("/admin/subscribers");
+  return "confirmed";
+}
+
+/**
+ * Leaving. Deliberately forgiving: an unknown token still reports success,
+ * because the alternative is telling a stranger whether an address is on the
+ * list, and because a reader who wants out should never meet an error.
+ */
+export async function unsubscribeByToken(token: string, reason = "Asked to stop") {
+  const db = await getDb();
+  await db.collection<Subscriber>("subscribers").updateOne(
+    { unsubscribeToken: token },
+    {
+      $set: {
+        status: "Unsubscribed",
+        unsubscribedAt: new Date().toISOString(),
+        stoppedReason: reason,
+      },
+      $unset: { confirmToken: "" },
+    },
+  );
+  revalidatePath("/admin/subscribers");
+}
+
+/**
+ * The mailbox refused us, or the reader pressed "spam". Both are terminal.
+ * Continuing to write to either is precisely what ruins a sending reputation,
+ * so the address is closed rather than retried.
+ */
+export async function stopSubscriber(
+  email: string,
+  status: "Bounced" | "Complained",
+  detail: string,
+) {
+  const db = await getDb();
+  await db.collection<Subscriber>("subscribers").updateOne(
+    { email },
+    { $set: { status, stoppedReason: detail, unsubscribedAt: new Date().toISOString() } },
   );
   revalidatePath("/admin/subscribers");
 }
@@ -313,6 +438,132 @@ export async function deleteSubscriber(id: string) {
   const db = await getDb();
   await db.collection<Subscriber>("subscribers").deleteOne({ id });
   revalidatePath("/admin/subscribers");
+}
+
+/* --------------------------------------------------------------- the post */
+
+/**
+ * Announcing a look is a separate act from publishing it.
+ *
+ * Publishing writes a row and stops. Announcing copies the look into a job and
+ * stops. A cron drains the job in batches. Nothing sends inside an admin
+ * request, which is what makes a mistake recoverable: between pressing the
+ * button and the first mail leaving there is a queue that can be cancelled.
+ */
+export async function queueLookAnnouncement(job: Omit<MailJob, "sent" | "failed" | "status" | "createdAt">) {
+  const db = await getDb();
+  const jobs = db.collection<MailJob>("mailJobs");
+
+  // One job per look. A double-click, or a retried form post, must not make a
+  // second announcement of the same thing.
+  const existing = await jobs.findOne({ outfitId: job.outfitId });
+  if (existing) return { queued: false as const, reason: "already" as const, job: existing };
+
+  const record: MailJob = {
+    ...job,
+    status: "Queued",
+    createdAt: new Date().toISOString(),
+    sent: 0,
+    failed: 0,
+  };
+  await jobs.insertOne(record);
+  revalidatePath("/admin/broadcasts");
+  return { queued: true as const, job: record };
+}
+
+/** Stops a job that has not finished. Anything already delivered is gone —
+ *  this only prevents the rest. */
+export async function cancelMailJob(id: string) {
+  const db = await getDb();
+  await db.collection<MailJob>("mailJobs").updateOne(
+    { id, status: { $in: ["Queued", "Sending"] } },
+    { $set: { status: "Cancelled", finishedAt: new Date().toISOString() } },
+  );
+  revalidatePath("/admin/broadcasts");
+}
+
+/** The next job waiting for the sender, oldest first. */
+export async function claimMailJob(): Promise<MailJob | null> {
+  const db = await getDb();
+  return db.collection<MailJob>("mailJobs").findOne(
+    { status: { $in: ["Queued", "Sending"] } },
+    { projection: { _id: 0 }, sort: { createdAt: 1 } },
+  );
+}
+
+/**
+ * Who this job has not written to yet.
+ *
+ * Status is re-read here rather than frozen when the job was made, so an
+ * address that unsubscribed, bounced or complained in the meantime is dropped
+ * even mid-send. The delivery ledger supplies the rest: anyone already written
+ * to is excluded, which is what makes a re-run of a half-finished batch safe.
+ */
+export async function nextRecipients(jobId: string, limit: number): Promise<string[]> {
+  const db = await getDb();
+  const done = await db
+    .collection<MailDelivery>("mailDeliveries")
+    .find({ jobId }, { projection: { email: 1, _id: 0 } })
+    .toArray();
+  const seen = new Set(done.map((row) => row.email));
+
+  const active = await db
+    .collection<Subscriber>("subscribers")
+    // An address is required, not merely a status. Rows carried over from the
+    // WhatsApp list are Active and have no email; without this they would
+    // arrive here as `undefined` and be handed to the mail server.
+    .find(
+      { status: { $in: [...MAILABLE] }, email: { $type: "string", $ne: "" } },
+      { projection: { email: 1, _id: 0 } },
+    )
+    .toArray();
+
+  return active
+    .map((row) => row.email)
+    .filter((email) => !seen.has(email))
+    .slice(0, limit);
+}
+
+/** Writes one attempt to the ledger. The unique index on (jobId, email) is
+ *  what makes a retry harmless. */
+export async function recordDelivery(delivery: MailDelivery) {
+  const db = await getDb();
+  const deliveries = db.collection<MailDelivery>("mailDeliveries");
+  await deliveries.createIndex({ jobId: 1, email: 1 }, { unique: true }).catch(() => {});
+  await deliveries.updateOne(
+    { jobId: delivery.jobId, email: delivery.email },
+    { $setOnInsert: delivery },
+    { upsert: true },
+  );
+  const db2 = await getDb();
+  await db2.collection<MailJob>("mailJobs").updateOne(
+    { id: delivery.jobId },
+    {
+      $inc: delivery.status === "Sent" ? { sent: 1 } : { failed: 1 },
+      $set: { status: "Sending", startedAt: delivery.at },
+    },
+  );
+  if (delivery.status === "Sent") {
+    await db2
+      .collection<Subscriber>("subscribers")
+      .updateOne({ email: delivery.email }, { $set: { lastSentAt: delivery.at } });
+  }
+}
+
+/** No recipients left, or the sender gave up. */
+export async function finishMailJob(id: string, status: MailJobStatus, error?: string) {
+  const db = await getDb();
+  await db.collection<MailJob>("mailJobs").updateOne(
+    { id },
+    {
+      $set: {
+        status,
+        finishedAt: new Date().toISOString(),
+        ...(error ? { error } : {}),
+      },
+    },
+  );
+  revalidatePath("/admin/broadcasts");
 }
 
 /* ------------------------------------------------------------ home content */

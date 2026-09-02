@@ -250,17 +250,124 @@ export type CelebrityRequest = {
   status: RequestStatus;
 };
 
-export const SUBSCRIBER_STATUSES = ["Active", "Unsubscribed"] as const;
+/**
+ * Where an address stands with us.
+ *
+ * `Pending` is an address that asked but has not clicked the link, and is the
+ * only honest place to start: anyone can type someone else's address into a
+ * form. `Bounced` and `Complained` are terminal — a mailbox that rejected us
+ * or a reader who pressed "spam" must never be written to again, because
+ * doing so is what destroys a sending reputation.
+ */
+export const SUBSCRIBER_STATUSES = [
+  "Pending",
+  "Active",
+  "Unsubscribed",
+  "Bounced",
+  "Complained",
+] as const;
 export type SubscriberStatus = (typeof SUBSCRIBER_STATUSES)[number];
 
-/** A WhatsApp number that asked for the weekly messages. */
+/** The statuses an address may be written to. Everything else is silence. */
+export const MAILABLE: readonly SubscriberStatus[] = ["Active"];
+
+/**
+ * Whether this row can actually receive a mail — the one rule the panel's
+ * audience count and the sender's recipient list both use, so the number shown
+ * on the button is the number of people written to. Status alone is not
+ * enough: rows carried over from the WhatsApp list are Active and have no
+ * address at all.
+ */
+export const isMailable = (subscriber: Subscriber) =>
+  MAILABLE.includes(subscriber.status) && Boolean(subscriber.email?.trim());
+
+/** What we can show about how an address reached the list, on the day
+ *  somebody asks. */
+export type OptInRecord = {
+  /** Where the form was, e.g. "homepage". */
+  source: string;
+  /** The exact promise made next to the button, kept verbatim. */
+  wording: string;
+  at: string;
+  ip?: string;
+};
+
+/** An address that asked for the new looks. */
 export type Subscriber = {
   id: string;
-  /** Digits only, no country code. Also the natural key, so signing up twice
-   *  reactivates rather than duplicating. */
-  number: string;
-  joinedAt: string;
+  /** Lowercased and trimmed. The natural key, so signing up twice returns to
+   *  the same row rather than making a second one. */
+  email: string;
+  /** A WhatsApp number collected before this list moved to email. Kept because
+   *  a real person gave it to us; never written to, because we have no way to
+   *  write to it and never had their permission to mail them. */
+  number?: string;
   status: SubscriberStatus;
+  joinedAt: string;
+  /** When the link in the confirmation mail was clicked. */
+  confirmedAt?: string;
+  optIn?: OptInRecord;
+  /** Single use, and short-lived. */
+  confirmToken?: string;
+  confirmSentAt?: string;
+  /** Never expires: it has to still work from a mail sent a year ago. */
+  unsubscribeToken: string;
+  unsubscribedAt?: string;
+  /** Why we stopped — a bounce, a complaint, or their own choice. */
+  stoppedReason?: string;
+  lastSentAt?: string;
+};
+
+/**
+ * One announcement, queued rather than sent.
+ *
+ * The look is copied into the job at the moment it is queued, so editing or
+ * deleting the outfit afterwards cannot change a mail that is already going
+ * out — and cannot leave half a send describing something else.
+ */
+export const MAIL_JOB_STATUSES = [
+  "Queued",
+  "Sending",
+  "Sent",
+  "Cancelled",
+  "Failed",
+] as const;
+export type MailJobStatus = (typeof MAIL_JOB_STATUSES)[number];
+
+export type MailJob = {
+  id: string;
+  /** One job per look, so pressing the button twice cannot send twice. */
+  outfitId: number;
+  status: MailJobStatus;
+  subject: string;
+  /** The look as it read when queued. */
+  look: {
+    celebrity: string;
+    event: string;
+    slug: string;
+    url: string;
+    image?: string;
+    pieces: number;
+    worn?: number;
+  };
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  sent: number;
+  failed: number;
+  /** How many were Active when the job was made — what the panel promised. */
+  audience: number;
+  error?: string;
+};
+
+/** One attempt at one address. Its (jobId, email) pair is unique, which is
+ *  what stops a retried batch mailing anybody twice. */
+export type MailDelivery = {
+  jobId: string;
+  email: string;
+  status: "Sent" | "Failed" | "Skipped";
+  at: string;
+  detail?: string;
 };
 
 export type TickerEntry = {

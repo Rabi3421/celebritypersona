@@ -7,6 +7,7 @@ import type {
   Celebrity,
   CelebrityRequest,
   HomeContent,
+  MailJob,
   Occasion,
   Outfit,
   PriceReport,
@@ -123,6 +124,22 @@ export const getSubscribers = cache(async (): Promise<Subscriber[]> => {
     .collection<Subscriber>("subscribers")
     .find({}, NO_ID)
     .sort({ joinedAt: -1 })
+    .toArray();
+});
+
+/** One address, read fresh. The sender checks this immediately before writing
+ *  to somebody, so it must not be cached across the batch. */
+export async function getSubscriberByEmail(email: string) {
+  const db = await getDb();
+  return db.collection<Subscriber>("subscribers").findOne({ email }, NO_ID);
+}
+
+export const getMailJobs = cache(async (): Promise<MailJob[]> => {
+  const db = await getDb();
+  return db
+    .collection<MailJob>("mailJobs")
+    .find({}, NO_ID)
+    .sort({ createdAt: -1 })
     .toArray();
 });
 

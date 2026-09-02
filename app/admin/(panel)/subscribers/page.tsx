@@ -6,7 +6,7 @@ import { removeSubscriber, updateSubscriberStatus } from "../requests/actions";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { getSubscribers } from "@/lib/db/content";
-import { SUBSCRIBER_STATUSES } from "@/lib/types";
+import { SUBSCRIBER_STATUSES, type SubscriberStatus } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
 
 type Query = { page?: string; per?: string; q?: string; status?: string };
@@ -19,10 +19,13 @@ const asDay = (value: string) => {
   return Number.isNaN(parsed.getTime()) ? value : day.format(parsed);
 };
 
-/** 98••••3210 — enough to recognise a number, not enough to read one off a
- *  shoulder. The full number is one click away in the WhatsApp link. */
-const masked = (number: string) =>
-  number.length === 10 ? `${number.slice(0, 2)}••••${number.slice(-4)}` : number;
+/** ra••••@gmail.com — enough to recognise an address across a room, not
+ *  enough to read one off a shoulder. */
+const masked = (email: string) => {
+  const at = email?.indexOf("@") ?? -1;
+  if (at < 3) return email;
+  return `${email.slice(0, 2)}••••${email.slice(at)}`;
+};
 
 export default async function AdminSubscribers({
   searchParams,
@@ -33,22 +36,25 @@ export default async function AdminSubscribers({
 
   const filtered = all.filter(
     (subscriber) =>
-      matchesQuery(query.q, subscriber.number) &&
+      matchesQuery(query.q, subscriber.email ?? subscriber.number ?? "") &&
       matchesValue(query.status, subscriber.status),
   );
   const paged = paginate(filtered, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
-  const activeCount = all.filter((subscriber) => subscriber.status === "Active").length;
+  const count = (status: SubscriberStatus) =>
+    all.filter((subscriber) => subscriber.status === status).length;
+  const activeCount = count("Active");
 
   return (
     <>
       <div className={styles.notice}>
-        <strong>Nothing is sent from here</strong>
+        <strong>Nobody is mailed until they confirm</strong>
         <p>
-          This is the list the homepage form collects, not a sending tool. The
-          numbers are stored and nothing else — no name, no email, no history —
-          and the public page promises one word stops the messages, so mark
-          anyone who asks as Unsubscribed or delete them outright.
+          An address that has not clicked the link in its confirmation mail sits
+          at Pending and is never written to. Bounced and Complained are
+          endings, not pauses: those addresses are closed for good, because
+          writing to them again is what destroys a sending reputation. Announce
+          a look from <Link href="/admin/broadcasts">Broadcasts</Link>.
         </p>
       </div>
 
@@ -56,22 +62,32 @@ export default async function AdminSubscribers({
         <div className={styles.tile}>
           <span>Active</span>
           <b className={activeCount ? styles.ok : undefined}>{activeCount}</b>
-          <small>Want the weekly messages</small>
+          <small>Confirmed, and mailed</small>
+        </div>
+        <div className={styles.tile}>
+          <span>Pending</span>
+          <b>{count("Pending")}</b>
+          <small>Asked, but have not clicked the link</small>
         </div>
         <div className={styles.tile}>
           <span>Unsubscribed</span>
-          <b>{all.length - activeCount}</b>
-          <small>Kept so they are not re-added by accident</small>
+          <b>{count("Unsubscribed")}</b>
+          <small>Kept, so they cannot be re-added by accident</small>
+        </div>
+        <div className={styles.tile}>
+          <span>Closed</span>
+          <b>{count("Bounced") + count("Complained")}</b>
+          <small>Bounced or marked us as spam</small>
         </div>
       </div>
 
       <div className={styles.listTop}>
         <p>
           {active
-            ? `${paged.total} of ${all.length} numbers match.`
-            : `${paged.total} ${all.length === 1 ? "number" : "numbers"}, newest first.`}
+            ? `${paged.total} of ${all.length} addresses match.`
+            : `${paged.total} ${all.length === 1 ? "address" : "addresses"}, newest first.`}
         </p>
-        <Link className={styles.newButton} href="/#whatsapp" target="_blank">
+        <Link className={styles.newButton} href="/#updates" target="_blank">
           See the public form ↗
         </Link>
       </div>
@@ -81,7 +97,7 @@ export default async function AdminSubscribers({
           action="/admin/subscribers"
           active={active}
           fields={[
-            { kind: "search", name: "q", label: "Search", value: query.q, placeholder: "Number" },
+            { kind: "search", name: "q", label: "Search", value: query.q, placeholder: "Address" },
             {
               kind: "select",
               name: "status",
@@ -99,9 +115,10 @@ export default async function AdminSubscribers({
           <p>
             {all.length === 0 ? (
               <>
-                The homepage asks for a WhatsApp number. Numbers land here, and
-                signing up twice does not create two rows.{" "}
-                <Link href="/#whatsapp" target="_blank">
+                The homepage asks for an email address. Addresses land here as
+                Pending and turn Active when the reader clicks the link in the
+                confirmation mail.{" "}
+                <Link href="/#updates" target="_blank">
                   See the public form ↗
                 </Link>
               </>
@@ -118,7 +135,7 @@ export default async function AdminSubscribers({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Number</th>
+                  <th>Address</th>
                   <th>Joined</th>
                   <th>Status</th>
                 </tr>
@@ -127,13 +144,17 @@ export default async function AdminSubscribers({
                 {paged.rows.map((subscriber) => (
                   <tr key={subscriber.id}>
                     <td className={styles.num}>
-                      <a
-                        href={`https://wa.me/91${subscriber.number}`}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        {masked(subscriber.number)} ↗
-                      </a>
+                      {subscriber.email ? (
+                        <a href={`mailto:${subscriber.email}`}>{masked(subscriber.email)}</a>
+                      ) : (
+                        <span title="Collected before the list moved to email">
+                          {subscriber.number ?? "—"}{" "}
+                          <small className={styles.muted}>WhatsApp, never mailed</small>
+                        </span>
+                      )}
+                      {subscriber.stoppedReason ? (
+                        <small className={styles.muted}> · {subscriber.stoppedReason}</small>
+                      ) : null}
                     </td>
                     <td className={`${styles.num} ${styles.muted}`}>
                       {asDay(subscriber.joinedAt)}
@@ -143,8 +164,8 @@ export default async function AdminSubscribers({
                         id={subscriber.id}
                         status={subscriber.status}
                         statuses={SUBSCRIBER_STATUSES}
-                        label={`number ending ${subscriber.number.slice(-4)}`}
-                        confirm="Delete this number? Unsubscribing keeps it on the list so it cannot be re-added by accident; deleting does not."
+                        label={subscriber.email ?? subscriber.number ?? subscriber.id}
+                        confirm="Delete this address? Unsubscribing keeps it on the list so it cannot be re-added by accident; deleting does not."
                         onStatus={updateSubscriberStatus}
                         onDelete={removeSubscriber}
                       />
@@ -161,7 +182,7 @@ export default async function AdminSubscribers({
         paged={paged}
         basePath="/admin/subscribers"
         params={carry(query, FILTER_KEYS)}
-        label="numbers"
+        label="addresses"
       />
     </>
   );

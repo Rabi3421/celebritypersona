@@ -15,6 +15,7 @@ export type AdminIconKey =
   | "reports"
   | "requests"
   | "subscribers"
+  | "broadcasts"
   | "settings";
 
 export type AdminGroup = "Panel" | "Content" | "Operations" | "System";
@@ -100,6 +101,13 @@ export const adminRoutes: AdminRoute[] = [
     group: "Operations",
     countKey: "subscribers",
     description: "WhatsApp numbers collected by the homepage form",
+  },
+  {
+    href: "/admin/broadcasts",
+    label: "Broadcasts",
+    icon: "broadcasts",
+    group: "Operations",
+    description: "Announce a look to the readers who confirmed their address",
   },
   {
     href: "/admin/settings",

@@ -48,7 +48,7 @@ export const footerColumns: { heading: string; links: { label: string; href: str
       { label: "Instagram", href: social.instagram },
       { label: "YouTube", href: social.youtube },
       { label: "Pinterest", href: social.pinterest },
-      { label: "WhatsApp updates", href: "#" },
+      { label: "Email updates", href: "/#updates" },
     ],
   },
 ];

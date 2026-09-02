@@ -28,6 +28,7 @@ const ICONS: Record<AdminIconKey, (props: { className?: string }) => React.React
   reports: InboxIcon,
   requests: PersonIcon,
   subscribers: InboxIcon,
+  broadcasts: TrendIcon,
   settings: SlidersIcon,
 };
 

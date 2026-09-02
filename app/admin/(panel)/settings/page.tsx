@@ -42,6 +42,27 @@ function envRows() {
       ok: Boolean(process.env.NEXT_PUBLIC_SITE_URL),
     },
     {
+      label: "Mail transport",
+      value: process.env.BREVO_API_KEY
+        ? "Brevo HTTP API · works from any address"
+        : process.env.MAIL_HOST
+          ? `${process.env.MAIL_HOST} over SMTP · needs an allowlisted IP`
+          : "none · mail runs dry, nothing leaves",
+      ok: Boolean(process.env.BREVO_API_KEY || process.env.MAIL_HOST),
+    },
+    {
+      label: "MAIL_FROM",
+      value: process.env.MAIL_FROM ?? "not set · falls back to a default",
+      ok: Boolean(process.env.MAIL_FROM),
+    },
+    {
+      label: "CRON_SECRET",
+      value: process.env.CRON_SECRET
+        ? "set · the sender endpoint is protected"
+        : "not set · anyone who finds the URL can drain the queue",
+      ok: Boolean(process.env.CRON_SECRET),
+    },
+    {
       label: "INSTAGRAM_ACCESS_TOKEN",
       value: process.env.INSTAGRAM_ACCESS_TOKEN
         ? "set · reels read live from the account"

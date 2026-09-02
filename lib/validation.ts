@@ -284,17 +284,46 @@ export const celebrityRequestSchema = z.object({
 });
 
 /**
- * An Indian mobile number, however it was typed: with +91, with spaces, with a
- * leading zero. Stored as the bare ten digits so one person cannot subscribe
- * five times by punctuating it differently.
+ * Mail domains people mean but mistype. A bounced address is a lost reader and
+ * a mark against our sending reputation, so the likely slips are caught at the
+ * form rather than discovered by the mail server.
+ */
+const DOMAIN_TYPOS: Record<string, string> = {
+  "gmail.con": "gmail.com", "gmail.co": "gmail.com", "gmai.com": "gmail.com",
+  "gmial.com": "gmail.com", "gamil.com": "gmail.com", "gmail.cm": "gmail.com",
+  "yahoo.con": "yahoo.com", "yaho.com": "yahoo.com", "yahooo.com": "yahoo.com",
+  "hotmail.con": "hotmail.com", "hotmial.com": "hotmail.com",
+  "outlook.con": "outlook.com", "outlok.com": "outlook.com",
+  "rediffmail.con": "rediffmail.com",
+};
+
+/** The likely intended address, when the domain is an obvious slip. */
+export function suggestEmail(email: string): string | null {
+  const at = email.lastIndexOf("@");
+  if (at < 0) return null;
+  const fix = DOMAIN_TYPOS[email.slice(at + 1).toLowerCase()];
+  return fix ? `${email.slice(0, at)}@${fix}` : null;
+}
+
+/**
+ * An email address as a person typed it: with stray spaces, with capitals,
+ * occasionally wrapped in angle brackets by a paste. Stored lowercased and
+ * trimmed so one person cannot join five times by shifting the case.
+ *
+ * The pattern is deliberately permissive — the confirmation link is what
+ * proves an address is real, not a regular expression.
  */
 export const subscriberSchema = z.object({
-  number: required("Your WhatsApp number")
-    .transform((value) => value.replace(/\D/g, ""))
-    .transform((digits) => digits.replace(/^(?:91|0)(?=\d{10}$)/, ""))
+  email: required("Your email address")
+    .transform((value) => value.trim().replace(/^<|>$/g, "").toLowerCase())
+    .refine((value) => value.length <= 254, "That address is too long")
     .refine(
-      (digits) => /^[6-9]\d{9}$/.test(digits),
-      "Enter a 10-digit Indian mobile number",
+      (value) => /^[^\s@,;]+@[^\s@,;.]+(?:\.[^\s@,;.]+)+$/.test(value),
+      "That does not look like an email address",
+    )
+    .refine(
+      (value) => !/\.(con|cmo|xom)$/.test(value),
+      "Check the ending — did you mean .com?",
     ),
   website: z.string().max(0, "Rejected").optional(),
 });
