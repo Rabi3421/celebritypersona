@@ -80,6 +80,10 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
     ...input,
     ...outfitTotals(input.items),
     pricesCheckedAt: today(),
+    // The day this look joined the archive. `isNewLook` counts the New badge
+    // from here, and an edit never moves it, so fixing a price on a month-old
+    // look does not put it back at the front of the queue as new.
+    publishedAt: today(),
     id,
   });
   revalidateSite();
@@ -112,6 +116,10 @@ export async function updateOutfit(
       },
       $unset: {
         image: "",
+        // The badge is derived from `publishedAt` now. Clearing the old
+        // hand-ticked flag as each look is edited keeps one look from
+        // carrying two competing answers to "is this new".
+        isNew: "",
         ...(input.seoTitle ? {} : { seoTitle: "" }),
         ...(input.seoDescription ? {} : { seoDescription: "" }),
       },

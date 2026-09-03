@@ -99,7 +99,6 @@ export const outfitSchema = z.object({
   event: required("Event"),
   occasion: required("Occasion"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
-  isNew: z.boolean().default(false),
   // The slug is the public URL segment and the storage folder, so it has to be
   // safe in both places: lowercase words joined by single hyphens.
   slug: required("Slug").regex(

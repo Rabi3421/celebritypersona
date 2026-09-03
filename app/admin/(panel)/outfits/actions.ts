@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
-import { flag, lines, rows, text } from "@/lib/form-data";
+import { lines, rows, text } from "@/lib/form-data";
 import { outfitSlug } from "@/lib/slugs";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 
@@ -15,7 +15,6 @@ export type OutfitDraft = {
   event: string;
   occasion: string;
   date: string;
-  isNew: boolean;
   slug: string;
   seoTitle: string;
   seoDescription: string;
@@ -53,7 +52,6 @@ export async function saveOutfit(
     event: text(form, "event"),
     occasion: text(form, "occasion"),
     date: text(form, "date"),
-    isNew: flag(form, "isNew"),
     slug: text(form, "slug"),
     seoTitle: text(form, "seoTitle"),
     seoDescription: text(form, "seoDescription"),

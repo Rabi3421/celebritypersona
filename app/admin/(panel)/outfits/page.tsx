@@ -6,7 +6,7 @@ import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, matchesQuery, matchesValue } from "@/lib/admin-filters";
-import { celebrityNames, occasionNames } from "@/lib/archive";
+import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { outfitPhotos, pricing, type Outfit } from "@/lib/types";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -191,7 +191,7 @@ export default async function AdminOutfits({
                     <tr key={outfit.id}>
                       <td>
                         {outfit.celebrity}
-                        {outfit.isNew ? (
+                        {isNewLook(outfit) ? (
                           <> <span className={`${styles.chip} ${styles.new}`}>New</span></>
                         ) : null}
                         {photos === 0 ? (

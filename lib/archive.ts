@@ -55,6 +55,24 @@ export function daysSince(date: string, now = new Date()) {
 /** Days from now until a YYYY-MM-DD day. Negative once it has passed. */
 export const daysUntil = (date: string, now = new Date()) => -daysSince(date, now);
 
+/**
+ * How long a look wears the "New" badge, counted from the day it was added to
+ * the archive. It used to be a checkbox an editor ticked on the way in and
+ * nobody ever came back to untick, so looks stayed "new" for months.
+ */
+export const NEW_LOOK_DAYS = 3;
+
+/** The day a look entered the archive. Looks saved before `publishedAt`
+ *  existed fall back to the day the look itself is dated. */
+export const publishedDay = (outfit: Pick<Outfit, "date" | "publishedAt">) =>
+  (outfit.publishedAt ?? outfit.date).slice(0, 10);
+
+/** Added today, yesterday or the day before. */
+export const isNewLook = (
+  outfit: Pick<Outfit, "date" | "publishedAt">,
+  now = new Date(),
+) => daysSince(publishedDay(outfit), now) < NEW_LOOK_DAYS;
+
 const newestFirst = (outfits: Outfit[]) =>
   [...outfits].sort((a, b) => b.date.localeCompare(a.date));
 

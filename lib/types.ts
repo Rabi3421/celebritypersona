@@ -166,7 +166,11 @@ export type Outfit = {
   worn: number;
   /** @deprecated See `worn`. */
   swap: number;
-  isNew?: boolean;
+  /** The day the look was added to the archive, set once when it is created
+   *  and never touched by an edit. The "New" badge is counted from this, so
+   *  nobody has to remember to tick or untick anything. Absent on looks saved
+   *  before the field existed, which fall back to the look's own date. */
+  publishedAt?: string;
   /** Editor-chosen URL segment. Also names the storage folder its photos are
    *  uploaded into. Absent on older looks, which fall back to a derived slug. */
   slug?: string;

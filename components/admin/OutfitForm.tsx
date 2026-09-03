@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import {
-  CheckField,
   ErrorSummary,
   FormError,
   SaveButton,
@@ -15,6 +14,7 @@ import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
 import { OutfitImageEditor } from "@/components/admin/OutfitImageEditor";
 import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(panel)/outfits/actions";
 import { outfitPhotos, type Outfit } from "@/lib/types";
+import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 
@@ -78,7 +78,21 @@ export function OutfitForm({
             errors={errors}
             required
           />
-          <CheckField name="isNew" label="Flag as new" defaultChecked={draft?.isNew ?? outfit?.isNew} />
+          {/* The badge is no longer a checkbox. It is counted from the day a
+              look is added, so nobody has to remember to come back and untick
+              it three days later. */}
+          <div className={styles.field}>
+            <label>New badge</label>
+            <small>
+              {outfit
+                ? `Added ${publishedDay(outfit)} — ${
+                    isNewLook(outfit)
+                      ? "showing as New now"
+                      : "no longer showing as New"
+                  }.`
+                : `Shows as New for its first ${NEW_LOOK_DAYS} days, then drops off on its own.`}
+            </small>
+          </div>
 
           <OutfitImageEditor
             key={`photo-${state.attempt ?? 0}`}

@@ -10,6 +10,12 @@ import { site } from "@/lib/site-config";
 import { outfitSlug } from "@/lib/slugs";
 import { hasSubstance } from "@/lib/types";
 
+/** The cards wear a "New" badge for the first few days after a look is added,
+ *  so a page prerendered once and never rebuilt would keep showing it. An hour
+ *  is finer than the badge's own day-level resolution, and publishing a look
+ *  revalidates the site immediately. */
+export const revalidate = 3600;
+
 export const metadata: Metadata = pageMetadata({
   title: "Celebrity Outfits Decoded — Every Look, Every Price",
   description:

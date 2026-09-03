@@ -2,13 +2,13 @@
 import type { Outfit } from "@/lib/types";
 
 export const outfits: Outfit[] = [
-  { id: 1, celebrity: "Alia Bhatt", event: "Mumbai Airport", occasion: "Airport", date: "2026-08-24", worn: 443500, swap: 5489, isNew: true, items: [
+  { id: 1, celebrity: "Alia Bhatt", event: "Mumbai Airport", occasion: "Airport", date: "2026-08-24", worn: 443500, swap: 5489, items: [
     { name: "Ivory kurta", wornBrand: "Anita Dongre", swapBrand: "Libas", worn: 42000, swap: 1799 },
     { name: "Structured tote", wornBrand: "Bottega Veneta", swapBrand: "Lino Perros", worn: 285000, swap: 1499 },
     { name: "Flat sandals", wornBrand: "Hermès", swapBrand: "Mochi", worn: 78000, swap: 892 },
     { name: "Sunglasses", wornBrand: "Gucci", swapBrand: "Lenskart", worn: 38500, swap: 1299 },
   ]},
-  { id: 2, celebrity: "Deepika Padukone", event: "Mumbai Airport", occasion: "Airport", date: "2026-08-23", worn: 560000, swap: 4780, isNew: true, items: [
+  { id: 2, celebrity: "Deepika Padukone", event: "Mumbai Airport", occasion: "Airport", date: "2026-08-23", worn: 560000, swap: 4780, items: [
     { name: "Blazer", wornBrand: "Gucci", swapBrand: "Zara", worn: 320000, swap: 2290 },
     { name: "Trousers", wornBrand: "Prada", swapBrand: "H&M", worn: 160000, swap: 1499 },
     { name: "Loafers", wornBrand: "Tods", swapBrand: "Mochi", worn: 80000, swap: 991 },

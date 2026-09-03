@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { archiveTotals, budgetRange, celebrityNames, occasionNames, savingThresholds } from "@/lib/archive";
+import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
 import { plural } from "@/lib/format";
@@ -387,7 +387,7 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
           <>
             <div className={styles.badges}>
               <span>{shortDate(outfit.date)}</span>
-              {outfit.isNew && <b>New</b>}
+              {isNewLook(outfit) && <b>New</b>}
               {money.allSwapped && percentage !== null && percentage >= 97 && <em>Top swap</em>}
             </div>
             <span className={styles.occasion}>{outfit.occasion}</span>
