@@ -7,7 +7,7 @@ import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { outfitPhotos, pricing } from "@/lib/types";
+import { outfitPhotos, pricing, wornLabel } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
@@ -215,7 +215,7 @@ export function OutfitDetail({
                 <article id={`outfit-item-${index}`} className={`${styles.line} ${highlighted === index ? styles.highlighted : ""}`} key={item.name}>
                   <div>
                     <h2>{item.name}</h2>
-                    <p>{mode === "worn" ? item.wornBrand : (item.swapBrand ?? "No swap found yet")}</p>
+                    <p>{mode === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</p>
                     <span className={`${styles.stockTag} ${mode === "worn" && (!item.wornUrl || item.soldOut) ? styles.archived : ""}`}>
                       {mode === "swap"
                         ? item.swapBrand

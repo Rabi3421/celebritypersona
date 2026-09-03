@@ -7,7 +7,7 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { garmentOf } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
-import { hasSubstance, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
+import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import { getCelebrities, getOutfitBySlug, getOutfits } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
@@ -38,15 +38,18 @@ function describe(outfit: Outfit) {
 
   const money = pricing(outfit);
   const pieces = `${money.pieces} ${money.pieces === 1 ? "piece" : "pieces"}`;
-  const brands = [...new Set(outfit.items.map((item) => item.wornBrand))].join(", ");
+  // Only the labels we have actually identified. "by " with nothing after it
+  // is worse than not naming a label at all.
+  const named = [...new Set(outfit.items.filter(hasWornBrand).map((item) => item.wornBrand))];
+  const by = named.length ? ` by ${named.join(", ")}` : "";
 
   if (money.anySwapped) {
-    return `Every piece ${outfit.celebrity} wore at ${outfit.event} — ${pieces} by ${brands}, with price-checked swaps from ${inr(money.swapTotal)}.`;
+    return `Every piece ${outfit.celebrity} wore at ${outfit.event} — ${pieces}${by}, with price-checked swaps from ${inr(money.swapTotal)}.`;
   }
   if (money.anyPriced) {
-    return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified and priced — ${pieces} by ${brands}, ${inr(money.wornTotal)} as worn.`;
+    return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified and priced — ${pieces}${by}, ${inr(money.wornTotal)} as worn.`;
   }
-  return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified piece by piece — ${pieces} by ${brands}.`;
+  return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified piece by piece — ${pieces}${by}.`;
 }
 
 /** Google shows about 60 characters, and 65 is where a fitted title starts
@@ -104,11 +107,12 @@ function headline(outfit: Outfit) {
 
   const garment = garmentOf(piece.name);
   const occasion = OCCASION_PHRASE[outfit.occasion];
+  const label = piece.wornBrand;
   const candidates = [
-    occasion && `${outfit.celebrity} ${occasion}: ${piece.name} by ${piece.wornBrand}`,
-    occasion && `${outfit.celebrity} ${occasion}: ${garment} by ${piece.wornBrand}`,
-    `${outfit.celebrity}'s ${piece.name} — ${piece.wornBrand}`,
-    `${outfit.celebrity}'s ${garment} — ${piece.wornBrand}`,
+    label && occasion && `${outfit.celebrity} ${occasion}: ${piece.name} by ${label}`,
+    label && occasion && `${outfit.celebrity} ${occasion}: ${garment} by ${label}`,
+    label && `${outfit.celebrity}'s ${piece.name} — ${label}`,
+    label && `${outfit.celebrity}'s ${garment} — ${label}`,
     occasion && `${outfit.celebrity} ${occasion}: ${garment}`,
     `${outfit.celebrity}'s ${piece.name}`,
     `${outfit.celebrity}'s ${garment}`,
@@ -208,7 +212,7 @@ export default async function OutfitPage({ params }: Props) {
         mentions: outfit.items.map((item) => ({
           "@type": "Product",
           name: item.name,
-          brand: { "@type": "Brand", name: item.wornBrand },
+          ...(item.wornBrand ? { brand: { "@type": "Brand", name: item.wornBrand } } : {}),
           ...(item.note ? { description: item.note } : {}),
           ...(hasWornPrice(item)
             ? {

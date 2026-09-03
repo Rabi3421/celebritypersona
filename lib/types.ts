@@ -2,7 +2,9 @@
 
 export type OutfitItem = {
   name: string;
-  wornBrand: string;
+  /** Absent when the label she wore has not been identified — a piece we have
+   *  only found the high-street version of is still worth publishing. */
+  wornBrand?: string;
   /** Absent when the original price could not be confirmed. */
   worn?: number;
   /** Where to buy the original, when it is still on sale somewhere. */
@@ -11,7 +13,9 @@ export type OutfitItem = {
    *  stock, and saying so lets the page and its structured data stop claiming
    *  something a reader will discover is false one click later. */
   soldOut?: boolean;
-  /** Both absent until a swap has been found. Never one without the other. */
+  /** Absent until a swap has been found. A brand without a price is a swap we
+   *  have named but not priced: it shows, it just does not count towards the
+   *  savings, which only `hasSwap` pieces do. */
   swapBrand?: string;
   swap?: number;
   /** Where to buy the swap. */
@@ -58,6 +62,16 @@ export const hasSwap = (item: OutfitItem): item is SwappedItem =>
   typeof item.swap === "number" && Boolean(item.swapBrand);
 
 export const hasWornPrice = (item: OutfitItem) => typeof item.worn === "number";
+
+/** A piece whose original label we have actually identified. */
+export type LabelledItem = OutfitItem & { wornBrand: string };
+
+export const hasWornBrand = (item: OutfitItem): item is LabelledItem =>
+  Boolean(item.wornBrand);
+
+/** What the original half of a piece is called on the page. The label when we
+ *  have it, and an honest blank when we do not — never an empty line. */
+export const wornLabel = (item: OutfitItem) => item.wornBrand ?? "Label not confirmed";
 
 /**
  * True only when every piece has an alternative. A look still missing a swap

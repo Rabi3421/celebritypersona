@@ -1,4 +1,4 @@
-import { isFullySwapped, pricing } from "@/lib/types";
+import { isFullySwapped, pricing, wornLabel } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import Link from "next/link";
 import { plural } from "@/lib/format";
@@ -139,7 +139,7 @@ export async function TrendingBoard() {
                 <span>{dupe.celebrity}</span>
                 <h3>{dupe.name}</h3>
                 <p className={styles.dupeSwap}>
-                  <s>{dupe.wornBrand}</s>
+                  <s>{wornLabel(dupe)}</s>
                   <i>→</i>
                   <b>{dupe.swapBrand}</b>
                 </p>

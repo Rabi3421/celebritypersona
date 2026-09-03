@@ -120,7 +120,7 @@ export function OutfitForm({
             key={`items-${state.attempt ?? 0}`}
             name="items"
             title="Pieces"
-            hint="Totals are calculated from these"
+            hint="Only the piece name is required — totals are calculated from what you fill in"
             columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
             error={errors?.items}
             initial={draft?.items ?? outfit?.items ?? []}
@@ -132,8 +132,8 @@ export function OutfitForm({
                 label: "Note (optional)",
                 placeholder: "Chikankari on cotton mul, elbow sleeves",
               },
-              { key: "wornBrand", label: "Worn brand", placeholder: "Anita Dongre" },
-              { key: "worn", label: "Worn ₹", type: "number" },
+              { key: "wornBrand", label: "Worn brand (optional)", placeholder: "Anita Dongre" },
+              { key: "worn", label: "Worn ₹ (optional)", type: "number" },
               {
                 key: "wornUrl",
                 label: "Worn link (optional)",

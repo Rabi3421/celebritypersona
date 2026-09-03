@@ -24,11 +24,13 @@ const wholeNumber = (label: string) =>
         .min(0, `${label} cannot be negative`),
     );
 
-/** A swap is optional, but a brand without a price is not a swap. */
+/** Only the piece's own name is asked for. Everything else — the label she
+ *  wore, either price, the swap — is filled in as it is confirmed, so a piece
+ *  we have only found the high-street version of can still be published. */
 export const outfitItemSchema = z
   .object({
     name: required("Piece name"),
-    wornBrand: required("Worn brand"),
+    wornBrand: z.string().trim().optional(),
     worn: z.string().trim().optional(),
     wornUrl: z.string().trim().optional(),
     swapBrand: z.string().trim().optional(),
@@ -41,6 +43,7 @@ export const outfitItemSchema = z
   })
   .transform((item) => ({
     ...item,
+    wornBrand: item.wornBrand || undefined,
     worn: item.worn || undefined,
     wornUrl: item.wornUrl || undefined,
     swapBrand: item.swapBrand || undefined,
@@ -52,12 +55,6 @@ export const outfitItemSchema = z
     hotspotY: item.hotspotY || undefined,
   }))
   .superRefine((item, ctx) => {
-    if (item.swapBrand && !item.swap) {
-      ctx.addIssue({ code: "custom", path: ["swap"], message: "Add the swap price, or clear the swap brand" });
-    }
-    if (item.swap && !item.swapBrand) {
-      ctx.addIssue({ code: "custom", path: ["swapBrand"], message: "Add the swap brand, or clear the swap price" });
-    }
     for (const [key, label] of [["worn", "Worn price"], ["swap", "Swap price"]] as const) {
       const value = item[key];
       if (value && !/^\d+$/.test(value)) {
@@ -70,13 +67,10 @@ export const outfitItemSchema = z
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must start with http:// or https://` });
       }
     }
-    if (item.swapUrl && !item.swapBrand) {
-      ctx.addIssue({ code: "custom", path: ["swapUrl"], message: "Add the swap brand before its link" });
-    }
   })
   .transform((item) => ({
     name: item.name,
-    wornBrand: item.wornBrand,
+    ...(item.wornBrand ? { wornBrand: item.wornBrand } : {}),
     ...(item.note ? { note: item.note } : {}),
     ...(item.worn ? { worn: Number(item.worn) } : {}),
     ...(item.wornUrl ? { wornUrl: item.wornUrl } : {}),
@@ -84,13 +78,9 @@ export const outfitItemSchema = z
     ...(item.hotspotX && item.hotspotY
       ? { hotspot: { x: Number(item.hotspotX), y: Number(item.hotspotY) } }
       : {}),
-    ...(item.swapBrand && item.swap
-      ? {
-          swapBrand: item.swapBrand,
-          swap: Number(item.swap),
-          ...(item.swapUrl ? { swapUrl: item.swapUrl } : {}),
-        }
-      : {}),
+    ...(item.swapBrand ? { swapBrand: item.swapBrand } : {}),
+    ...(item.swap ? { swap: Number(item.swap) } : {}),
+    ...(item.swapUrl ? { swapUrl: item.swapUrl } : {}),
   }));
 
 /** What an editor may override for the search result. Both are optional: the

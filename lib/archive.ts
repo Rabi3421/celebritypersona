@@ -1,10 +1,12 @@
 import type { Celebrity, Occasion } from "@/lib/types";
 import {
   hasSwap,
+  hasWornBrand,
   hasWornPrice,
   isFullySwapped,
   outfitPhotos,
   pricing,
+  type LabelledItem,
   type Outfit,
   type OutfitItem,
   type SwappedItem,
@@ -181,7 +183,7 @@ export function archiveTotals(outfits: Outfit[], now = new Date()): ArchiveTotal
 
 /** Labels worn in the archive, commonest first. The designer half. */
 export const wornBrands = (outfits: Outfit[]) =>
-  tally(outfits.flatMap((outfit) => outfit.items.map((item) => item.wornBrand)));
+  tally(outfits.flatMap((outfit) => outfit.items.filter(hasWornBrand).map((item) => item.wornBrand)));
 
 /** Retailers the swaps point at, commonest first. The high-street half. */
 export const swapBrands = (outfits: Outfit[]) =>
@@ -513,10 +515,10 @@ export type HeroLook = {
   items: { name: string; short: string; wornBrand: string; swapBrand: string; worn: number; swap: number }[];
 };
 
-/** Both halves of a piece priced, which the swap demo needs to compare two
- *  honest totals. */
-const comparable = (item: OutfitItem): item is SwappedItem & { worn: number } =>
-  hasSwap(item) && hasWornPrice(item);
+/** Both halves of a piece priced and the original label named, which the swap
+ *  demo and the dupe pick need to compare two honest, attributed totals. */
+const comparable = (item: OutfitItem): item is SwappedItem & LabelledItem & { worn: number } =>
+  hasSwap(item) && hasWornPrice(item) && hasWornBrand(item);
 
 /**
  * The look the swap demo animates: the most recent one with at least two

@@ -16,6 +16,7 @@ import {
   savingPercent,
   savingSortKey,
   swapSortKey,
+  wornLabel,
   wornSortKey,
 } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
@@ -474,7 +475,7 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
         <div>
           {outfit.items.map((item) => (
             <div className={styles.modalLine} key={item.name}>
-              <div>{item.name}<small>{mode === "worn" ? item.wornBrand : (item.swapBrand ?? "No swap found yet")}</small></div>
+              <div>{item.name}<small>{mode === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</small></div>
               <b>{(mode === "worn" ? item.worn : item.swap) === undefined ? "—" : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
             </div>
           ))}

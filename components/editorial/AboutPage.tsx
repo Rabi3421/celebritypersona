@@ -4,18 +4,20 @@ import { contacts, legalEntity, site } from "@/lib/site-config";
 import styles from "./editorial.module.css";
 import { getOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
-import { hasSwap, hasWornPrice, type Outfit } from "@/lib/types";
+import { hasSwap, hasWornBrand, hasWornPrice, type Outfit } from "@/lib/types";
 
 /** The single piece in the archive with the widest gap between what she wore
  *  and what it can be rebuilt for — the clearest example the site has. */
 function widestGap(outfits: Outfit[]) {
   const pieces = outfits.flatMap((outfit) =>
     outfit.items
-      .filter((item) => hasSwap(item) && hasWornPrice(item))
+      // The line names the label, so a piece whose label we never confirmed
+      // cannot be the example, however wide its gap.
+      .filter((item) => hasSwap(item) && hasWornPrice(item) && hasWornBrand(item))
       .map((item) => ({
         celebrity: outfit.celebrity,
         piece: item.name,
-        wornBrand: item.wornBrand,
+        wornBrand: item.wornBrand as string,
         worn: item.worn as number,
         swapBrand: item.swapBrand as string,
         swap: item.swap as number,
