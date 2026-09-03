@@ -7,6 +7,10 @@ export type OutfitItem = {
   worn?: number;
   /** Where to buy the original, when it is still on sale somewhere. */
   wornUrl?: string;
+  /** The merchant has it listed but has run out. A link is not the same as
+   *  stock, and saying so lets the page and its structured data stop claiming
+   *  something a reader will discover is false one click later. */
+  soldOut?: boolean;
   /** Both absent until a swap has been found. Never one without the other. */
   swapBrand?: string;
   swap?: number;

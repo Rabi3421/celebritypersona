@@ -6,3 +6,11 @@ export function inr(value: number): string {
   if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
   return `₹${rest ? `${rest},` : ""}${last3}`;
 }
+
+/**
+ * "1 look", "3 looks". Counts are read off the archive rather than typed, so
+ * they are as often one as many — and a title tag reading "1 looks decoded" is
+ * the kind of thing a reader notices before anything else on the page.
+ */
+export const plural = (count: number, one: string, many = `${one}s`) =>
+  `${count} ${count === 1 ? one : many}`;

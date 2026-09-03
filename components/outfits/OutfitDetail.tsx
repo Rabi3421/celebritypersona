@@ -203,18 +203,20 @@ export function OutfitDetail({
                   <div>
                     <h2>{item.name}</h2>
                     <p>{mode === "worn" ? item.wornBrand : (item.swapBrand ?? "No swap found yet")}</p>
-                    <span className={`${styles.stockTag} ${mode === "worn" && !item.wornUrl ? styles.archived : ""}`}>
+                    <span className={`${styles.stockTag} ${mode === "worn" && (!item.wornUrl || item.soldOut) ? styles.archived : ""}`}>
                       {mode === "swap"
                         ? item.swapBrand
                           ? item.swapUrl
                             ? "Similar · buy it"
                             : "Similar · link pending"
                           : "Still looking"
-                        : item.worn === undefined
-                          ? "Exact · price unconfirmed"
-                          : item.wornUrl
-                            ? "Exact · buy it"
-                            : "Exact · link pending"}
+                        : item.soldOut
+                          ? "Exact · sold out"
+                          : item.worn === undefined
+                            ? "Exact · price unconfirmed"
+                            : item.wornUrl
+                              ? "Exact · buy it"
+                              : "Exact · link pending"}
                     </span>
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
                   </div>

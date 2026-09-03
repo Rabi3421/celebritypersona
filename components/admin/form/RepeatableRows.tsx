@@ -70,18 +70,32 @@ export function RepeatableRows({
           {fields.map((field) => (
             <div className={styles.field} key={field.key}>
               <label htmlFor={`${name}.${index}.${field.key}`}>{field.label}</label>
-              <input
-                id={`${name}.${index}.${field.key}`}
-                name={`${name}.${index}.${field.key}`}
-                type={field.type ?? "text"}
-                placeholder={field.placeholder}
-                defaultValue={
-                  typeof row.values[field.key] === "string" ||
-                  typeof row.values[field.key] === "number"
-                    ? (row.values[field.key] as string | number)
-                    : ""
-                }
-              />
+              {field.type === "checkbox" ? (
+                // A tick posts "on" and an untick posts nothing at all, which
+                // is why the parsing side reads presence rather than value.
+                <label className={styles.rowCheck} htmlFor={`${name}.${index}.${field.key}`}>
+                  <input
+                    id={`${name}.${index}.${field.key}`}
+                    name={`${name}.${index}.${field.key}`}
+                    type="checkbox"
+                    defaultChecked={Boolean(row.values[field.key])}
+                  />
+                  <span>{field.placeholder ?? "Yes"}</span>
+                </label>
+              ) : (
+                <input
+                  id={`${name}.${index}.${field.key}`}
+                  name={`${name}.${index}.${field.key}`}
+                  type={field.type ?? "text"}
+                  placeholder={field.placeholder}
+                  defaultValue={
+                    typeof row.values[field.key] === "string" ||
+                    typeof row.values[field.key] === "number"
+                      ? (row.values[field.key] as string | number)
+                      : ""
+                  }
+                />
+              )}
             </div>
           ))}
           <button

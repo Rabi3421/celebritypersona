@@ -75,7 +75,8 @@ export default async function AdminBroadcasts() {
           <strong>Nothing has been announced</strong>
           <p>
             Publishing a look never mails anybody — announcing is a separate,
-            deliberate act. Pick a look above when one is worth sending.
+            deliberate act, and it sends straight away. Pick a look above when one
+            is worth sending.
           </p>
         </div>
       ) : (

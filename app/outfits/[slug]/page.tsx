@@ -201,9 +201,14 @@ export default async function OutfitPage({ params }: Props) {
                   "@type": "Offer",
                   price: String(item.worn),
                   priceCurrency: "INR",
-                  availability: item.wornUrl
-                    ? "https://schema.org/InStock"
-                    : "https://schema.org/Discontinued",
+                  // A link is not stock. Saying InStock because a URL exists is
+                  // a guess dressed as a fact, and a reader who clicks through
+                  // to a sold-out page has been told something untrue by us.
+                  availability: item.soldOut
+                    ? "https://schema.org/OutOfStock"
+                    : item.wornUrl
+                      ? "https://schema.org/InStock"
+                      : "https://schema.org/Discontinued",
                   ...(item.wornUrl ? { url: item.wornUrl } : {}),
                 },
               }

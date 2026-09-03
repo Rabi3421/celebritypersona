@@ -37,6 +37,7 @@ const ITEM_FIELDS = [
   "swap",
   "swapUrl",
   "note",
+  "soldOut",
   "hotspotX",
   "hotspotY",
 ];

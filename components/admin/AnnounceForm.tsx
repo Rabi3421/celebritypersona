@@ -33,7 +33,7 @@ export function AnnounceForm({
     <form action={action} id="announce-form" className={styles.section}>
       <div className={styles.sectionHead}>
         <h2>Announce a look</h2>
-        <span>Queued, not sent — you can stop it below</span>
+        <span>Sends as soon as you confirm</span>
       </div>
 
       {state.error ? <p className={styles.bad}>{state.error}</p> : null}
@@ -63,7 +63,7 @@ export function AnnounceForm({
 
       <div className={styles.formBar}>
         <button className={styles.primary} type="submit" disabled={pending || audience === 0}>
-          {pending ? "Queueing…" : `Queue for ${audience} ${audience === 1 ? "reader" : "readers"}`}
+          {pending ? "Sending…" : `Send to ${audience} ${audience === 1 ? "reader" : "readers"}`}
         </button>
       </div>
     </form>

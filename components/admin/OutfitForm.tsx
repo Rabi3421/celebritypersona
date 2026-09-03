@@ -140,6 +140,12 @@ export function OutfitForm({
                 type: "url",
                 placeholder: "https://…",
               },
+              {
+                key: "soldOut",
+                label: "Stock",
+                type: "checkbox",
+                placeholder: "Sold out",
+              },
               { key: "swapBrand", label: "Swap brand (optional)", placeholder: "Libas" },
               { key: "swap", label: "Swap ₹ (optional)", type: "number" },
               {

@@ -35,6 +35,7 @@ export const outfitItemSchema = z
     swap: z.string().trim().optional(),
     swapUrl: z.string().trim().optional(),
     note: z.string().trim().optional(),
+    soldOut: z.string().trim().optional(),
     hotspotX: z.string().trim().optional(),
     hotspotY: z.string().trim().optional(),
   })
@@ -46,6 +47,7 @@ export const outfitItemSchema = z
     swap: item.swap || undefined,
     swapUrl: item.swapUrl || undefined,
     note: item.note || undefined,
+    soldOut: item.soldOut || undefined,
     hotspotX: item.hotspotX || undefined,
     hotspotY: item.hotspotY || undefined,
   }))
@@ -78,6 +80,7 @@ export const outfitItemSchema = z
     ...(item.note ? { note: item.note } : {}),
     ...(item.worn ? { worn: Number(item.worn) } : {}),
     ...(item.wornUrl ? { wornUrl: item.wornUrl } : {}),
+    ...(item.soldOut ? { soldOut: true } : {}),
     ...(item.hotspotX && item.hotspotY
       ? { hotspot: { x: Number(item.hotspotX), y: Number(item.hotspotY) } }
       : {}),

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { plural } from "@/lib/format";
 import { notFound } from "next/navigation";
 import { CelebrityProfile } from "@/components/celebrities/CelebrityProfile";
 import { Footer } from "@/components/site/Footer";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!celebrity) return {};
   const { looks } = celebrity.stats;
   return {
-    title: `${celebrity.name} Style Archive — ${looks} looks decoded`,
+    title: `${celebrity.name} Style Archive — ${plural(looks, "look")} decoded`,
     description: `Explore ${celebrity.name}'s style archive with brands, original prices, affordable swaps, and ${looks} decoded ${looks === 1 ? "look" : "looks"}.`,
   };
 }

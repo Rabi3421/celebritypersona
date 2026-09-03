@@ -144,6 +144,9 @@
 .field small{display:block;font-size:12.5px;color:var(--faint);margin-top:6px;line-height:1.5}
 .field .bad{color:var(--rani-soft);margin-top:6px;font-size:12.5px}
 .field input[aria-invalid="true"],.field textarea[aria-invalid="true"]{border-color:var(--rani)}
+.rowCheck{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text);cursor:pointer;
+  padding:11px 0}
+.rowCheck input{width:auto;accent-color:var(--rani)}
 .check{display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--text);cursor:pointer;
   padding-top:var(--s5)}
 .check input{width:auto;accent-color:var(--rani)}

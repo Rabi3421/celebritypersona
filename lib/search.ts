@@ -1,6 +1,7 @@
 import { celebritySlug, nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSwap, outfitPhoto, pricing } from "@/lib/types";
 import type { Celebrity, Occasion, Outfit } from "@/lib/types";
+import { plural } from "@/lib/format";
 
 /**
  * One index for the whole site, built from the archive.
@@ -94,7 +95,7 @@ export function buildSearchIndex({
       kind: "Occasion",
       title: occasion.name,
       subtitle: cheapest
-        ? `${theirs.length} looks · swaps from ${inr.format(cheapest)}`
+        ? `${plural(theirs.length, "look")} · swaps from ${inr.format(cheapest)}`
         : `${theirs.length} ${theirs.length === 1 ? "look" : "looks"} decoded`,
       href: `/occasions/${nameSlug(occasion.name)}`,
       image: theirs.map((outfit) => outfitPhoto(outfit)?.url).find(Boolean),
