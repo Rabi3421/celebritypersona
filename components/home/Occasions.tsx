@@ -1,3 +1,4 @@
+import { BlankFrame } from "@/components/site/Thumb";
 import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
@@ -28,13 +29,17 @@ export async function Occasions() {
             className={`otile ${revealClass(i, 4)}`}
             key={occasion.name}
           >
-            <Image
-              className="home-cover"
-              src={occasion.image ?? `https://picsum.photos/seed/cp-occasion-${i + 1}/600/800`}
-              alt={`${occasion.name} outfit decoded on CelebrityPersona`}
-              fill
-              sizes="(max-width: 620px) 50vw, 25vw"
-            />
+            {occasion.image ? (
+              <Image
+                className="home-cover"
+                src={occasion.image}
+                alt={`A ${occasion.name.toLowerCase()} outfit decoded on CelebrityPersona`}
+                fill
+                sizes="(max-width: 620px) 50vw, 25vw"
+              />
+            ) : (
+              <BlankFrame seed={occasion.name} />
+            )}
             <div className="lab">
               <strong>{occasion.name}</strong>
               <span>

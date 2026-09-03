@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { Budget } from "@/components/home/Budget";
 import { Campaign } from "@/components/home/Campaign";
@@ -19,11 +20,27 @@ import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
 import { heroLook, homeStats, looksInGroup } from "@/lib/archive";
 import { getHomeContent, getOccasions, getOutfits } from "@/lib/db/content";
+import { pageMetadata } from "@/lib/seo";
 
 /** The rail labels looks "2 days ago", so a page prerendered once and never
  *  rebuilt would keep saying it. An hour is finer than the labels' own
  *  resolution, and content edits still revalidate immediately. */
 export const revalidate = 3600;
+
+/**
+ * The homepage had no metadata of its own at all: no canonical, no share card,
+ * and a title that led with the brand name rather than with what the site is
+ * for. It is the page most likely to be linked to and the one Google reads
+ * first, so it says plainly what the archive holds.
+ */
+export const metadata: Metadata = pageMetadata({
+  title:
+    "Indian Celebrity Outfits, Prices & Affordable Alternatives",
+  absoluteTitle: false,
+  description:
+    "See what Indian celebrities actually wore, decoded piece by piece — the exact brand, the price we could confirm, and an affordable alternative you can buy. Airport looks, red carpets, sangeet and festive edits.",
+  path: "/",
+});
 
 export default async function Home() {
   const [{ swapSteps, campaign }, outfits, occasions] = await Promise.all([

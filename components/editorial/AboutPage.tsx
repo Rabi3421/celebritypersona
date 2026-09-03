@@ -1,11 +1,40 @@
 import Link from "next/link";
-import { Pending } from "./Pending";
+import { DetailRow } from "./Pending";
 import { contacts, legalEntity, site } from "@/lib/site-config";
 import styles from "./editorial.module.css";
 import { getOutfits } from "@/lib/db/content";
+import { inr } from "@/lib/format";
+import { hasSwap, hasWornPrice, type Outfit } from "@/lib/types";
+
+/** The single piece in the archive with the widest gap between what she wore
+ *  and what it can be rebuilt for — the clearest example the site has. */
+function widestGap(outfits: Outfit[]) {
+  const pieces = outfits.flatMap((outfit) =>
+    outfit.items
+      .filter((item) => hasSwap(item) && hasWornPrice(item))
+      .map((item) => ({
+        celebrity: outfit.celebrity,
+        piece: item.name,
+        wornBrand: item.wornBrand,
+        worn: item.worn as number,
+        swapBrand: item.swapBrand as string,
+        swap: item.swap as number,
+      })),
+  );
+  if (!pieces.length) return null;
+  return pieces.reduce((widest, piece) =>
+    piece.worn - piece.swap > widest.worn - widest.swap ? piece : widest,
+  );
+}
 
 export async function AboutPage() {
   const outfits = await getOutfits();
+  // The two cards below used to quote a Bottega Veneta tote at ₹2,85,000
+  // against a ₹1,499 Lino Perros one — figures typed into this file to
+  // illustrate the idea, on a page whose whole subject is not making numbers
+  // up. They now come from a look that has actually been decoded, and say
+  // nothing at all when none has.
+  const example = widestGap(outfits);
 
   return (
     <main className={styles.page}>
@@ -41,7 +70,9 @@ export async function AboutPage() {
             <div className={`${styles.contrastCard} ${styles.them}`}>
               <h3>What you usually get</h3>
               <q>
-                Actress carries ₹2,12,000 tote to the airport
+                {example
+                  ? `${example.celebrity} carries a ${inr(example.worn)} ${example.piece.toLowerCase()}`
+                  : "Actress carries a six-figure tote to the airport"}
               </q>
               <p>
                 Accurate, well photographed, and completely useless if you were
@@ -52,8 +83,9 @@ export async function AboutPage() {
             <div className={`${styles.contrastCard} ${styles.us}`}>
               <h3>What we publish instead</h3>
               <q>
-                That tote is Bottega Veneta at ₹2,85,000. This Lino Perros one
-                is ₹1,499 and the shape is the same.
+                {example
+                  ? `That ${example.piece.toLowerCase()} is ${example.wornBrand} at ${inr(example.worn)}. This ${example.swapBrand} one is ${inr(example.swap)} and the shape is the same.`
+                  : "The exact label, the exact price, and the closest thing you can actually buy — named, priced and linked."}
               </q>
               <p>
                 Every piece named, every original priced, every swap linked to a
@@ -185,18 +217,8 @@ export async function AboutPage() {
               particular decode, ask and we will tell you.
             </p>
             <dl className={styles.calloutRows}>
-              <div>
-                <dt>Published by</dt>
-                <dd>
-                  <Pending value={legalEntity.name} />
-                </dd>
-              </div>
-              <div>
-                <dt>Based in</dt>
-                <dd>
-                  <Pending value={legalEntity.address} />
-                </dd>
-              </div>
+              <DetailRow label="Published by" value={legalEntity.name} />
+              <DetailRow label="Based in" value={legalEntity.address} />
               <div>
                 <dt>Editorial</dt>
                 <dd>{contacts.editorial}</dd>

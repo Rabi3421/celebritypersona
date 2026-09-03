@@ -351,7 +351,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "Under the Information Technology Rules, 2021 we publish a Grievance Officer. Any complaint about content on this site goes to them and gets an acknowledgement and a resolution inside the timelines below.",
+            text: "Under the Information Technology Rules, 2021 a Grievance Officer handles complaints about content on this site. Anything sent to the address below gets an acknowledgement and a resolution inside the timelines shown.",
           },
           { type: "details", rows: grievanceRows },
         ],

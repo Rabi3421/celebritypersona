@@ -7,15 +7,20 @@ import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { celebritySlug, outfitSlug } from "@/lib/slugs";
 import { isFullySwapped, outfitPhoto, pricing } from "@/lib/types";
 import { getCelebrityViews, getOutfits } from "@/lib/db/content";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Saved looks — CelebrityPersona",
+/**
+ * A page whose content differs per visitor and lives only in their browser has
+ * nothing for a crawler to index. The title also no longer carries the site
+ * name into a template that appends it a second time.
+ */
+export const metadata: Metadata = pageMetadata({
+  title: "Your saved looks",
   description:
     "The celebrity looks and style archives you have saved, kept in your own browser.",
-  // A page whose content differs per visitor and lives only in their browser
-  // has nothing for a crawler to index.
-  robots: { index: false, follow: true },
-};
+  path: "/saved",
+  index: false,
+});
 
 /**
  * The archive is handed to the client whole and filtered there against the

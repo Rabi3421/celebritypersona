@@ -31,13 +31,15 @@ export async function DecodedThisWeek() {
             <Link href={`/outfits/${look.slug}`}>
               <div className={look.tone ? `ph ${look.tone}` : "ph"}>
                 <div className="inner">
-                  <Image
-                    className="home-cover"
-                    src={look.image ?? `https://picsum.photos/seed/cp-week-${i + 1}/600/750`}
-                    alt={`${look.celebrity} at ${look.event}`}
-                    fill
-                    sizes="(max-width: 700px) 72vw, 20vw"
-                  />
+                  {look.image ? (
+                    <Image
+                      className="home-cover"
+                      src={look.image}
+                      alt={`${look.celebrity} at ${look.event}`}
+                      fill
+                      sizes="(max-width: 700px) 72vw, 20vw"
+                    />
+                  ) : null}
                 </div>
                 <span className="when">{look.posted}</span>
                 {look.peek.length > 0 ? (

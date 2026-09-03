@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BlankFrame } from "@/components/site/Thumb";
 import Link from "next/link";
 import { occasionSlug } from "@/lib/slugs";
 import type { OccasionGroup } from "@/lib/types";
@@ -19,9 +20,7 @@ const formatDate = (value?: string) =>
 /** A photo from a look in this group, so a tile shows the occasion rather than
  *  a placeholder seed. */
 const tilePhoto = (occasion: OccasionView, index = 0) =>
-  occasion.stats.photos[index] ??
-  occasion.stats.photos[0] ??
-  `https://picsum.photos/seed/cpocc${occasion.id}/500/667`;
+  occasion.stats.photos[index] ?? occasion.stats.photos[0];
 
 /**
  * Everything counted here — the countdowns, the looks-ready figures, the group
@@ -35,12 +34,12 @@ export async function OccasionsDirectory() {
   const nextWedding = upcoming.find((occasion) => occasion.group === "Wedding");
 
   return <main className={styles.page}>
-    <header className={styles.band}><div className={styles.shell}><nav className={styles.crumb}><Link href="/">Home</Link><i>›</i><span>Occasions</span></nav><h1>What are you<br/>dressing for?</h1><p>Most people don&apos;t browse by celebrity — they browse by the thing in their calendar. Start with the event, we&apos;ll show you what to wear and what it costs.</p></div></header>
+    <header className={styles.band}><div className={styles.shell}><nav className={styles.crumb}><Link href="/">Home</Link><i>›</i><span>Occasions</span></nav><h1>Outfit ideas<br/>by occasion</h1><p>Most people don&apos;t browse by celebrity — they browse by the thing in their calendar. Sangeet, mehendi, reception, Diwali, the airport run: start with the event and we&apos;ll show you what to wear and what it costs.</p></div></header>
     {upcoming.length ? <section className={styles.calendar}><div className={styles.shell}><div className={styles.calendarHeading}><span>◆ Coming up</span><i/><small>Dates approximate</small></div><div className={styles.calendarRail}>{upcoming.map((event)=><Link href={`/occasions/${occasionSlug(event)}`} className={(event.daysAway ?? 0)<=SOON_DAYS?styles.soon:""} key={event.id}><div><span><h2>{event.name}</h2><small>{formatDate(event.nextDate)}</small></span><i style={{"--progress":`${Math.max(8,100-(event.daysAway ?? 0)/1.2)}%`} as React.CSSProperties}><b>{event.daysAway}</b><small>days</small></i></div><p><span>Looks ready</span><b>{event.stats.looks}</b></p></Link>)}</div></div></section> : null}
     <div className={styles.shell}>
-      <section className={styles.section}>{nextWedding ? <div className={styles.weddingFeature}><div><p>{nextWedding.peak}</p><h2>Wedding season is coming</h2><span>Sangeet, mehendi, haldi, reception — the five events everyone panics about. All decoded, all with swaps you can order in time.</span></div><strong>{nextWedding.daysAway}<small>Days until season starts</small></strong></div> : null}<GroupSection occasions={occasions} group="Wedding" eyebrow="The five" title="Wedding occasions" body="Ranked by how many looks we've decoded for each." /></section>
+      <section className={styles.section} id="wedding">{nextWedding ? <div className={styles.weddingFeature}><div><p>{nextWedding.peak}</p><h2>Wedding season is coming</h2><span>Sangeet, mehendi, haldi, reception — the five events everyone panics about. All decoded, all with swaps you can order in time.</span></div><strong>{nextWedding.daysAway}<small>Days until season starts</small></strong></div> : null}<GroupSection occasions={occasions} group="Wedding" eyebrow="The five" title="Wedding occasions" body="Ranked by how many looks we've decoded for each." /></section>
       <GroupSection occasions={occasions} group="Festival" eyebrow="Around the year" title="Festival looks" body="Dressing for the dates that actually move the needle in India." section />
-      <GroupSection occasions={occasions} group="Everyday" eyebrow="The rest of the time" title="Everyday and events" body="Airport looks are the most-searched category on this site by a wide margin." section />
+      <GroupSection occasions={occasions} group="Everyday" eyebrow="The rest of the time" title="Everyday and events" body="Airport runs, red carpets, promo tours and off-duty days — the looks that are not tied to a date in the calendar." section />
       <section className={styles.planner}><div><h2>Got an event in the diary?</h2><p>Tap the heart on any look and it is kept in this browser, ready to compare side by side with what the whole outfit would cost to rebuild.</p></div><Link href="/saved">Open your saved looks →</Link></section>
     </div>
   </main>;
@@ -58,5 +57,5 @@ function OccasionTile({occasion}:{occasion:OccasionView}){
   // The countdown wins over the editorial peak line once a date is in range.
   const soon=occasion.daysAway!==null&&occasion.daysAway<=SOON_DAYS;
   const badge=soon?`In ${occasion.daysAway} days`:occasion.peak;
-  return <Link href={`/occasions/${occasionSlug(occasion)}`} className={styles.tile}><Image src={tilePhoto(occasion)} alt={`${occasion.name} looks`} fill sizes="(max-width:1023px) 50vw, 20vw"/>{badge?<span className={soon?styles.now:""}>{badge}</span>:null}{swapFrom!==null?<em>from {inr.format(swapFrom)}</em>:null}<div><h3>{occasion.name}</h3><p>{looks} {looks===1?"look":"looks"}{swapFrom!==null?` · swaps from ${inr.format(swapFrom)}`:""}</p><section>{[0,1,2,3].map((value)=><Image key={value} src={tilePhoto(occasion,value)} alt="" width={34} height={44}/>)}</section></div></Link>;
+  return <Link href={`/occasions/${occasionSlug(occasion)}`} className={styles.tile}>{tilePhoto(occasion)?<Image src={tilePhoto(occasion)!} alt={`A ${occasion.name.toLowerCase()} look decoded on CelebrityPersona`} fill sizes="(max-width:1023px) 50vw, 20vw"/>:<BlankFrame seed={occasion.name}/>}{badge?<span className={soon?styles.now:""}>{badge}</span>:null}{swapFrom!==null?<em>from {inr.format(swapFrom)}</em>:null}<div><h3>{occasion.name}</h3><p>{looks} {looks===1?"look":"looks"}{swapFrom!==null?` · swaps from ${inr.format(swapFrom)}`:""}</p><section>{[0,1,2,3].map((value)=>{const src=tilePhoto(occasion,value);return src?<Image key={value} src={src} alt="" width={34} height={44}/>:null;})}</section></div></Link>;
 }

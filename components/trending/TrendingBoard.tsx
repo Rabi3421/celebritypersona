@@ -1,8 +1,8 @@
-import type { CSSProperties } from "react";
-import { outfitPhoto, isFullySwapped } from "@/lib/types";
+import { isFullySwapped, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
-import Image from "next/image";
 import Link from "next/link";
+import { plural } from "@/lib/format";
+import { OutfitThumb } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import {
   getOutfits,
@@ -25,13 +25,17 @@ export async function TrendingBoard() {
     getTrendingFaqs(),
   ]);
 
-  const totalSearches = trendingSearches.reduce((sum, item) => sum + item.volume, 0);
-  // An empty leaderboard used to make these -Infinity and undefined.
-  const topVolume = Math.max(1, ...trendingSearches.map((item) => item.volume));
-  const fastestRiser = [...trendingSearches].sort((a, b) => b.changePct - a.changePct)[0];
+  /**
+   * `volume` and `changePct` are typed into the admin form. Nothing on this
+   * site counts searches — there is no search log — so the page used to
+   * publish "12,170 searches this week" and per-term counts that measured
+   * nothing, under a methodology note claiming they came from the site's own
+   * search box. Both are now left unrendered; the ordering, which is an
+   * editor's ranking and honestly described as one, is kept.
+   */
   const buyable = outfits.filter(isFullySwapped);
   const cheapestLook = buyable.length
-    ? Math.min(...buyable.map((outfit) => outfit.swap))
+    ? Math.min(...buyable.map((outfit) => pricing(outfit).swapTotal))
     : null;
 
   return (
@@ -44,32 +48,24 @@ export async function TrendingBoard() {
             <span>Trending</span>
           </nav>
           <h1>
-            What India is searching
+            Trending celebrity
             <br />
-            for right now
+            outfits right now
           </h1>
           <p className={styles.lede}>
-            The ten most-searched looks on this site this week, each one answered
-            with the piece, the brand and the price you would actually pay. Every
-            other site publishes the number she spent and stops there.
+            The looks people come here for, ranked by our editor, each one
+            answered with the piece, the brand and the price you would actually
+            pay. Every other site publishes the number she spent and stops
+            there.
           </p>
           <div className={styles.pulse}>
             <div>
-              <span>Searches this week</span>
-              <b>{totalSearches.toLocaleString("en-IN")}</b>
-            </div>
-            {fastestRiser ? (
-              <div>
-                <span>Fastest riser</span>
-                <b>
-                  +{fastestRiser.changePct}
-                  <em>%</em>
-                </b>
-              </div>
-            ) : null}
-            <div>
               <span>Looks in the archive</span>
               <b>{outfits.length}</b>
+            </div>
+            <div>
+              <span>Complete looks you can copy</span>
+              <b>{buyable.length}</b>
             </div>
             {cheapestLook === null ? null : (
               <div>
@@ -84,25 +80,15 @@ export async function TrendingBoard() {
       <section className={styles.board}>
         <div className={styles.shell}>
           <div className={styles.boardHeading}>
-            <span>◆ Top searches · last 7 days</span>
+            <span>◆ What we are asked for most</span>
             <i />
-            <small>On-site search, not scraped</small>
+            <small>Ranked by our editor</small>
           </div>
           {trendingSearches.map((search, index) => (
             <Link href={search.href} className={styles.row} key={search.term}>
               <i className={styles.rank}>{String(index + 1).padStart(2, "0")}</i>
               <span className={styles.term}>{search.term}</span>
               <span className={styles.intent}>{search.intent}</span>
-              <span className={styles.metric}>
-                <span className={styles.bar}>
-                  <i
-                    style={
-                      { "--fill": `${(search.volume / topVolume) * 100}%` } as CSSProperties
-                    }
-                  />
-                </span>
-                <b className={styles.change}>+{search.changePct}%</b>
-              </span>
               <span className={styles.answer}>{search.answer}</span>
               <i className={styles.arrow}>→</i>
             </Link>
@@ -185,7 +171,7 @@ export async function TrendingBoard() {
                   <div className={styles.listRow} key={brand.name}>
                     <i>{String(index + 1).padStart(2, "0")}</i>
                     <strong>{brand.name}</strong>
-                    <span>{brand.swaps} swaps</span>
+                    <span>{plural(brand.swaps, "swap")}</span>
                     <b>from {inr.format(brand.cheapest)}</b>
                   </div>
                 ))}
@@ -211,8 +197,12 @@ export async function TrendingBoard() {
                   >
                     <i>{String(index + 1).padStart(2, "0")}</i>
                     <strong>{occasion.name}</strong>
-                    <span>{occasion.looks} looks</span>
-                    <b>from {inr.format(occasion.cheapest)}</b>
+                    <span>{plural(occasion.looks, "look")}</span>
+                    <b>
+                      {occasion.cheapest === null
+                        ? "No swap yet"
+                        : `from ${inr.format(occasion.cheapest)}`}
+                    </b>
                   </Link>
                 ))}
               </div>
@@ -249,11 +239,12 @@ export async function TrendingBoard() {
           <div className={styles.methodGrid}>
             <div>
               <span>01</span>
-              <strong>Our own search box</strong>
+              <strong>An editor&apos;s ranking</strong>
               <p>
-                The leaderboard is what visitors typed into this site over the
-                last seven days, ranked by count. It is not third-party keyword
-                data and we do not present it as national search volume.
+                The leaderboard is the questions we are asked most, ordered by
+                the person who maintains this archive. It is not search-volume
+                data, and we do not publish a number against it, because we do
+                not measure one.
               </p>
             </div>
             <div>
@@ -299,25 +290,25 @@ export async function TrendingBoard() {
 }
 
 function LookCard({ outfit }: { outfit: Outfit }) {
+  const money = pricing(outfit);
+  const cut = savingPercent(outfit);
   return (
     <article className={styles.look}>
       <Link href={`/outfits/${outfitSlug(outfit)}`}>
         <div className={styles.lookImage}>
-          <Image
-            src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/600/750`}
-            alt={`${outfit.celebrity} at ${outfit.event}`}
-            fill
+          <OutfitThumb
+            outfit={outfit}
             sizes="(max-width:520px) 100vw, (max-width:1023px) 50vw, 25vw"
           />
           <span>{outfit.occasion}</span>
-          <em>{savingPercent(outfit)}% less</em>
+          {cut === null ? null : <em>{cut}% less</em>}
         </div>
         <div className={styles.lookBody}>
           <h3>{outfit.celebrity}</h3>
           <p>{outfit.event}</p>
           <p className={styles.lookPrice}>
-            <s>{inr.format(outfit.worn)}</s>
-            <b>{inr.format(outfit.swap)}</b>
+            {money.anyPriced ? <s>{inr.format(money.wornTotal)}</s> : <em>Price unconfirmed</em>}
+            {money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : <em>No swap yet</em>}
           </p>
         </div>
       </Link>

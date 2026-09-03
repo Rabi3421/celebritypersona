@@ -111,13 +111,46 @@ export function pricing(outfit: { items: OutfitItem[] }): OutfitPricing {
   };
 }
 
+/**
+ * Prices a card can show without lying, and the sort keys that go with them.
+ *
+ * Every one of these used to be read off the top-level `worn`/`swap` fields
+ * below, which are written once and never recomputed when an editor edits a
+ * piece. A look whose pieces carry no alternative therefore still had
+ * `swap: 0`, so cards printed "₹0" beside the real price and badged the look
+ * "−100%". `null` here means "not established", and the views print
+ * "No swap yet" rather than a number.
+ */
+export const wornPrice = (outfit: { items: OutfitItem[] }) => {
+  const money = pricing(outfit);
+  return money.anyPriced ? money.wornTotal : null;
+};
+
+export const swapPrice = (outfit: { items: OutfitItem[] }) => {
+  const money = pricing(outfit);
+  return money.anySwapped ? money.swapTotal : null;
+};
+
+/** Null unless at least one piece is priced on both sides. */
+export const savingPercent = (outfit: { items: OutfitItem[] }) => pricing(outfit).savingPct;
+
+/** Sort keys. Looks with nothing to compare sink rather than leading a
+ *  "cheapest first" list at ₹0. */
+export const swapSortKey = (outfit: { items: OutfitItem[] }) =>
+  swapPrice(outfit) ?? Number.POSITIVE_INFINITY;
+export const wornSortKey = (outfit: { items: OutfitItem[] }) => wornPrice(outfit) ?? 0;
+export const savingSortKey = (outfit: { items: OutfitItem[] }) => pricing(outfit).savingTotal;
+
 export type Outfit = {
   id: number;
   celebrity: string;
   event: string;
   occasion: string;
   date: string;
+  /** @deprecated Stored totals, never recomputed on edit. Use `pricing()`,
+   *  `wornPrice()` and `swapPrice()` — nothing rendered should read these. */
   worn: number;
+  /** @deprecated See `worn`. */
   swap: number;
   isNew?: boolean;
   /** Editor-chosen URL segment. Also names the storage folder its photos are

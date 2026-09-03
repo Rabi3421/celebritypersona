@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { contacts, grievanceOfficer } from "@/lib/site-config";
-import { Pending } from "./Pending";
+import { DetailRow } from "./Pending";
 import styles from "./editorial.module.css";
 
 /** Published corrections, newest first. Add an entry every time a live page
@@ -174,12 +174,7 @@ export function CorrectionsPage() {
                 <dt>Editorial correction</dt>
                 <dd>{contacts.corrections}</dd>
               </div>
-              <div>
-                <dt>Grievance Officer</dt>
-                <dd>
-                  <Pending value={grievanceOfficer.name} />
-                </dd>
-              </div>
+              <DetailRow label="Grievance Officer" value={grievanceOfficer.name} />
               <div>
                 <dt>Grievance email</dt>
                 <dd>{grievanceOfficer.email}</dd>

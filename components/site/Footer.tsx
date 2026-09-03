@@ -14,9 +14,13 @@ export function Footer() {
               you actually have.
             </p>
           </div>
+          {/* These were <h4> under the page's own <h2>s, which skipped two
+              levels in the outline on every page of the site. Inside <footer>
+              an <h2> is the right level, and each column is a nav in its own
+              right. */}
           {footerColumns.map((column) => (
-            <div className="fcol" key={column.heading}>
-              <h4>{column.heading}</h4>
+            <nav className="fcol" key={column.heading} aria-label={column.heading}>
+              <h2>{column.heading}</h2>
               {column.links.map((link) =>
                 link.href.startsWith("http") ? (
                   <a
@@ -37,7 +41,7 @@ export function Footer() {
                   </Link>
                 ),
               )}
-            </div>
+            </nav>
           ))}
         </div>
         <div className="fbot">

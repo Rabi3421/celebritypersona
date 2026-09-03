@@ -6,15 +6,16 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { getLegalDoc } from "@/lib/legal-content";
+import { pageMetadata } from "@/lib/seo";
 
 const doc = getLegalDoc("affiliate-disclosure");
 
 export const metadata: Metadata = doc
-  ? {
+  ? pageMetadata({
       title: doc.title,
       description: doc.description,
-      alternates: { canonical: "/affiliate-disclosure" },
-    }
+      path: "/affiliate-disclosure",
+    })
   : {};
 
 export default function Page() {

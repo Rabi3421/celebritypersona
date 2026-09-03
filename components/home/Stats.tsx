@@ -4,6 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { HomeStat } from "@/lib/archive";
 
+/**
+ * A counted figure that animates up when it scrolls into view.
+ *
+ * It used to start at zero in state, which meant the server-rendered HTML —
+ * the only version a crawler is guaranteed to read — said "0 Looks decoded,
+ * 0 Pieces identified, 0% Average saving" on the homepage. The real number is
+ * now what renders; the roll is applied afterwards, and only to a tile that is
+ * still off-screen, so nobody watching sees a number fall to zero first.
+ */
+/**
+ * A counted figure that rolls up when it scrolls into view.
+ *
+ * It used to start at zero in state, which meant the server-rendered HTML —
+ * the only version a crawler is guaranteed to read — said "0 Looks decoded,
+ * 0 Pieces identified, 0% Average saving" on the homepage. The real number is
+ * what renders now; the roll is applied afterwards and only to a tile still
+ * far enough below the fold that nobody watches it drop to zero first.
+ */
+
+/** How far below the fold the tile is zeroed, so the reset is never seen. */
+const ARM_MARGIN = 400;
+
 function StatTile({
   value,
   suffix,
@@ -14,23 +36,34 @@ function StatTile({
   label: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(0);
+  const [shown, setShown] = useState(value);
   const reduced = useReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || reduced) return;
+
+    // Within a screen of the fold when the page loaded: the reader is looking
+    // at the real figure already, so it is left alone rather than reset to
+    // animate in front of them.
+    if (el.getBoundingClientRect().top < window.innerHeight + ARM_MARGIN) return;
 
     let frame = 0;
-    const observer = new IntersectionObserver(
+
+    // Zeroed well before it can be seen, then rolled up when it arrives.
+    const arm = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;
-        observer.disconnect();
+        arm.disconnect();
+        setShown(0);
+      },
+      { rootMargin: `${ARM_MARGIN}px 0px` },
+    );
 
-        if (reduced) {
-          setShown(value);
-          return;
-        }
+    const roll = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        roll.disconnect();
 
         const duration = 1500;
         let start: number | null = null;
@@ -46,9 +79,11 @@ function StatTile({
       { threshold: 0.5 },
     );
 
-    observer.observe(el);
+    arm.observe(el);
+    roll.observe(el);
     return () => {
-      observer.disconnect();
+      arm.disconnect();
+      roll.disconnect();
       cancelAnimationFrame(frame);
     };
   }, [value, reduced]);

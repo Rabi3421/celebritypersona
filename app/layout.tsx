@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { site, social } from "@/lib/site-config";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -21,19 +23,40 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-/** Set NEXT_PUBLIC_SITE_URL in the deploy environment. Canonical and Open
- *  Graph URLs resolve against it. */
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://celebritypersona.com";
+const siteUrl = site.url;
 
+/**
+ * Site-wide defaults. Everything here is inherited by any route that does not
+ * set its own, so the fallback share card and the locale are correct even on a
+ * page nobody has written metadata for.
+ *
+ * `alternates.canonical` is deliberately NOT set here: it is not resolved
+ * per-route, so a canonical declared at the root would tell Google that every
+ * page on the site is the homepage. Each route declares its own through
+ * `pageMetadata()` in lib/seo.ts.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default:
-      "CelebrityPersona — What Indian celebrities wear, and where to get the look",
+      "Indian Celebrity Outfits, Prices & Affordable Alternatives | CelebrityPersona",
     template: "%s · CelebrityPersona",
   },
   description:
-    "Discover Indian celebrity outfits, occasion edits, trending style, identified pieces, and accessible ways to make every look your own.",
+    "What Indian celebrities actually wore, decoded piece by piece — the exact brands, the prices we could confirm, and affordable alternatives you can buy in India.",
+  applicationName: site.name,
+  authors: [{ name: "Rabi", url: `${siteUrl}/about` }],
+  publisher: site.name,
+  category: "Fashion",
+  formatDetection: { telephone: false, address: false, email: false },
+  openGraph: {
+    type: "website",
+    siteName: site.name,
+    locale: "en_IN",
+    url: siteUrl,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: { card: "summary_large_image", images: [DEFAULT_OG_IMAGE.url] },
 };
 
 export const viewport: Viewport = {
@@ -54,7 +77,7 @@ const siteGraph = {
     {
       "@type": "Organization",
       "@id": `${siteUrl}#organization`,
-      name: "CelebrityPersona",
+      name: site.name,
       url: siteUrl,
       description:
         "What Indian celebrities wear, decoded piece by piece, with prices and affordable swaps.",
@@ -62,14 +85,18 @@ const siteGraph = {
         "@type": "ImageObject",
         "@id": `${siteUrl}#logo`,
         url: `${siteUrl}/brand/celebritypersona-logo.png`,
-        caption: "CelebrityPersona",
+        width: 1230,
+        height: 252,
+        caption: site.name,
       },
+      sameAs: [social.instagram, social.youtube, social.pinterest],
     },
     {
       "@type": "WebSite",
       "@id": `${siteUrl}#website`,
       url: siteUrl,
-      name: "CelebrityPersona",
+      name: site.name,
+      description: site.tagline,
       publisher: { "@id": `${siteUrl}#organization` },
       inLanguage: "en-IN",
       potentialAction: {

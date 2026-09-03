@@ -6,7 +6,6 @@ const firebaseBucket =
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      new URL("https://picsum.photos/**"),
       // Firebase download URLs always carry ?alt=media&token=…, and the URL
       // form of this rule would forbid a query string, so spell it out and
       // scope the path to this bucket's objects.

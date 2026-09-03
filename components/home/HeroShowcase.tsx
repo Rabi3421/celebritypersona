@@ -23,20 +23,24 @@ export function HeroShowcase() {
 
       <div className="shell hx-in">
         <div className="hx-copy">
+          {/* The kicker carries the brand line; the h1 says what the site is
+              about, because "Know the look. Find your version." named the page
+              for nothing anybody searches for. Both lines are the same length
+              as the ones they replace, so the hero sets identically. */}
           <p className="hx-kicker">
             <em aria-hidden="true" />
-            Indian celebrity style, decoded
+            Know the look. Find your version.
           </p>
 
           <h1 className="hx-title" id="home-hero-title">
-            Know the look.
-            <span>Find your version.</span>
+            Indian celebrity{" "}
+            <span>outfits, decoded.</span>
           </h1>
 
           <p className="hx-lede">
-            From airport arrivals to wedding season, discover what India&apos;s
-            most-watched stars are wearing—and the ideas, labels, and looks that
-            make their style your own.
+            Every look broken down piece by piece — the exact brand she wore,
+            what it costs, and an affordable alternative you can order in India.
+            From airport arrivals and red carpets to sangeet and Diwali season.
           </p>
 
           <div className="hx-cta">

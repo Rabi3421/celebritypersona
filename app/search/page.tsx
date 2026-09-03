@@ -8,15 +8,22 @@ import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { buildSearchIndex, searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
 import { celebrityTiles, occasionTiles } from "@/lib/archive";
 import { getCelebrities, getOccasions, getOutfits, getTrendingSearches } from "@/lib/db/content";
+import { pageMetadata } from "@/lib/seo";
 import styles from "./search.module.css";
 
-export const metadata: Metadata = {
-  title: "Search — CelebrityPersona",
-  description: "Search every decoded look, style archive and occasion.",
-  // Results pages are query-shaped and endless; there is nothing here for a
-  // crawler that the directories do not already cover.
-  robots: { index: false, follow: true },
-};
+/**
+ * The title used to end up as "Search — CelebrityPersona · CelebrityPersona",
+ * because it carried the site name into a template that appends it again.
+ *
+ * Results pages are query-shaped and endless, so the page stays out of the
+ * index; `follow` keeps it useful as a route to everything it links to.
+ */
+export const metadata: Metadata = pageMetadata({
+  title: "Search the archive",
+  description: "Search every decoded look, style archive and occasion by name, event or brand.",
+  path: "/search",
+  index: false,
+});
 
 const GROUPS: { kind: SearchKind; label: string }[] = [
   { kind: "Celebrity", label: "Style archives" },

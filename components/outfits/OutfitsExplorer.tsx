@@ -5,9 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { archiveTotals, budgetRange, celebrityNames, occasionNames, savingThresholds } from "@/lib/archive";
-import { nameSlug, outfitSlug } from "@/lib/slugs";
+import { OutfitThumb } from "@/components/site/Thumb";
+import { outfitSlug } from "@/lib/slugs";
+import { plural } from "@/lib/format";
 import { useSavedList } from "@/lib/saved";
-import { outfitPhoto, pricing } from "@/lib/types";
+import {
+  isFullySwapped,
+  outfitPhoto,
+  pricing,
+  savingPercent,
+  savingSortKey,
+  swapSortKey,
+  wornSortKey,
+} from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/outfits.module.css";
 
@@ -20,9 +30,9 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-function saving(outfit: Outfit) {
-  return outfit.worn > 0 ? Math.round((1 - outfit.swap / outfit.worn) * 100) : 0;
-}
+/** Null when no piece is priced on both sides, so a look with no swap is not
+ *  badged "−100%" against a stored total that was never recomputed. */
+const saving = (outfit: Outfit) => savingPercent(outfit);
 
 function shortDate(value: string) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -75,15 +85,15 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
     const filtered = outfits.filter((outfit) => {
       if (occasions.length && !occasions.includes(outfit.occasion)) return false;
       if (celebrities.length && !celebrities.includes(outfit.celebrity)) return false;
-      if (budget < anyBudget && outfit.swap > budget) return false;
-      if (minimumSaving && saving(outfit) < minimumSaving) return false;
+      if (budget < anyBudget && swapSortKey(outfit) > budget) return false;
+      if (minimumSaving && (saving(outfit) ?? -1) < minimumSaving) return false;
       return true;
     });
 
     return filtered.sort((a, b) => {
-      if (sort === "saving") return b.worn - b.swap - (a.worn - a.swap);
-      if (sort === "cheap") return a.swap - b.swap;
-      if (sort === "lux") return b.worn - a.worn;
+      if (sort === "saving") return savingSortKey(b) - savingSortKey(a);
+      if (sort === "cheap") return swapSortKey(a) - swapSortKey(b);
+      if (sort === "lux") return wornSortKey(b) - wornSortKey(a);
       return b.date.localeCompare(a.date);
     });
   }, [outfits, anyBudget, budget, celebrities, minimumSaving, occasions, sort]);
@@ -129,10 +139,13 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
             <nav className={styles.crumb} aria-label="Breadcrumb">
               <Link href="/">Home</Link><i>›</i><span>Outfits</span>
             </nav>
-            <h1>Every look,<br />decoded</h1>
+            {/* "Every look, decoded" named the page for nothing anybody
+                searches; the phrasing carries the same two lines. */}
+            <h1>Celebrity outfits,<br />decoded</h1>
             <p className={styles.lede}>
-              Each outfit identified piece by piece — what she paid, and what
-              you&apos;d pay. Filter by occasion, person or budget.
+              Every Indian celebrity look in the archive, identified piece by
+              piece — the brand she wore, what it cost, and the affordable
+              alternative. Filter by occasion, person or budget.
             </p>
           </div>
           <div className={styles.bannerStats} aria-label="Outfit statistics">
@@ -158,12 +171,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 key={outfit.id}
                 aria-label={`View ${outfit.celebrity}, ${outfit.event}`}
               >
-                <Image
-                  src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/360/480`}
-                  alt=""
-                  fill
-                  sizes="180px"
-                />
+                <OutfitThumb outfit={outfit} decorative sizes="180px" />
                 <span className={styles.rank}>{index + 1}</span>
                 <span className={styles.trendingMeta}>
                   <b>{outfit.celebrity}</b>
@@ -195,17 +203,14 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                   key={celebrity}
                   selected={celebrities.includes(celebrity)}
                   count={outfits.filter((outfit) => outfit.celebrity === celebrity).length}
-                  avatar={
-                    celebrityAvatars.get(celebrity) ??
-                    `https://picsum.photos/seed/${nameSlug(celebrity)}/60/60`
-                  }
+                  avatar={celebrityAvatars.get(celebrity)}
                   onClick={() => { setCelebrities(toggleValue(celebrities, celebrity)); resetShown(); }}
                 >{celebrity}</FilterOption>
               ))}
             </FilterGroup>
 
             <div className={styles.filterGroup}>
-              <h3>Max swap price</h3>
+              <h2>Max swap price</h2>
               <div className={styles.range}>
                 <input
                   type="range"
@@ -272,7 +277,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                       onNavigate={() => router.push(`/outfits/${outfitSlug(outfit)}`)}
                       onQuickView={() => openQuickView(outfit)}
                     />
-                    {index === 4 && <PromoCard />}
+                    {index === 4 && <PromoCard outfits={outfits} />}
                   </Fragment>
                 ))}
               </div>
@@ -342,7 +347,7 @@ function CardPrices({ outfit, tone }: { outfit: Outfit; tone: "featured" | "card
 function FilterGroup({ title, onClear, children }: { title: string; onClear?: () => void; children: React.ReactNode }) {
   return (
     <div className={styles.filterGroup}>
-      <h3>{title}{onClear && <button type="button" onClick={onClear}>Clear</button>}</h3>
+      <h2>{title}{onClear && <button type="button" onClick={onClear}>Clear</button>}</h2>
       {children}
     </div>
   );
@@ -364,6 +369,7 @@ function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }
 
 function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }: { outfit: Outfit; featured: boolean; saved: boolean; onSave: () => void; onNavigate: () => void; onQuickView: () => void }) {
   const percentage = saving(outfit);
+  const money = pricing(outfit);
   return (
     <article
       className={`${styles.card} ${featured ? styles.featured : ""}`}
@@ -372,10 +378,8 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
       onKeyDown={(event) => { if (event.key === "Enter") onNavigate(); }}
     >
       <div className={styles.cardImage}>
-        <Image
-          src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/${featured ? "900/760" : "600/750"}`}
-          alt={`${outfit.celebrity} at ${outfit.event}`}
-          fill
+        <OutfitThumb
+          outfit={outfit}
           sizes={featured ? "(max-width: 1023px) 100vw, 55vw" : "(max-width: 700px) 50vw, 30vw"}
         />
         {featured ? <span className={styles.featuredLabel}>Look of the week</span> : (
@@ -383,10 +387,10 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
             <div className={styles.badges}>
               <span>{shortDate(outfit.date)}</span>
               {outfit.isNew && <b>New</b>}
-              {pricing(outfit).allSwapped && percentage >= 97 && <em>Top swap</em>}
+              {money.allSwapped && percentage !== null && percentage >= 97 && <em>Top swap</em>}
             </div>
             <span className={styles.occasion}>{outfit.occasion}</span>
-            <span className={styles.saving}>{pricing(outfit).allSwapped ? `−${percentage}%` : "No swap yet"}</span>
+            <span className={styles.saving}>{money.allSwapped && percentage !== null ? `−${percentage}%` : "No swap yet"}</span>
             <div className={styles.peek}>
               {outfit.items.slice(0, 3).map((item) => <span key={item.name}>{item.name}<b>{item.swap === undefined ? "—" : inr.format(item.swap)}</b></span>)}
               <button type="button" onClick={(event) => { event.stopPropagation(); onQuickView(); }}>Quick view</button>
@@ -405,20 +409,50 @@ function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }
         <h2>{outfit.celebrity}</h2>
         <p>{outfit.event}{featured && ` · ${outfit.items.length} ${outfit.items.length === 1 ? "piece" : "pieces"} identified`}</p>
         <div className={styles.prices}><CardPrices outfit={outfit} tone="card" /></div>
-        {!featured && <span className={styles.savingBar}><i style={{ width: `${percentage}%` }} /></span>}
+        {!featured && percentage !== null && <span className={styles.savingBar}><i style={{ width: `${percentage}%` }} /></span>}
       </div>
     </article>
   );
 }
 
-function PromoCard() {
+/**
+ * The tile used to promise "64 complete looks" under ₹2,000 whatever the
+ * archive held. It now counts them, and stays out of the grid entirely when
+ * there is nothing to count.
+ */
+function PromoCard({ outfits }: { outfits: Outfit[] }) {
+  const tier = 2000;
+  const count = outfits.filter(
+    (outfit) => isFullySwapped(outfit) && pricing(outfit).swapTotal <= tier,
+  ).length;
+  if (count === 0) return null;
+
   return (
-    <article className={styles.promo}>
+    <Link className={styles.promo} href={`/budget?budget=${tier}`}>
       <span>Shop by wallet</span>
       <h2>Under<br />₹2,000</h2>
-      <p>64 complete looks you can build for less than a dinner out.</p>
+      <p>{plural(count, "complete look")} you can build for less than a dinner out.</p>
       <b>Browse →</b>
-    </article>
+    </Link>
+  );
+}
+
+/** The modal total, which used to print the stored ₹0 for a look with no swap. */
+function QuickViewTotal({ outfit, mode }: { outfit: Outfit; mode: PriceMode }) {
+  const money = pricing(outfit);
+  const shown =
+    mode === "worn"
+      ? money.anyPriced
+        ? inr.format(money.wornTotal)
+        : "Not confirmed yet"
+      : money.anySwapped
+        ? inr.format(money.swapTotal)
+        : "No swap yet";
+  return (
+    <div className={styles.modalTotal}>
+      <span>{mode === "worn" ? "Total as worn" : "Total for the swap"}</span>
+      <b>{shown}</b>
+    </div>
   );
 }
 
@@ -426,7 +460,7 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
   return (
     <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-view-title">
       <div className={styles.modalImage}>
-        <Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/700/900`} alt={`${outfit.celebrity} at ${outfit.event}`} fill sizes="(max-width: 800px) 94vw, 540px" />
+        <OutfitThumb outfit={outfit} sizes="(max-width: 800px) 94vw, 540px" />
         <button type="button" onClick={onClose} aria-label="Close quick view">×</button>
       </div>
       <div className={styles.modalBody}>
@@ -445,7 +479,7 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
             </div>
           ))}
         </div>
-        <div className={styles.modalTotal}><span>{mode === "worn" ? "Total as worn" : "Total for the swap"}</span><b>{inr.format(mode === "worn" ? outfit.worn : outfit.swap)}</b></div>
+        <QuickViewTotal outfit={outfit} mode={mode} />
         <Link className={`${styles.button} ${styles.primaryButton}`} href={`/outfits/${outfitSlug(outfit)}`}>See full breakdown →</Link>
       </div>
     </div>

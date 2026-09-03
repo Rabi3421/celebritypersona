@@ -12,7 +12,8 @@
     "mongo:local": "node scripts/local-mongo.mjs",
     "instagram:refresh": "node --env-file=.env scripts/instagram-refresh.mjs",
     "mail:init": "node --env-file=.env scripts/mail-init.mjs",
-    "mail:test": "node --env-file=.env scripts/mail-test.mjs"
+    "mail:test": "node --env-file=.env scripts/mail-test.mjs",
+    "purge:seed": "node --env-file=.env scripts/purge-seed-content.mjs"
   },
   "dependencies": {
     "@types/nodemailer": "^8.0.1",

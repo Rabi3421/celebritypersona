@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { plural } from "@/lib/format";
 import { useActionState, useMemo, useState } from "react";
 import { requestCelebrity, type AudienceState } from "@/app/actions/audience";
 import { celebritySlug } from "@/lib/slugs";
@@ -26,9 +27,36 @@ function priceRange(low: number | null, high: number | null) {
 /** Her own photo where the archive has one, so a card is never a stock seed
  *  standing in for a person. */
 const portrait = (celebrity: CelebrityView, index = 0) =>
-  celebrity.stats.photos[index] ??
-  celebrity.stats.photos[0] ??
-  `https://picsum.photos/seed/cpc${celebrity.id}/300/300`;
+  celebrity.stats.photos[index] ?? celebrity.stats.photos[0];
+
+/**
+ * A person with no decoded look yet has no photograph of her on this site.
+ * Every one of these frames used to fill with a random picsum photograph under
+ * her name; now the frame stays empty rather than showing a stranger.
+ */
+function Portrait({
+  celebrity,
+  index = 0,
+  describe,
+  ...rest
+}: {
+  celebrity: CelebrityView;
+  index?: number;
+  /** Set on the large portraits, where the photograph is worth describing to
+   *  a reader who cannot see it and to image search. The thumbnail rows sit
+   *  beside her name already, so they stay decorative. */
+  describe?: boolean;
+} & Omit<React.ComponentProps<typeof Image>, "src" | "alt">) {
+  const src = portrait(celebrity, index);
+  if (!src) return null;
+  return (
+    <Image
+      src={src}
+      alt={describe ? `${celebrity.name} in a look decoded on CelebrityPersona` : ""}
+      {...rest}
+    />
+  );
+}
 
 export function CelebrityDirectory({
   celebrities,
@@ -86,8 +114,8 @@ export function CelebrityDirectory({
       <header className={styles.band}>
         <div className={styles.shell}>
           <nav className={styles.crumb} aria-label="Breadcrumb"><Link href="/">Home</Link><i>›</i><span>Celebrities</span></nav>
-          <h1>Style archives</h1>
-          <p className={styles.lede}>Every look we&apos;ve decoded, organised by person. Follow someone and we&apos;ll tell you when they wear something new.</p>
+          <h1>Celebrity style archives</h1>
+          <p className={styles.lede}>Every Indian celebrity outfit we&apos;ve decoded, organised by person — the labels, the prices, and the affordable alternatives. Follow someone and we&apos;ll tell you when they wear something new.</p>
 
           <div className={styles.search}>
             <span>⌕</span>
@@ -107,8 +135,8 @@ export function CelebrityDirectory({
                     <p>{searchMatches.length} {searchMatches.length === 1 ? "match" : "matches"}</p>
                     {searchMatches.map((celebrity) => (
                       <Link href={`/celebrities/${celebritySlug(celebrity)}`} key={celebrity.id}>
-                        <Image src={portrait(celebrity)} width={34} height={34} alt="" />
-                        <b>{celebrity.name}</b><span>{celebrity.stats.looks} looks</span>
+                        <Portrait celebrity={celebrity} width={34} height={34} />
+                        <b>{celebrity.name}</b><span>{plural(celebrity.stats.looks, "look")}</span>
                       </Link>
                     ))}
                   </>
@@ -137,7 +165,7 @@ export function CelebrityDirectory({
       <div className={styles.toolbar}>
         <div className={styles.shell}>
           <div className={styles.toolbarRow}>
-            <p><b>{results.length}</b> archives · {celebrities.reduce((sum, celebrity) => sum + celebrity.stats.looks, 0)} looks</p>
+            <p><b>{results.length}</b> {results.length === 1 ? "archive" : "archives"} · {plural(celebrities.reduce((sum, celebrity) => sum + celebrity.stats.looks, 0), "look")}</p>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="Sort celebrities">
               <option value="looks">Most decoded</option><option value="trend">Trending now</option>
               <option value="new">Recently added</option><option value="save">Biggest savings</option><option value="az">A–Z</option>
@@ -208,10 +236,10 @@ export function CelebrityDirectory({
 function SpotlightCard({ celebrity, rank }: { celebrity: CelebrityView; rank: number }) {
   return (
     <Link className={styles.spotlightCard} href={`/celebrities/${celebritySlug(celebrity)}`}>
-      <div className={styles.spotlightImage}><Image src={portrait(celebrity, 1)} alt="" fill sizes="(max-width: 1023px) 100vw, 33vw" /><span>#{rank}</span></div>
+      <div className={styles.spotlightImage}><Portrait celebrity={celebrity} index={1} describe fill sizes="(max-width: 1023px) 100vw, 33vw" /><span>#{rank}</span></div>
       <div className={styles.spotlightBody}>
-        <Image src={portrait(celebrity)} alt="" width={58} height={58} />
-        <h2>{celebrity.name}</h2><p>{celebrity.stats.looks} looks{celebrity.stats.brands[0] ? ` · ${celebrity.stats.brands[0].name}` : ""}</p>
+        <Portrait celebrity={celebrity} width={58} height={58} />
+        <h2>{celebrity.name}</h2><p>{plural(celebrity.stats.looks, "look")}{celebrity.stats.brands[0] ? ` · ${celebrity.stats.brands[0].name}` : ""}</p>
         <div><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
       </div>
     </Link>
@@ -223,10 +251,10 @@ function CelebrityCard({ celebrity, following, onFollow }: { celebrity: Celebrit
     <article className={styles.card}>
       <Link className={styles.cardMain} href={`/celebrities/${celebritySlug(celebrity)}`}>
         <div className={styles.cardTop}>
-          <Image src={portrait(celebrity)} width={66} height={66} alt="" />
-          <div><h2>{celebrity.name}</h2><p>{celebrity.stats.looks} looks decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.stats.isNew && <em>New archive</em>}</span></div>
+          <Portrait celebrity={celebrity} describe width={66} height={66} />
+          <div><h2>{celebrity.name}</h2><p>{plural(celebrity.stats.looks, "look")} decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.stats.isNew && <em>New archive</em>}</span></div>
         </div>
-        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Image key={index} src={portrait(celebrity, index)} width={180} height={240} alt="" />)}</div>
+        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Portrait key={index} celebrity={celebrity} index={index} width={180} height={240} />)}</div>
         <div className={styles.cardMeta}><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
         <p className={styles.brands}>{celebrity.stats.brands.slice(0, 5).map((brand) => brand.name).join(" · ")}</p>
       </Link>

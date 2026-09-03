@@ -1,9 +1,10 @@
 "use client";
 
+import { BlankFrame } from "@/components/site/Thumb";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
-import { inr } from "@/lib/format";
+import { inr, plural } from "@/lib/format";
 import { useSavedList } from "@/lib/saved";
 import styles from "@/app/saved/saved.module.css";
 
@@ -149,12 +150,16 @@ export function SavedLibrary({ looks, people }: { looks: SavedLook[]; people: Sa
                         ♥
                       </button>
                       <Link className={styles.cardImage} href={`/outfits/${look.slug}`}>
-                        <Image
-                          src={look.photo ?? `https://picsum.photos/seed/${look.slug}/600/750`}
-                          alt={`${look.celebrity} at ${look.event}`}
-                          fill
-                          sizes="(max-width: 620px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                        />
+                        {look.photo ? (
+                          <Image
+                            src={look.photo}
+                            alt={`${look.celebrity} at ${look.event}`}
+                            fill
+                            sizes="(max-width: 620px) 50vw, (max-width: 1023px) 33vw, 25vw"
+                          />
+                        ) : (
+                          <BlankFrame seed={look.slug} />
+                        )}
                         <em>{look.occasion}</em>
                       </Link>
                       <div className={styles.cardBody}>
@@ -190,16 +195,13 @@ export function SavedLibrary({ looks, people }: { looks: SavedLook[]; people: Sa
                   {chosenPeople.map((person) => (
                     <div className={styles.person} key={person.slug}>
                       <Link href={`/celebrities/${person.slug}`}>
-                        <Image
-                          src={person.photo ?? `https://picsum.photos/seed/${person.slug}/80/80`}
-                          alt=""
-                          width={34}
-                          height={34}
-                        />
+                        {person.photo ? (
+                          <Image src={person.photo} alt="" width={34} height={34} />
+                        ) : null}
                       </Link>
                       <Link href={`/celebrities/${person.slug}`}>
                         <b>{person.name}</b>
-                        <span>{person.looks} looks</span>
+                        <span>{plural(person.looks, "look")}</span>
                       </Link>
                       <button
                         type="button"

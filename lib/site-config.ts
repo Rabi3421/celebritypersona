@@ -16,10 +16,23 @@ export const pending = (value: string) => value.startsWith(PENDING);
 /** Marks a value as still to be supplied, with a hint for whoever fills it. */
 const todo = (hint: string) => `${PENDING}${hint}`;
 
+/**
+ * The one hostname the site answers on. celebritypersona.com 308-redirects to
+ * www, so every canonical, sitemap entry and Open Graph URL has to be written
+ * with the www in it: a canonical pointing at a URL that redirects asks Google
+ * to index an address that does not serve the page.
+ */
+const CANONICAL_ORIGIN = "https://www.celebritypersona.com";
+
+/** Trailing slashes make `${site.url}/outfits` come out with two. */
+const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? CANONICAL_ORIGIN).replace(/\/+$/, "");
+
 export const site = {
   name: "CelebrityPersona",
   domain: "celebritypersona.com",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://celebritypersona.com",
+  /** Host shown to readers, and the one every canonical is written against. */
+  host: "www.celebritypersona.com",
+  url: origin,
   tagline: "What Indian celebrities wear, and where to get the look.",
   launched: "2026",
 };

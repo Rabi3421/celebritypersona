@@ -1,3 +1,4 @@
+import { BlankFrame } from "@/components/site/Thumb";
 import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
@@ -29,13 +30,17 @@ export async function Celebrities() {
             key={celebrity.name}
           >
             <div className="av">
-              <Image
-                className="home-cover"
-                src={celebrity.image ?? `https://picsum.photos/seed/cp-celebrity-${i + 1}/320/320`}
-                alt={`${celebrity.name}'s style archive`}
-                fill
-                sizes="(max-width: 620px) 28vw, 15vw"
-              />
+              {celebrity.image ? (
+                <Image
+                  className="home-cover"
+                  src={celebrity.image}
+                  alt={`${celebrity.name} in a look decoded on CelebrityPersona`}
+                  fill
+                  sizes="(max-width: 620px) 28vw, 15vw"
+                />
+              ) : (
+                <BlankFrame seed={celebrity.name} />
+              )}
             </div>
             <strong>{celebrity.name}</strong>
             <span>

@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
+import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { outfitPhoto, outfitPhotos, isFullySwapped, pricing } from "@/lib/types";
+import { outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
@@ -32,10 +33,16 @@ const shortDate = new Intl.DateTimeFormat("en-IN", {
 
 export function OutfitDetail({
   outfit,
+  heading,
   sameCelebrity,
   sameOccasion,
 }: {
   outfit: Outfit;
+  /** The same line the title tag carries, so the page's heading and its blue
+   *  link answer the same question. "Kashaf Ali at Shaadi Season Look" was the
+   *  event field read out loud; the title had already worked out that the
+   *  search is for the garment and the label. */
+  heading: string;
   sameCelebrity: Outfit[];
   sameOccasion: Outfit[];
 }) {
@@ -119,10 +126,11 @@ export function OutfitDetail({
         <div className={styles.split}>
           <div className={styles.photoColumn}>
             <figure className={styles.frame}>
+              {shown ? (
               <Image
-                src={shown?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/900/1125`}
+                src={shown.url}
                 // What the editor says the photo shows, when she has said it.
-                alt={shown?.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`}
+                alt={shown.alt?.trim() || outfitAlt(outfit)}
                 fill
                 // `priority` is deprecated in Next 16; this hero is the LCP.
                 preload
@@ -132,7 +140,12 @@ export function OutfitDetail({
                 // larger than anything it could display.
                 sizes="(max-width: 1023px) 100vw, 740px"
               />
-              <figcaption>Photo · Editorial archive</figcaption>
+              ) : (
+                <BlankFrame seed={outfit.id} />
+              )}
+              {shown ? (
+                <figcaption>{shown.credit ?? "Photo · Editorial archive"}</figcaption>
+              ) : null}
               <button
                 type="button"
                 className={styles.keep}
@@ -185,7 +198,7 @@ export function OutfitDetail({
           <div className={styles.ledger}>
             <header className={styles.title}>
               <p>Decoded · {outfit.items.length} {pieceWord(outfit.items.length)}</p>
-              <h1>{outfit.celebrity} at {outfit.event}</h1>
+              <h1>{heading}</h1>
               <div>{longDate.format(published)} · <Link href={`/occasions/${outfit.occasion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.occasion} looks</Link> · <Link href={`/celebrities/${outfit.celebrity.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.celebrity} archive</Link></div>
             </header>
 
@@ -368,8 +381,18 @@ export function OutfitDetail({
           </section>
         ) : null}
 
-        <RelatedRail title={`More from ${outfit.celebrity}`} outfits={sameCelebrity} />
-        <RelatedRail title={`More ${outfit.occasion.toLowerCase()} looks`} outfits={sameOccasion} />
+        <RelatedRail
+          title={`More from ${outfit.celebrity}`}
+          outfits={sameCelebrity}
+          moreHref={`/celebrities/${nameSlug(outfit.celebrity)}`}
+          moreLabel={`All ${outfit.celebrity} outfits`}
+        />
+        <RelatedRail
+          title={`More ${outfit.occasion.toLowerCase()} looks`}
+          outfits={sameOccasion}
+          moreHref={`/occasions/${nameSlug(outfit.occasion)}`}
+          moreLabel={`All ${outfit.occasion.toLowerCase()} outfits`}
+        />
 
         <div className={styles.byline}>
           <div className={styles.authorAvatar}>R</div>
@@ -400,22 +423,50 @@ export function OutfitDetail({
   );
 }
 
-function RelatedRail({ title, outfits }: { title: string; outfits: Outfit[] }) {
+/** The rail used to print the stored ₹0 as a swap price. */
+function RelatedPrice({ outfit }: { outfit: Outfit }) {
+  const money = pricing(outfit);
+  return (
+    <span>
+      {money.anyPriced ? <s>{inr.format(money.wornTotal)}</s> : <em>Price unconfirmed</em>}
+      {money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : <em>No swap yet</em>}
+    </span>
+  );
+}
+
+/**
+ * Both rails used to send "View all" to /outfits, which is the least specific
+ * page on the site. A rail titled "More from Alia Bhatt" belongs pointed at
+ * her archive, and one titled "More sangeet looks" at the sangeet page — the
+ * anchor then says where it goes, and the crawl reaches the pages that most
+ * want the link.
+ */
+function RelatedRail({
+  title,
+  outfits,
+  moreHref,
+  moreLabel,
+}: {
+  title: string;
+  outfits: Outfit[];
+  moreHref: string;
+  moreLabel: string;
+}) {
   if (!outfits.length) return null;
 
   return (
     <section className={styles.related}>
       <div className={styles.relatedHeading}>
-        <h2>{title}</h2><Link href="/outfits">View all →</Link>
+        <h2>{title}</h2><Link href={moreHref}>{moreLabel} →</Link>
       </div>
       <div className={styles.relatedRail}>
         {outfits.map((outfit) => (
           <Link className={styles.relatedCard} href={`/outfits/${outfitSlug(outfit)}`} key={outfit.id}>
-            <div><Image src={outfitPhoto(outfit)?.url ?? `https://picsum.photos/seed/cpo${outfit.id}/380/475`} alt="" fill sizes="220px" /></div>
+            <div><OutfitThumb outfit={outfit} decorative sizes="220px" /></div>
             <section>
               <h3>{outfit.celebrity}</h3>
               <p>{outfit.event} · {shortDate.format(new Date(`${outfit.date}T00:00:00`))}</p>
-              <span>{isFullySwapped(outfit) ? <><s>{inr.format(outfit.worn)}</s><b>{inr.format(outfit.swap)}</b></> : <b>{inr.format(outfit.worn)}</b>}</span>
+              <RelatedPrice outfit={outfit} />
             </section>
           </Link>
         ))}

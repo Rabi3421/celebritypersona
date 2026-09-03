@@ -1,3 +1,4 @@
+import { BlankFrame } from "@/components/site/Thumb";
 import Image from "next/image";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
@@ -21,13 +22,17 @@ export async function DupeOfTheWeek() {
       <div className="dupe rv rv-d1">
         <div className="dside a">
           <div className="box">
-            <Image
-              className="home-cover"
-              src={dupe.worn.image ?? "https://picsum.photos/seed/cp-dupe-designer/800/800"}
-              alt={`${dupe.celebrity} wearing the ${dupe.worn.brand} piece`}
-              fill
-              sizes="(max-width: 700px) 80vw, 38vw"
-            />
+            {dupe.worn.image ? (
+              <Image
+                className="home-cover"
+                src={dupe.worn.image}
+                alt={`${dupe.celebrity} wearing the ${dupe.worn.name} by ${dupe.worn.brand}`}
+                fill
+                sizes="(max-width: 700px) 80vw, 38vw"
+              />
+            ) : (
+              <BlankFrame seed={dupe.worn.brand} />
+            )}
           </div>
           <p className="lbl">As worn</p>
           <p className="nm">{dupe.worn.name}</p>
@@ -36,13 +41,17 @@ export async function DupeOfTheWeek() {
         <div className="dvs">VS</div>
         <div className="dside b">
           <div className="box">
-            <Image
-              className="home-cover"
-              src={dupe.swap.image ?? "https://picsum.photos/seed/cp-dupe-swap/800/800"}
-              alt={`The ${dupe.swap.brand} alternative`}
-              fill
-              sizes="(max-width: 700px) 80vw, 38vw"
-            />
+            {dupe.swap.image ? (
+              <Image
+                className="home-cover"
+                src={dupe.swap.image}
+                alt={`The ${dupe.swap.name} by ${dupe.swap.brand}, the affordable alternative`}
+                fill
+                sizes="(max-width: 700px) 80vw, 38vw"
+              />
+            ) : (
+              <BlankFrame seed={dupe.swap.brand} />
+            )}
           </div>
           <p className="lbl">The swap</p>
           <p className="nm">{dupe.swap.name}</p>

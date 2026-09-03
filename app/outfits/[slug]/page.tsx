@@ -10,6 +10,7 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import { getCelebrities, getOutfitBySlug, getOutfits } from "@/lib/db/content";
+import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -48,8 +49,9 @@ function describe(outfit: Outfit) {
   return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified piece by piece — ${pieces} by ${brands}.`;
 }
 
-/** Google shows about 60 characters. */
-const TITLE_LIMIT = 60;
+/** Google shows about 60 characters, and 65 is where a fitted title starts
+ *  being cut. */
+const TITLE_LIMIT = 62;
 
 /**
  * The piece the look is really about: the dearest one we could price, and the
@@ -67,9 +69,30 @@ function leadPiece(outfit: Outfit) {
 }
 
 /**
+ * Occasion words worth carrying into the title, because "<name> airport look"
+ * and "<name> wedding look" are searched far more than the event's own name.
+ * Anything not listed here is left out rather than bent into a phrase.
+ */
+const OCCASION_PHRASE: Record<string, string> = {
+  Airport: "Airport Look",
+  "Red carpet": "Red Carpet Look",
+  Sangeet: "Sangeet Look",
+  Mehendi: "Mehendi Look",
+  Reception: "Reception Look",
+  Haldi: "Haldi Look",
+  Engagement: "Engagement Look",
+  Diwali: "Diwali Look",
+  Navratri: "Navratri Look",
+  Holi: "Holi Look",
+  Eid: "Eid Look",
+  "Karwa Chauth": "Karwa Chauth Look",
+  "Promo tour": "Promo Look",
+};
+
+/**
  * What the search result's blue link says. The editor's own title wins;
- * otherwise the widest form of "her + the piece + the label" that fits, down
- * to the event when a look has no pieces to name.
+ * otherwise the widest form that fits, preferring the shapes people actually
+ * type: her name, the occasion, the garment, the label.
  */
 function headline(outfit: Outfit) {
   const own = outfit.seoTitle?.trim();
@@ -80,12 +103,16 @@ function headline(outfit: Outfit) {
   if (!piece) return fallback;
 
   const garment = garmentOf(piece.name);
+  const occasion = OCCASION_PHRASE[outfit.occasion];
   const candidates = [
+    occasion && `${outfit.celebrity} ${occasion}: ${piece.name} by ${piece.wornBrand}`,
+    occasion && `${outfit.celebrity} ${occasion}: ${garment} by ${piece.wornBrand}`,
     `${outfit.celebrity}'s ${piece.name} — ${piece.wornBrand}`,
     `${outfit.celebrity}'s ${garment} — ${piece.wornBrand}`,
+    occasion && `${outfit.celebrity} ${occasion}: ${garment}`,
     `${outfit.celebrity}'s ${piece.name}`,
     `${outfit.celebrity}'s ${garment}`,
-  ];
+  ].filter((value): value is string => Boolean(value));
   return candidates.find((candidate) => candidate.length <= TITLE_LIMIT) ?? fallback;
 }
 
@@ -95,38 +122,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!outfit) return {};
 
   const description = outfit.seoDescription?.trim() || describe(outfit);
-  const photo = outfitPhotos(outfit)[0];
+  const photos = outfitPhotos(outfit);
   const path = `/outfits/${outfitSlug(outfit)}`;
-  const title = headline(outfit);
 
-  return {
+  return pageMetadata({
     // Absolute, so the site-name template cannot push a fitted title past the
     // width Google renders. The site name is carried by the WebSite graph.
-    title: { absolute: title },
+    title: headline(outfit),
+    absoluteTitle: true,
     description,
-    alternates: { canonical: path },
+    path,
+    type: "article",
+    images: photos.map((photo) => ({
+      url: photo.url,
+      alt: photo.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`,
+    })),
+    publishedTime: outfit.date,
+    modifiedTime: outfit.pricesCheckedAt ?? outfit.date,
     // A look with no swap, no notes and no piece notes is a brand's product
     // name and a buy link. It stays browsable, but it is not worth a place in
     // the index until it says something the merchant's own page does not.
-    robots: hasSubstance(outfit) ? undefined : { index: false, follow: true },
-    openGraph: {
-      type: "article",
-      siteName: site.name,
-      locale: "en_IN",
-      title: `${outfit.celebrity} at ${outfit.event}`,
-      description,
-      url: path,
-      publishedTime: outfit.date,
-      modifiedTime: outfit.pricesCheckedAt ?? outfit.date,
-      images: photo ? [{ url: photo.url }] : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${outfit.celebrity} at ${outfit.event}`,
-      description,
-      images: photo ? [photo.url] : undefined,
-    },
-  };
+    index: hasSubstance(outfit),
+  });
 }
 
 export default async function OutfitPage({ params }: Props) {
@@ -154,9 +171,7 @@ export default async function OutfitPage({ params }: Props) {
     (celebrity) => celebrity.name === outfit.celebrity,
   )?.sameAs;
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@graph": [
+  const structuredData = jsonLd([
       {
         "@type": "Article",
         "@id": `${canonical}#article`,
@@ -215,29 +230,20 @@ export default async function OutfitPage({ params }: Props) {
             : {}),
         })),
       },
-      {
-        "@type": "BreadcrumbList",
-        "@id": `${canonical}#breadcrumbs`,
-        itemListElement: [
-          { name: "Home", item: site.url },
-          { name: "Outfits", item: `${site.url}/outfits` },
-          { name: outfit.celebrity, item: `${site.url}/celebrities/${nameSlug(outfit.celebrity)}` },
-          { name: outfit.event, item: canonical },
-        ].map((crumb, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: crumb.name,
-          item: crumb.item,
-        })),
-      },
-    ],
-  };
+      breadcrumbs(canonical, [
+        { name: "Home", path: "/" },
+        { name: "Outfits", path: "/outfits" },
+        { name: outfit.celebrity, path: `/celebrities/${nameSlug(outfit.celebrity)}` },
+        { name: outfit.event, path: `/outfits/${outfitSlug(outfit)}` },
+      ]),
+  ]);
 
   return (
     <>
       <Nav active="outfits" />
       <OutfitDetail
         outfit={outfit}
+        heading={headline(outfit)}
         sameCelebrity={sameCelebrity}
         sameOccasion={sameOccasion}
       />
@@ -246,7 +252,7 @@ export default async function OutfitPage({ params }: Props) {
       <ScrollEffects />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: structuredData }}
       />
     </>
   );

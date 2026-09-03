@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { legalDocs, type LegalBlock, type LegalDoc } from "@/lib/legal-content";
-import { contacts, PENDING, pending } from "@/lib/site-config";
+import { contacts, pending } from "@/lib/site-config";
 import styles from "./legal.module.css";
 
-/** Renders a value from site-config, making unfilled details impossible to miss. */
-function DetailValue({ value }: { value: string }) {
-  if (!pending(value)) return <>{value}</>;
-  return (
-    <span className={styles.pendingChip}>
-      Add {value.slice(PENDING.length)}
-    </span>
-  );
-}
+/**
+ * A detail row whose value has not been supplied yet is left out entirely,
+ * rather than published as an "Add …" chip. The admin Settings page is where
+ * the missing ones are listed; a policy page is not the place to show a reader
+ * that the publisher's own name has not been filled in.
+ */
 
 function Block({ block }: { block: LegalBlock }) {
   if (block.type === "p") return <p>{block.text}</p>;
@@ -34,16 +31,18 @@ function Block({ block }: { block: LegalBlock }) {
     );
   }
 
+  const rows = block.rows.filter((row) => !pending(row.value));
+  if (rows.length === 0) return null;
+
   return (
     <dl className={styles.details}>
-      {block.rows.map((row) => (
-        <div className={styles.detailRow} key={row.label}>
-          <dt>{row.label}</dt>
-          <dd>
-            <DetailValue value={row.value} />
-          </dd>
-        </div>
-      ))}
+      {rows
+        .map((row) => (
+          <div className={styles.detailRow} key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
     </dl>
   );
 }

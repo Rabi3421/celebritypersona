@@ -9,14 +9,16 @@ export async function Trending() {
     <section className="sec">
       <SectionHeading
         eyebrow="Right now"
-        title="What people are searching"
+        title="What people ask us for"
         moreLabel="Full leaderboard →"
         moreHref="/trending"
       />
       <div className="tags rv rv-d1">
         {trendingSearches.map((search) => (
           <Link href={search.href} key={search.term}>
-            {search.term} <b>{search.volume.toLocaleString("en-IN")}</b>
+            {/* `volume` is a number typed into the admin form, not a
+                measurement; it is no longer published as one. */}
+            {search.term} <b aria-hidden="true">→</b>
           </Link>
         ))}
       </div>

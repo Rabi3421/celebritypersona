@@ -18,7 +18,8 @@ export const footerColumns: { heading: string; links: { label: string; href: str
       { label: "Occasions", href: "/occasions" },
       { label: "By budget", href: "/budget" },
       { label: "Trending", href: "/trending" },
-      { label: "Wedding edit", href: "#" },
+      // Pointed at "#" on every page of the site until now.
+      { label: "Wedding occasions", href: "/occasions#wedding" },
     ],
   },
   {

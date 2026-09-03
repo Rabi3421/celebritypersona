@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pending } from "./Pending";
+import { DetailRow } from "./Pending";
 import {
   contacts,
   dataProtection,
@@ -100,7 +100,7 @@ export function ContactPage() {
             <h2>Grievance Officer</h2>
             <p>
               Published as required by the Information Technology Rules, 2021.
-              Any complaint about content on this site reaches a named person,
+              Any complaint about content on this site reaches the officer,
               gets acknowledged within {grievanceOfficer.acknowledgeWithin}, and
               is resolved within {grievanceOfficer.resolveWithin}. Data
               protection complaints under the DPDP Act run to a{" "}
@@ -108,28 +108,10 @@ export function ContactPage() {
               the {dataProtection.board}.
             </p>
             <dl className={styles.calloutRows}>
-              <div>
-                <dt>Name</dt>
-                <dd>
-                  <Pending value={grievanceOfficer.name} />
-                </dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{grievanceOfficer.email}</dd>
-              </div>
-              <div>
-                <dt>Published by</dt>
-                <dd>
-                  <Pending value={legalEntity.name} />
-                </dd>
-              </div>
-              <div>
-                <dt>Registered address</dt>
-                <dd>
-                  <Pending value={legalEntity.address} />
-                </dd>
-              </div>
+              <DetailRow label="Name" value={grievanceOfficer.name} />
+              <DetailRow label="Email" value={grievanceOfficer.email} />
+              <DetailRow label="Published by" value={legalEntity.name} />
+              <DetailRow label="Registered address" value={legalEntity.address} />
             </dl>
           </div>
         </section>
