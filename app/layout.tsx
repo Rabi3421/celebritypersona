@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@/components/site/Analytics";
 import { NavProgress } from "@/components/site/NavProgress";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { site, social } from "@/lib/site-config";
@@ -112,6 +113,15 @@ const siteGraph = {
   ],
 };
 
+/**
+ * Set in Vercel's Production environment only, so preview deployments and
+ * local work never reach the live property. Absent, nothing is loaded at all.
+ */
+const gaId =
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
+    : undefined;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -125,6 +135,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteGraph) }}
         />
+        {gaId ? <Analytics gaId={gaId} /> : null}
       </body>
     </html>
   );

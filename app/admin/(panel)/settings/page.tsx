@@ -42,6 +42,15 @@ function envRows() {
       ok: Boolean(process.env.NEXT_PUBLIC_SITE_URL),
     },
     {
+      label: "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+      // Unset is the right answer locally, where the tag is deliberately not
+      // loaded, so this only reads as a problem on the live site.
+      value: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+        ? `${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} · loaded on the public site only`
+        : "not set · no analytics on this deployment",
+      ok: Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+    },
+    {
       label: "Mail transport",
       value: process.env.BREVO_API_KEY
         ? "Brevo HTTP API · works from any address"
