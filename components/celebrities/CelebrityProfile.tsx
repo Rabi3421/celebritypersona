@@ -19,6 +19,7 @@ import {
 import type { Outfit } from "@/lib/types";
 import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/[slug]/celebrity-profile.module.css";
+import { sameName } from "@/lib/archive";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";
 const inr = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
@@ -48,7 +49,7 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
   const isFollowed = followed.has(celebritySlug(celebrity));
 
   const results = useMemo(() => {
-    const filtered = outfits.filter((outfit) => !occasion || outfit.occasion === occasion);
+    const filtered = outfits.filter((outfit) => !occasion || sameName(outfit.occasion, occasion));
     return filtered.sort((a, b) => {
       if (sort === "saving") return savingSortKey(b) - savingSortKey(a);
       if (sort === "cheap") return swapSortKey(a) - swapSortKey(b);

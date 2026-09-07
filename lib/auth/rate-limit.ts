@@ -43,8 +43,25 @@ export function checkRateLimit(
   };
 }
 
+/**
+ * Buckets are keyed by IP and the public forms are throttled too, so on a
+ * long-lived instance this map would otherwise grow for every address that
+ * ever posted. Sweeping only once the map is large keeps the common write at
+ * one map operation.
+ */
+const SWEEP_ABOVE = 512;
+
+function sweep(windowMs: number, now: number) {
+  if (attempts.size <= SWEEP_ABOVE) return;
+  for (const [key, bucket] of attempts) {
+    if (now - bucket.firstAt > windowMs) attempts.delete(key);
+  }
+}
+
 export function recordFailure(key: string, { windowMs = WINDOW_MS }: RateLimitOptions = {}) {
   const now = Date.now();
+  sweep(windowMs, now);
+
   const bucket = attempts.get(key);
   if (!bucket || now - bucket.firstAt > windowMs) {
     attempts.set(key, { count: 1, firstAt: now });

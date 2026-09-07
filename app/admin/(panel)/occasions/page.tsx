@@ -4,10 +4,11 @@ import styles from "@/app/admin/panel.module.css";
 import { getOccasionViews } from "@/lib/db/content";
 import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
+import { RenameRowButton } from "@/components/admin/RenameRowButton";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
-import { removeOccasion } from "./actions";
+import { removeOccasion, renameOccasion } from "./actions";
 import type { OccasionView } from "@/lib/archive";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -78,6 +79,9 @@ export default async function AdminOccasions({
   const paged = paginate(sorted, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
   const returnTo = listPath("/admin/occasions", query, FILTER_KEYS, paged.page);
+  // Offered in the rename dialog, so correcting a name onto one that already
+  // exists is a pick rather than a retype.
+  const names = all.map((occasion) => occasion.name);
   const missing = all.filter((occasion) => !occasion.record).length;
 
   return (
@@ -196,6 +200,15 @@ export default async function AdminOccasions({
                           <Link href={`/occasions/${occasionSlug(occasion)}`} target="_blank">
                             View ↗
                           </Link>
+                          {/* Renaming reaches every look filed under the name,
+                              which is the only way to fix one no record covers. */}
+                          <RenameRowButton
+                            from={occasion.name}
+                            options={names}
+                            action={renameOccasion}
+                            returnTo={returnTo}
+                            noun="occasion"
+                          />
                           {/* An occasion the outfits mention but no record covers
                               has nothing to delete. */}
                           {occasion.record ? (

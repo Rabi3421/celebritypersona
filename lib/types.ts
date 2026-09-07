@@ -440,3 +440,18 @@ export type HomeContent = {
   /** The campaign band. Its look count is filled in from the archive. */
   campaign: { eyebrow: string; title: string; body: string; cta: string; href: string };
 };
+
+/**
+ * A URL this site used to answer on.
+ *
+ * Kept in its own collection rather than on the record, because the thing most
+ * likely to be renamed — a celebrity or occasion the outfits mention that no
+ * record covers — has no record to keep it on. Consulted only when a slug
+ * matches nothing live, so a name reused later still wins over its own history.
+ */
+export type SlugRedirect = {
+  kind: "outfit" | "celebrity" | "occasion";
+  from: string;
+  to: string;
+  at: string;
+};

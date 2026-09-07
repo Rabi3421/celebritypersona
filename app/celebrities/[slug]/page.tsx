@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { plural } from "@/lib/format";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { CelebrityProfile } from "@/components/celebrities/CelebrityProfile";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
@@ -10,8 +10,9 @@ import { celebrityBio } from "@/lib/celebrity-bio";
 import { celebritySlug, outfitSlug } from "@/lib/slugs";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
-import { getCelebrityBySlug, getCelebrityViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityBySlug, getCelebrityViews, getOutfits, movedCelebritySlug } from "@/lib/db/content";
 import type { CelebrityView } from "@/lib/archive";
+import { sameName } from "@/lib/archive";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -86,9 +87,14 @@ export default async function CelebrityProfilePage({ params }: Props) {
     getOutfits(),
     getCelebrityViews(),
   ]);
-  if (!celebrity) notFound();
+  if (!celebrity) {
+    // The record may simply have been renamed since this link was made.
+    const moved = await movedCelebritySlug(slug);
+    if (moved) permanentRedirect(`/celebrities/${moved}`);
+    notFound();
+  }
 
-  const celebrityOutfits = outfits.filter((outfit) => outfit.celebrity === celebrity.name);
+  const celebrityOutfits = outfits.filter((outfit) => sameName(outfit.celebrity, celebrity.name));
   /**
    * The rail used to lead with whoever had the biggest archive, which meant
    * every page pointed at the same five names. It now prefers people this

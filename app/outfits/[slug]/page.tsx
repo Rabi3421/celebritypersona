@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { OutfitDetail } from "@/components/outfits/OutfitDetail";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { garmentOf } from "@/lib/archive";
+import { garmentOf, sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
-import { getCelebrities, getOutfitBySlug, getOutfits } from "@/lib/db/content";
+import { getCelebrities, getOutfitBySlug, getOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
@@ -157,13 +157,18 @@ export default async function OutfitPage({ params }: Props) {
     getOutfits(),
     getCelebrities(),
   ]);
-  if (!outfit) notFound();
+  if (!outfit) {
+    // The record may simply have been renamed since this link was made.
+    const moved = await movedOutfitSlug(slug);
+    if (moved) permanentRedirect(`/outfits/${moved}`);
+    notFound();
+  }
 
   const sameCelebrity = outfits
-    .filter((item) => item.id !== outfit.id && item.celebrity === outfit.celebrity)
+    .filter((item) => item.id !== outfit.id && sameName(item.celebrity, outfit.celebrity))
     .slice(0, 4);
   const sameOccasion = outfits
-    .filter((item) => item.id !== outfit.id && item.occasion === outfit.occasion)
+    .filter((item) => item.id !== outfit.id && sameName(item.occasion, outfit.occasion))
     .slice(0, 4);
 
   // metadataBase covers the <link rel=canonical>; JSON-LD needs it spelled out.

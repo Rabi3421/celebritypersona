@@ -7,7 +7,12 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { buildSearchIndex, searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
 import { celebrityTiles, occasionTiles } from "@/lib/archive";
-import { getCelebrities, getOccasions, getOutfits, getTrendingSearches } from "@/lib/db/content";
+import {
+  getCelebrityViews,
+  getOccasionViews,
+  getOutfits,
+  getTrendingSearches,
+} from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./search.module.css";
 
@@ -45,8 +50,8 @@ export default async function SearchPage({
   const [{ q }, outfits, celebrities, occasions, trending] = await Promise.all([
     searchParams,
     getOutfits(),
-    getCelebrities(),
-    getOccasions(),
+    getCelebrityViews(),
+    getOccasionViews(),
     getTrendingSearches(),
   ]);
 

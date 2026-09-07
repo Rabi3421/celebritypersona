@@ -227,6 +227,15 @@
 .confirm .confirmCancel:disabled{opacity:.4}
 .confirm .confirmCancel:disabled:hover{color:var(--muted);border-color:var(--line)}
 .confirm .confirmGo:disabled,.confirm .confirmGo:disabled:hover{background:#b00055;border-color:#b00055}
+/* The one field the confirm dialog carries, for a rename. */
+.renameField{margin-top:var(--s4)}
+.renameField label{display:block;font-family:var(--mono),ui-monospace,monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.renameField input{width:100%;font-family:inherit;font-size:14.5px;color:var(--text);
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px}
+.renameField input:focus{outline:none;border-color:var(--rani)}
+.renameField input:disabled{opacity:.5}
+
 .spinner{width:14px;height:14px;flex:none;border-radius:50%;
   border:2px solid rgba(255,255,255,.32);border-top-color:#fff;
   animation:spin 640ms linear infinite}

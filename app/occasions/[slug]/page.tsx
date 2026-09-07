@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { OccasionDetail } from "@/components/occasions/OccasionDetail";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
@@ -11,7 +11,7 @@ import { outfitsForOccasion } from "@/lib/archive";
 import type { OccasionView } from "@/lib/archive";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
-import { getOccasionBySlug, getOccasionViews, getOutfits } from "@/lib/db/content";
+import { getOccasionBySlug, getOccasionViews, getOutfits, movedOccasionSlug } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -85,7 +85,12 @@ export default async function OccasionPage({ params }: Props) {
     getOutfits(),
     getOccasionViews(),
   ]);
-  if (!occasion) notFound();
+  if (!occasion) {
+    // The record may simply have been renamed since this link was made.
+    const moved = await movedOccasionSlug(slug);
+    if (moved) permanentRedirect(`/occasions/${moved}`);
+    notFound();
+  }
 
   const archive = outfitsForOccasion(outfits, occasion.name);
   /**

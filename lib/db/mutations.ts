@@ -5,6 +5,8 @@ import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
 import { hasSwap, hasWornPrice, MAILABLE, outfitPhotos } from "@/lib/types";
+import { sameName } from "@/lib/archive";
+import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
   MailDelivery,
@@ -18,6 +20,7 @@ import type {
   OutfitItem,
   PriceReport,
   RequestStatus,
+  SlugRedirect,
   Subscriber,
   SubscriberStatus,
   TrendingSearch,
@@ -90,16 +93,77 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
   return id;
 }
 
+/**
+ * Remembers that a URL moved.
+ *
+ * Renaming a look's event, or a celebrity, rewrites the slug it is served at —
+ * and the old one is what every existing link, share and search result still
+ * points at. Kept in a collection of its own so a name no record covers can be
+ * redirected too; consulted only when a slug matches nothing live, so a name
+ * reused later still wins.
+ */
+async function rememberSlugMove(kind: SlugRedirect["kind"], from: string, to: string) {
+  if (!from || !to || from === to) return;
+
+  const db = await getDb();
+  const collection = db.collection<SlugRedirect>("redirects");
+
+  // Anything already pointing at the old slug follows it, so a name renamed
+  // twice never leaves a reader on a redirect to a redirect.
+  await collection.updateMany({ kind, to: from }, { $set: { to } });
+  await collection.deleteMany({ kind, from: to });
+  await collection.updateOne(
+    { kind, from },
+    { $set: { kind, from, to, at: new Date().toISOString() } },
+    { upsert: true },
+  );
+}
+
+/**
+ * Moves every look filed under one name to another, and remembers the URLs
+ * they answered on before.
+ *
+ * A look's slug falls back to `celebrity-event-date`, so renaming a celebrity
+ * silently rewrites the URL of every look she is in. Without this, a rename
+ * split the archive in two — the record under the new name holding nothing,
+ * the looks under the old name with no record — and broke their links on the
+ * way. Matching is case-insensitive, so a rename also merges the variants.
+ */
+async function renameAcrossOutfits(
+  field: "celebrity" | "occasion",
+  from: string,
+  to: string,
+): Promise<number> {
+  if (sameName(from, to)) return 0;
+
+  const db = await getDb();
+  const collection = db.collection<Outfit>("outfits");
+  const affected = (await collection.find({}).toArray()).filter((outfit) =>
+    sameName(outfit[field], from),
+  );
+
+  for (const outfit of affected) {
+    // A look's slug falls back to celebrity-event-date, so this rename may
+    // move its URL as well as the name printed on it.
+    await rememberSlugMove("outfit", outfitSlug(outfit), outfitSlug({ ...outfit, [field]: to }));
+    await collection.updateOne({ id: outfit.id }, { $set: { [field]: to } });
+  }
+  return affected.length;
+}
+
 export async function updateOutfit(
   id: number,
   input: Omit<Outfit, "id" | "worn" | "swap">,
 ) {
   const db = await getDb();
   const collection = db.collection<Outfit>("outfits");
-  const previous = await collection.findOne(
-    { id },
-    { projection: { image: 1, images: 1 } },
-  );
+  const previous = await collection.findOne({ id });
+
+  // Read before the write, from the document as it stands, so the URL that is
+  // about to be replaced is the one that gets remembered.
+  if (previous) {
+    await rememberSlugMove("outfit", outfitSlug(previous), outfitSlug({ ...previous, ...input }));
+  }
 
   // `image` is the single-photo field older documents were saved with. Always
   // clearing it keeps one look from carrying two competing photo fields. The
@@ -161,8 +225,73 @@ export async function createCelebrity(input: Omit<Celebrity, "id">) {
 
 export async function updateCelebrity(id: number, input: Omit<Celebrity, "id">) {
   const db = await getDb();
-  await db.collection<Celebrity>("celebrities").updateOne({ id }, { $set: input });
+  const collection = db.collection<Celebrity>("celebrities");
+  const previous = await collection.findOne({ id });
+
+  if (previous) {
+    await rememberSlugMove("celebrity", celebritySlug(previous), celebritySlug({ ...previous, ...input }));
+  }
+
+  await collection.updateOne({ id }, { $set: input });
+
+  // Her looks are filed under her name, so they have to move with it.
+  if (previous) await renameAcrossOutfits("celebrity", previous.name, input.name);
+
   revalidateSite();
+}
+
+/**
+ * Renames a celebrity everywhere the archive mentions her, record or not.
+ *
+ * The panel lists names the outfits mention that no record covers, so the
+ * thing most in need of correcting is usually the one thing no form can edit.
+ * Renaming onto a name that already exists merges the two: the looks join it,
+ * and the now-duplicate record is removed rather than left orphaned under a
+ * name nothing points at.
+ */
+export async function renameCelebrityEverywhere(from: string, to: string) {
+  const db = await getDb();
+  const collection = db.collection<Celebrity>("celebrities");
+  const records = await collection.find({}).toArray();
+  const source = records.find((record) => sameName(record.name, from));
+  const target = records.find((record) => sameName(record.name, to));
+
+  if (source && target && source.id !== target.id) {
+    await collection.deleteOne({ id: source.id });
+  } else if (source) {
+    await collection.updateOne({ id: source.id }, { $set: { name: to } });
+  }
+
+  // The archive page is served at a slug built from the name, whether or not a
+  // record backs it — which is exactly the case that had nowhere to record it.
+  await rememberSlugMove("celebrity", nameSlug(from), nameSlug(to));
+
+  const looks = await renameAcrossOutfits("celebrity", from, to);
+  revalidateSite();
+  return { looks, merged: Boolean(source && target && source.id !== target.id) };
+}
+
+/** The same, for an occasion. */
+export async function renameOccasionEverywhere(from: string, to: string) {
+  const db = await getDb();
+  const collection = db.collection<Occasion>("occasions");
+  const records = await collection.find({}).toArray();
+  const source = records.find((record) => sameName(record.name, from));
+  const target = records.find((record) => sameName(record.name, to));
+
+  if (source && target && source.id !== target.id) {
+    await collection.deleteOne({ id: source.id });
+  } else if (source) {
+    await collection.updateOne({ id: source.id }, { $set: { name: to } });
+  }
+
+  // The archive page is served at a slug built from the name, whether or not a
+  // record backs it — which is exactly the case that had nowhere to record it.
+  await rememberSlugMove("occasion", nameSlug(from), nameSlug(to));
+
+  const looks = await renameAcrossOutfits("occasion", from, to);
+  revalidateSite();
+  return { looks, merged: Boolean(source && target && source.id !== target.id) };
 }
 
 export async function deleteCelebrity(id: number) {
@@ -183,7 +312,18 @@ export async function createOccasion(input: Omit<Occasion, "id">) {
 
 export async function updateOccasion(id: number, input: Omit<Occasion, "id">) {
   const db = await getDb();
-  await db.collection<Occasion>("occasions").updateOne({ id }, { $set: input });
+  const collection = db.collection<Occasion>("occasions");
+  const previous = await collection.findOne({ id });
+
+  if (previous) {
+    await rememberSlugMove("occasion", occasionSlug(previous), occasionSlug({ ...previous, ...input }));
+  }
+
+  await collection.updateOne({ id }, { $set: input });
+
+  // The looks carry the occasion's name, so renaming it has to move them too.
+  if (previous) await renameAcrossOutfits("occasion", previous.name, input.name);
+
   revalidateSite();
 }
 

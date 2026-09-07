@@ -4,10 +4,11 @@ import styles from "@/app/admin/panel.module.css";
 import { getCelebrityViews } from "@/lib/db/content";
 import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
+import { RenameRowButton } from "@/components/admin/RenameRowButton";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { anyFilter, carry, listPath, matchesQuery } from "@/lib/admin-filters";
-import { removeCelebrity } from "./actions";
+import { removeCelebrity, renameCelebrity } from "./actions";
 import type { CelebrityView } from "@/lib/archive";
 
 type Query = { page?: string; per?: string; q?: string; state?: string; sort?: string };
@@ -73,6 +74,9 @@ export default async function AdminCelebrities({
   const paged = paginate(sorted, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
   const returnTo = listPath("/admin/celebrities", query, FILTER_KEYS, paged.page);
+  // Offered in the rename dialog, so correcting a name onto one that already
+  // exists is a pick rather than a retype.
+  const names = all.map((celebrity) => celebrity.name);
   const missing = all.filter((celebrity) => !celebrity.record).length;
 
   return (
@@ -174,6 +178,15 @@ export default async function AdminCelebrities({
                           <Link href={`/celebrities/${celebritySlug(celebrity)}`} target="_blank">
                             View ↗
                           </Link>
+                          {/* Renaming reaches every look filed under the name,
+                              which is the only way to fix one no record covers. */}
+                          <RenameRowButton
+                            from={celebrity.name}
+                            options={names}
+                            action={renameCelebrity}
+                            returnTo={returnTo}
+                            noun="celebrity"
+                          />
                           {/* A name the outfits mention but no record covers has
                               nothing to delete — and a negative placeholder id. */}
                           {celebrity.record ? (

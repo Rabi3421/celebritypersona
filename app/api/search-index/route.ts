@@ -1,5 +1,5 @@
 import { buildSearchIndex } from "@/lib/search";
-import { getCelebrities, getOccasions, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
 
 /**
  * The search index, fetched once by the header search box the first time
@@ -12,10 +12,13 @@ import { getCelebrities, getOccasions, getOutfits } from "@/lib/db/content";
 export const revalidate = 3600;
 
 export async function GET() {
+  // The merged views, not the records: a celebrity or occasion the outfits
+  // mention has a working page and sits in the sitemap, so search has to be
+  // able to reach it too.
   const [outfits, celebrities, occasions] = await Promise.all([
     getOutfits(),
-    getCelebrities(),
-    getOccasions(),
+    getCelebrityViews(),
+    getOccasionViews(),
   ]);
 
   return Response.json(buildSearchIndex({ outfits, celebrities, occasions }));

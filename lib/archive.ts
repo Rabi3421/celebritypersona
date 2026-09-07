@@ -366,7 +366,7 @@ export function occasionCoverage(outfits: Outfit[], budget: number) {
   const within = completeLooks(outfits).filter((outfit) => swapTotal(outfit) <= budget);
   return occasionNames(outfits).map((name) => ({
     name,
-    looks: within.filter((outfit) => outfit.occasion === name).length,
+    looks: within.filter((outfit) => sameName(outfit.occasion, name)).length,
   }));
 }
 
@@ -402,7 +402,7 @@ export function celebrityStats(
   name: string,
   now = new Date(),
 ): CelebrityStats {
-  const hers = outfits.filter((outfit) => outfit.celebrity === name);
+  const hers = outfits.filter((outfit) => sameName(outfit.celebrity, name));
   const savings = hers
     .map((outfit) => pricing(outfit).savingPct)
     .filter((value): value is number => value !== null);
@@ -453,7 +453,7 @@ export type OccasionStats = {
 };
 
 const matchesOccasion = (outfit: Outfit, name: string) =>
-  outfit.occasion.toLowerCase() === name.toLowerCase();
+  sameName(outfit.occasion, name);
 
 export function occasionStats(outfits: Outfit[], name: string): OccasionStats {
   const theirs = outfits.filter((outfit) => matchesOccasion(outfit, name));
@@ -518,7 +518,7 @@ export function celebrityTiles(outfits: Outfit[], limit = 6): OccasionTile[] {
     .map((entry) => ({
       name: entry.name,
       looks: entry.count,
-      image: newestFirst(outfits.filter((outfit) => outfit.celebrity === entry.name))
+      image: newestFirst(outfits.filter((outfit) => sameName(outfit.celebrity, entry.name)))
         .map((outfit) => outfitPhotos(outfit)[0]?.url)
         .find(Boolean),
     }));
@@ -667,6 +667,18 @@ function unrecorded<T extends { name: string }>(
     .filter((name) => !known.has(name.toLowerCase()))
     .map((name, index) => ({ id: -(index + 1), name }));
 }
+
+/**
+ * One rule for comparing an archive name, used everywhere two of them meet.
+ *
+ * Celebrity and occasion are typed by hand, and the surfaces disagreed about
+ * what counted as the same name: the occasion pages matched case-insensitively
+ * while the counts, the profile filters and the related-looks rails all used
+ * exact equality. Same data, two answers, and only the typing kept them
+ * agreeing.
+ */
+export const sameName = (a: string | undefined, b: string | undefined) =>
+  (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
 
 /**
  * Settles a typed name against the names already in use.

@@ -8,6 +8,26 @@ import { firebaseStorage } from "@/lib/firebase";
 const MAX_BYTES = 6 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
+/**
+ * What the bytes say the file is, which is not always what the browser said.
+ * `file.type` is client-supplied, so an allowed label can arrive on anything
+ * at all; the signature is the part that cannot be typed by hand.
+ */
+function sniff(bytes: Uint8Array): string | null {
+  const is = (offset: number, ...expected: number[]) =>
+    expected.every((byte, index) => bytes[offset + index] === byte);
+  const ascii = (offset: number, text: string) =>
+    [...text].every((char, index) => bytes[offset + index] === char.charCodeAt(0));
+
+  if (is(0, 0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (is(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+  if (ascii(0, "RIFF") && ascii(8, "WEBP")) return "image/webp";
+  // ISO-BMFF: the brand sits after the box header, and AVIF stills declare
+  // "avif" while a sequence declares "avis".
+  if (ascii(4, "ftyp") && (ascii(8, "avif") || ascii(8, "avis"))) return "image/avif";
+  return null;
+}
+
 const extensionFor = (type: string) =>
   ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" })[type] ??
   "jpg";
@@ -43,12 +63,25 @@ export async function POST(request: Request) {
   // A look saved before it had a slug still needs somewhere to go.
   const folder = nameSlug(String(form.get("folder") ?? "")) || "outfits";
   const slug = nameSlug(String(form.get("slug") ?? "")) || "unfiled";
-  const path = `${folder}/${slug}/${Date.now()}-${crypto.randomUUID()}.${extensionFor(file.type)}`;
+  const named = (type: string) =>
+    `${folder}/${slug}/${Date.now()}-${crypto.randomUUID()}.${extensionFor(type)}`;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  // The stored type and the extension come from the signature, never from the
+  // label, so nothing can be filed as an image that is not one.
+  const actual = sniff(bytes);
+  if (!actual || !ALLOWED.includes(actual)) {
+    return NextResponse.json(
+      { error: "That file is not a JPEG, PNG, WebP or AVIF image." },
+      { status: 415 },
+    );
+  }
 
   try {
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const path = named(actual);
     const handle = ref(firebaseStorage(), path);
-    await uploadBytes(handle, bytes, { contentType: file.type });
+    await uploadBytes(handle, bytes, { contentType: actual });
     const url = await getDownloadURL(handle);
     return NextResponse.json({ url, path });
   } catch (error) {

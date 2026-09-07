@@ -11,6 +11,7 @@ import type {
   Occasion,
   Outfit,
   PriceReport,
+  SlugRedirect,
   Subscriber,
   TrendingSearch,
 } from "@/lib/types";
@@ -151,3 +152,19 @@ export const getPriceReports = cache(async (): Promise<PriceReport[]> => {
     .sort({ receivedAt: -1 })
     .toArray();
 });
+
+/**
+ * Where a retired URL went, or null if it never existed.
+ *
+ * Read only when a slug matches nothing live, so a name that comes back into
+ * use is served by the record rather than by its own history.
+ */
+const movedSlug = cache(async (kind: SlugRedirect["kind"], from: string) => {
+  const db = await getDb();
+  const row = await db.collection<SlugRedirect>("redirects").findOne({ kind, from }, NO_ID);
+  return row?.to ?? null;
+});
+
+export const movedOutfitSlug = (slug: string) => movedSlug("outfit", slug);
+export const movedCelebritySlug = (slug: string) => movedSlug("celebrity", slug);
+export const movedOccasionSlug = (slug: string) => movedSlug("occasion", slug);

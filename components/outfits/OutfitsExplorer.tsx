@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startNavProgress } from "@/components/site/NavProgress";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, savingThresholds } from "@/lib/archive";
+import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, sameName, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
 import { plural } from "@/lib/format";
@@ -193,7 +193,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 <FilterOption
                   key={occasion}
                   selected={occasions.includes(occasion)}
-                  count={outfits.filter((outfit) => outfit.occasion === occasion).length}
+                  count={outfits.filter((outfit) => sameName(outfit.occasion, occasion)).length}
                   onClick={() => { setOccasions(toggleValue(occasions, occasion)); resetShown(); }}
                 >{occasion}</FilterOption>
               ))}
@@ -204,7 +204,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 <FilterOption
                   key={celebrity}
                   selected={celebrities.includes(celebrity)}
-                  count={outfits.filter((outfit) => outfit.celebrity === celebrity).length}
+                  count={outfits.filter((outfit) => sameName(outfit.celebrity, celebrity)).length}
                   avatar={celebrityAvatars.get(celebrity)}
                   onClick={() => { setCelebrities(toggleValue(celebrities, celebrity)); resetShown(); }}
                 >{celebrity}</FilterOption>
