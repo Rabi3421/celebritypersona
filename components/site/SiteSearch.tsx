@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { startNavProgress } from "./NavProgress";
 import { useEffect, useId, useRef, useState } from "react";
 import { SearchIcon } from "./Icons";
 import { searchEntries, type SearchEntry } from "@/lib/search";
@@ -55,6 +56,8 @@ export function SiteSearch() {
   function go(href: string) {
     setOpen(false);
     setQuery("");
+    // Pushed rather than clicked, so the site's progress bar has to be told.
+    startNavProgress();
     router.push(href);
   }
 

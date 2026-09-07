@@ -190,6 +190,50 @@
   padding:5px 10px;cursor:pointer;transition:all 130ms}
 .rowActions a:hover{border-color:var(--rani);color:var(--rani-soft)}
 .rowActions button:hover{border-color:var(--rani);color:var(--rani-soft)}
+/* A row delete reads as destructive on hover, so it is not mistaken for Edit. */
+.rowDanger:hover{background:rgba(224,0,108,.14);border-color:var(--rani)}
+
+/* ---------- confirm dialog ---------- */
+/* Sits in the top layer but stays a descendant of .shell, so it inherits the
+   panel's colour tokens rather than restating them. It also inherits from
+   whatever opened it — a table cell, a row-actions span — so type, wrapping
+   and alignment are all set here rather than left to the caller.
+   margin:auto restores the centring that Tailwind preflight's `* {margin:0}`
+   takes off the UA's dialog rule. */
+.confirm{margin:auto;width:min(430px,calc(100vw - 2*var(--s5)));padding:var(--s5);
+  background:var(--panel-2);color:var(--text);
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:0 28px 70px rgba(0,0,0,.6);animation:confirmIn 160ms ease-out;
+  font-family:var(--body),system-ui,sans-serif;font-size:14px;font-weight:400;
+  white-space:normal;text-align:left;letter-spacing:normal;text-transform:none}
+.confirm::backdrop{background:rgba(4,5,7,.66);backdrop-filter:blur(3px)}
+@keyframes confirmIn{from{opacity:0;transform:translateY(6px) scale(.97)}}
+.confirmTitle{font-family:var(--display),system-ui,sans-serif;font-size:17px;font-weight:700;
+  letter-spacing:-.02em;margin-bottom:var(--s2)}
+.confirmBody{font-size:14px;line-height:1.6;color:var(--muted)}
+.confirmBar{display:flex;justify-content:flex-end;gap:var(--s2);margin-top:var(--s5)}
+/* Doubled class so these win over .rowActions button, which is more specific
+   than a lone .confirmCancel and would otherwise repaint both as row chips. */
+.confirm .confirmBar button{font-family:var(--body),system-ui,sans-serif;font-size:13.5px;
+  letter-spacing:normal;border-radius:var(--r-sm);padding:9px 16px;cursor:pointer;transition:all 130ms}
+.confirm .confirmCancel{color:var(--muted);background:transparent;border:1px solid var(--line)}
+.confirm .confirmCancel:hover{color:var(--text);border-color:rgba(255,255,255,.26)}
+.confirm .confirmGo{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-width:128px;color:#fff;background:var(--rani);border:1px solid var(--rani);font-weight:600}
+.confirm .confirmGo:hover{background:#b00055;border-color:#b00055}
+/* While the action is in flight both buttons stop responding, and the confirm
+   holds its width so the bar does not jump as the label changes. */
+.confirm .confirmBar button:disabled{cursor:default}
+.confirm .confirmCancel:disabled{opacity:.4}
+.confirm .confirmCancel:disabled:hover{color:var(--muted);border-color:var(--line)}
+.confirm .confirmGo:disabled,.confirm .confirmGo:disabled:hover{background:#b00055;border-color:#b00055}
+.spinner{width:14px;height:14px;flex:none;border-radius:50%;
+  border:2px solid rgba(255,255,255,.32);border-top-color:#fff;
+  animation:spin 640ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* The global reduced-motion rule stops the spin, so drop the leading edge that
+   only reads as motion and leave an even ring behind. */
+@media(prefers-reduced-motion:reduce){.spinner{border-top-color:rgba(255,255,255,.32)}}
 .newButton{font-family:inherit;font-weight:600;font-size:13.5px;color:#fff;background:var(--rani);
   border:0;border-radius:var(--r-sm);padding:10px 18px;white-space:nowrap;transition:background 130ms}
 .newButton:hover{background:#b00055}

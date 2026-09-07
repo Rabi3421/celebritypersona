@@ -165,7 +165,8 @@ export default async function AdminSubscribers({
                         status={subscriber.status}
                         statuses={SUBSCRIBER_STATUSES}
                         label={subscriber.email ?? subscriber.number ?? subscriber.id}
-                        confirm="Delete this address? Unsubscribing keeps it on the list so it cannot be re-added by accident; deleting does not."
+                        confirmTitle="Delete this address?"
+                        confirm="Unsubscribing keeps an address on the list so it cannot be re-added by accident. Deleting does not."
                         onStatus={updateSubscriberStatus}
                         onDelete={removeSubscriber}
                       />

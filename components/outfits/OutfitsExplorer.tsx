@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startNavProgress } from "@/components/site/NavProgress";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
@@ -275,7 +276,10 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                       featured={index === 0 && sort === "new" && occasions.length === 0}
                       saved={saved.has(outfitSlug(outfit))}
                       onSave={() => saved.toggle(outfitSlug(outfit))}
-                      onNavigate={() => router.push(`/outfits/${outfitSlug(outfit)}`)}
+                      onNavigate={() => {
+                        startNavProgress();
+                        router.push(`/outfits/${outfitSlug(outfit)}`);
+                      }}
                       onQuickView={() => openQuickView(outfit)}
                     />
                     {index === 4 && <PromoCard outfits={outfits} />}

@@ -147,7 +147,8 @@ export default async function AdminRequests({
                         status={request.status}
                         statuses={REQUEST_STATUSES}
                         label={`request for ${request.name}`}
-                        confirm={`Delete the request for ${request.name}? Its ${request.votes} vote${request.votes === 1 ? "" : "s"} go with it.`}
+                        confirmTitle="Delete this request?"
+                        confirm={`The request for ${request.name} goes, and its ${request.votes} vote${request.votes === 1 ? "" : "s"} with it.`}
                         onStatus={updateRequestStatus}
                         onDelete={removeRequest}
                       />

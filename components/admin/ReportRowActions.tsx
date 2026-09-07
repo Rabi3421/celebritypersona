@@ -3,10 +3,12 @@
 import { removeReport, updateReportStatus } from "@/app/admin/(panel)/reports/actions";
 import { PRICE_REPORT_STATUSES, type PriceReport } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 /**
  * Changing the status submits immediately; there is nothing else to confirm.
- * Deleting is not undoable and loses the reader's words, so it asks first.
+ * Deleting is not undoable and loses the reader's words, so it asks first in
+ * a modal.
  */
 export function ReportRowActions({ report }: { report: PriceReport }) {
   return (
@@ -26,16 +28,16 @@ export function ReportRowActions({ report }: { report: PriceReport }) {
           ))}
         </select>
       </form>
-      <form
-        action={removeReport}
-        onSubmit={(event) => {
-          if (!window.confirm("Delete this report? It cannot be recovered.")) {
-            event.preventDefault();
-          }
-        }}
-      >
+      <form action={removeReport}>
         <input type="hidden" name="id" value={report.id} />
-        <button type="submit">Delete</button>
+        <ConfirmButton
+          className={styles.rowDanger}
+          title="Delete this report?"
+          message="The reader's correction goes with it, and it cannot be recovered."
+          ariaLabel={`Delete report ${report.id}`}
+        >
+          Delete
+        </ConfirmButton>
       </form>
     </span>
   );

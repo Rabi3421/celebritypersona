@@ -8,20 +8,24 @@ import { navLinks } from "@/lib/navigation";
 export function Nav({ active }: { active?: string }) {
   return (
     <nav className="nav" id="nav">
-      <Brand />
-      <div className="navlinks">
-        {navLinks.map((link) => (
-          <Link
-            href={link.href}
-            key={link.label}
-            aria-current={active === link.label.toLowerCase() ? "page" : undefined}
-          >
-            {link.label}
-          </Link>
-        ))}
+      <div className="nav-in shell">
+        <Brand />
+        <div className="navlinks">
+          {navLinks.map((link) => (
+            <Link
+              href={link.href}
+              key={link.label}
+              aria-current={active === link.label.toLowerCase() ? "page" : undefined}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <div className="nav-end">
+          <SiteSearch />
+          <SavedBadge />
+        </div>
       </div>
-      <SiteSearch />
-      <SavedBadge />
     </nav>
   );
 }

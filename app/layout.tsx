@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { NavProgress } from "@/components/site/NavProgress";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { site, social } from "@/lib/site-config";
 
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${archivo.variable} ${plexSans.variable} ${plexMono.variable}`}
     >
       <body>
+        <NavProgress />
         {children}
         <script
           type="application/ld+json"

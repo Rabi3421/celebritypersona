@@ -18,6 +18,7 @@ import {
 } from "@/app/admin/(panel)/trending/actions";
 import type { TrendingSearch } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 const INTENTS = ["Celebrity", "Occasion", "Budget", "Brand", "How to"] as const;
 
@@ -49,15 +50,17 @@ export function TrendingForm({ search }: { search?: TrendingSearch }) {
         </div>
       </form>
       {search ? (
-        <form
-          action={removeTrendingSearch}
-          className={styles.formBar}
-          onSubmit={(event) => {
-            if (!window.confirm("Remove this row from the public leaderboard?")) event.preventDefault();
-          }}
-        >
+        <form action={removeTrendingSearch} className={styles.formBar}>
           <input type="hidden" name="term" value={search.term} />
-          <button className={styles.danger} type="submit">Delete this term</button>
+          <ConfirmButton
+            className={styles.danger}
+            title="Remove this term?"
+            message="The row comes off the public leaderboard. The searches behind it are not affected."
+            confirmLabel="Remove"
+            pendingLabel="Removing…"
+          >
+            Delete this term
+          </ConfirmButton>
         </form>
       ) : null}
     </>

@@ -18,6 +18,7 @@ import {
 } from "@/app/admin/(panel)/occasions/actions";
 import type { OccasionView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 const GROUPS = ["Wedding", "Festival", "Everyday"] as const;
 const money = (value: number | null) =>
@@ -102,15 +103,15 @@ export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
         </div>
       </form>
       {occasion ? (
-        <form
-          action={removeOccasion}
-          className={styles.formBar}
-          onSubmit={(event) => {
-            if (!window.confirm("Delete this occasion? Its looks stay, but the guide copy and palette are gone for good.")) event.preventDefault();
-          }}
-        >
+        <form action={removeOccasion} className={styles.formBar}>
           <input type="hidden" name="id" value={occasion.id} />
-          <button className={styles.danger} type="submit">Delete this occasion</button>
+          <ConfirmButton
+            className={styles.danger}
+            title="Delete this occasion?"
+            message="Its looks stay on the site, but the guide copy and palette are gone for good."
+          >
+            Delete this occasion
+          </ConfirmButton>
         </form>
       ) : null}
     </>

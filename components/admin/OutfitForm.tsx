@@ -17,6 +17,7 @@ import { outfitPhotos, type Outfit } from "@/lib/types";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 export function OutfitForm({
   outfit,
@@ -181,17 +182,15 @@ export function OutfitForm({
       </form>
 
       {outfit ? (
-        <form
-          action={removeOutfit}
-          className={styles.formBar}
-          onSubmit={(event) => {
-            if (!window.confirm("Delete this look? Its photos are removed too, and this cannot be undone.")) event.preventDefault();
-          }}
-        >
+        <form action={removeOutfit} className={styles.formBar}>
           <input type="hidden" name="id" value={outfit.id} />
-          <button className={styles.danger} type="submit">
+          <ConfirmButton
+            className={styles.danger}
+            title="Delete this look?"
+            message="The look comes off the site, along with its photos. This cannot be undone."
+          >
             Delete this outfit
-          </button>
+          </ConfirmButton>
         </form>
       ) : null}
     </>

@@ -94,5 +94,10 @@ export async function saveOutfit(
 export async function removeOutfit(form: FormData) {
   await requireAdmin();
   await deleteOutfit(Number(form.get("id")));
-  redirect("/admin/outfits");
+
+  // Deleting from a row should land back on the page and filters that were
+  // open. Anything but a path on this list is ignored, so a posted field can
+  // never send the admin somewhere else.
+  const back = text(form, "returnTo");
+  redirect(back.startsWith("/admin/outfits") ? back : "/admin/outfits");
 }

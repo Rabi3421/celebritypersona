@@ -16,6 +16,7 @@ import {
 } from "@/app/admin/(panel)/celebrities/actions";
 import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 /** Her look count, average saving, price range and repeated labels are counted
  *  from the outfits, so the form only asks for what a person writes. */
@@ -101,15 +102,15 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
         </div>
       </form>
       {celebrity ? (
-        <form
-          action={removeCelebrity}
-          className={styles.formBar}
-          onSubmit={(event) => {
-            if (!window.confirm("Delete this archive? Her looks stay, but the bio and record are gone for good.")) event.preventDefault();
-          }}
-        >
+        <form action={removeCelebrity} className={styles.formBar}>
           <input type="hidden" name="id" value={celebrity.id} />
-          <button className={styles.danger} type="submit">Delete this celebrity</button>
+          <ConfirmButton
+            className={styles.danger}
+            title="Delete this archive?"
+            message="The decoded looks stay on the site, but the bio and record are gone for good."
+          >
+            Delete this celebrity
+          </ConfirmButton>
         </form>
       ) : null}
     </>

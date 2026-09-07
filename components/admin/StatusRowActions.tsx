@@ -1,9 +1,11 @@
 "use client";
 
 import styles from "@/app/admin/panel.module.css";
+import { ConfirmButton } from "./ConfirmButton";
 
 /**
- * A status dropdown that saves on change, and a delete that asks first.
+ * A status dropdown that saves on change, and a delete that asks first in a
+ * modal.
  *
  * Shared by the reports, requests and subscriber tables: three inboxes with
  * the same two things to do to a row, so they behave identically rather than
@@ -14,6 +16,7 @@ export function StatusRowActions({
   status,
   statuses,
   label,
+  confirmTitle,
   confirm,
   onStatus,
   onDelete,
@@ -23,6 +26,8 @@ export function StatusRowActions({
   statuses: readonly string[];
   /** Describes the row, for the screen reader on the select. */
   label: string;
+  /** The dialog heading — short, e.g. "Delete this address?". */
+  confirmTitle: string;
   confirm: string;
   onStatus: (form: FormData) => Promise<void>;
   onDelete: (form: FormData) => Promise<void>;
@@ -44,14 +49,16 @@ export function StatusRowActions({
           ))}
         </select>
       </form>
-      <form
-        action={onDelete}
-        onSubmit={(event) => {
-          if (!window.confirm(confirm)) event.preventDefault();
-        }}
-      >
+      <form action={onDelete}>
         <input type="hidden" name="id" value={id} />
-        <button type="submit">Delete</button>
+        <ConfirmButton
+          className={styles.rowDanger}
+          title={confirmTitle}
+          message={confirm}
+          ariaLabel={`Delete ${label}`}
+        >
+          Delete
+        </ConfirmButton>
       </form>
     </span>
   );
