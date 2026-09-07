@@ -6,7 +6,7 @@ import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
-import { allOption, anyFilter, carry, matchesQuery, matchesValue } from "@/lib/admin-filters";
+import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { removeOutfit } from "./actions";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { outfitPhotos, pricing, type Outfit } from "@/lib/types";
@@ -107,17 +107,7 @@ export default async function AdminOutfits({
   const paged = paginate(sorted, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
 
-  // Where a row delete returns to: the same page, filters and page size the
-  // admin is looking at now.
-  const listParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(carry(query, FILTER_KEYS))) {
-    if (value) listParams.set(key, value);
-  }
-  if (paged.page > 1) listParams.set("page", String(paged.page));
-  if (query.per) listParams.set("per", query.per);
-  const returnTo = listParams.toString()
-    ? `/admin/outfits?${listParams}`
-    : "/admin/outfits";
+  const returnTo = listPath("/admin/outfits", query, FILTER_KEYS, paged.page);
 
   return (
     <>

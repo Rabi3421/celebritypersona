@@ -6,7 +6,7 @@ import {
   ErrorSummary,
   FormError,
   SaveButton,
-  SelectField,
+  ComboField,
   TextAreaField,
   TextField,
 } from "@/components/admin/form/Fields";
@@ -55,12 +55,15 @@ export function OutfitForm({
             errors={errors}
             required
           />
-          <SelectField
+          <ComboField
             name="occasion"
             label="Occasion"
             options={occasions}
             defaultValue={draft?.occasion ?? outfit?.occasion}
+            placeholder="Airport"
+            hint="Pick one, or type a new one — it appears under Occasions straight away, ready for its guide copy."
             errors={errors}
+            required
           />
           <TextField
             name="date"

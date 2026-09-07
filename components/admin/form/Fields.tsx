@@ -95,6 +95,43 @@ export function SelectField({
   );
 }
 
+/**
+ * A text field that suggests what already exists without confining you to it.
+ *
+ * Occasion and celebrity are open lists: the archive grows a new one whenever
+ * a look is published under a name nothing else uses yet. A <select> could
+ * only ever offer what has already been written down, which meant an outfit
+ * could not be filed under anything new. The datalist offers the known names
+ * so the common case is two keystrokes and no typo, while anything typed is
+ * accepted as it stands.
+ */
+export function ComboField({
+  options,
+  ...p
+}: Base & { options: readonly string[] }) {
+  const listId = `${p.name}-options`;
+  return (
+    <Wrapper {...p}>
+      <input
+        id={p.name}
+        name={p.name}
+        list={listId}
+        defaultValue={p.defaultValue}
+        placeholder={p.placeholder}
+        required={p.required}
+        // The browser's own history would bury the list this field offers.
+        autoComplete="off"
+        aria-invalid={p.errors?.[p.name] ? true : undefined}
+      />
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option value={option} key={option} />
+        ))}
+      </datalist>
+    </Wrapper>
+  );
+}
+
 export function CheckField({
   name,
   label,

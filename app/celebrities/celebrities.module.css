@@ -35,7 +35,10 @@
 .spotlightCard { border-radius:var(--r-lg); overflow:hidden; border:1px solid rgba(255,255,255,.1); background:#181b21; transition:transform var(--base) var(--out),border-color var(--base); }
 .spotlightCard:hover { transform:translateY(-6px); border-color:var(--rani); }
 .spotlightImage { aspect-ratio:16/10; overflow:hidden; position:relative; }
-.spotlightImage img { object-fit:cover; transition:transform .9s var(--out); }
+/* These are portrait photographs cropped into a short landscape band, so the
+   default centred crop lands on the torso and cuts the face off. Holding the
+   window near the top of the frame keeps the head in every card. */
+.spotlightImage img { object-fit:cover; object-position:center top; transition:transform .9s var(--out); }
 .spotlightCard:hover .spotlightImage img { transform:scale(1.07); }
 .spotlightImage::after { content:""; position:absolute; inset:0; background:linear-gradient(to top,#181b21,transparent 62%); }
 .spotlightImage span { position:absolute; left:12px; top:12px; z-index:2; font-family:var(--mono); font-size:9.5px; background:var(--rani); color:#fff; padding:5px 10px; border-radius:3px; }
@@ -99,6 +102,6 @@
 .request form { display:flex; gap:var(--s3); min-width:390px; }
 .request input { flex:1; font-size:15px; padding:15px 18px; border-radius:var(--r-md); border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.07); color:var(--bone); }
 @media(max-width:1200px){.grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:1023px){.shell{padding:0 var(--s4)}.band{padding:var(--s7) 0 var(--s6)}.stats{gap:var(--s6);margin-top:var(--s6)}.stats b{font-size:23px}.spotlightGrid{grid-template-columns:1fr}.spotlightImage{aspect-ratio:21/9}.grid{grid-template-columns:repeat(2,1fr);gap:var(--s4) var(--s3);padding:var(--s5) 0 var(--s8)}.cardTop{padding:var(--s4) var(--s4) var(--s3)}.cardTop>img{width:50px;height:50px}.cardTop h2{font-size:14.5px}.thumbnails,.cardMeta,.brands{padding-left:var(--s4);padding-right:var(--s4)}.cardActions{padding:var(--s4)}.brands{display:none}.request{grid-template-columns:1fr;padding:var(--s7) var(--s5)}.request form{min-width:0;flex-direction:column}.toolbarRow p{width:100%}}
+@media(max-width:1023px){.shell{padding:0 var(--s4)}.band{padding:var(--s7) 0 var(--s6)}.stats{gap:var(--s6);margin-top:var(--s6)}.stats b{font-size:23px}.spotlightGrid{grid-template-columns:1fr}.spotlightImage{aspect-ratio:3/2}.grid{grid-template-columns:repeat(2,1fr);gap:var(--s4) var(--s3);padding:var(--s5) 0 var(--s8)}.cardTop{padding:var(--s4) var(--s4) var(--s3)}.cardTop>img{width:50px;height:50px}.cardTop h2{font-size:14.5px}.thumbnails,.cardMeta,.brands{padding-left:var(--s4);padding-right:var(--s4)}.cardActions{padding:var(--s4)}.brands{display:none}.request{grid-template-columns:1fr;padding:var(--s7) var(--s5)}.request form{min-width:0;flex-direction:column}.toolbarRow p{width:100%}}
 @media(max-width:560px){.grid{grid-template-columns:1fr}.cardMeta{gap:var(--s3)}}
 @media(prefers-reduced-motion:reduce){.page *{animation-duration:.01ms!important;transition-duration:.01ms!important}}

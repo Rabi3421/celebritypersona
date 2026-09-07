@@ -2,10 +2,12 @@ import Link from "next/link";
 import { occasionSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getOccasionViews } from "@/lib/db/content";
+import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
-import { allOption, anyFilter, carry, matchesQuery, matchesValue } from "@/lib/admin-filters";
+import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
+import { removeOccasion } from "./actions";
 import type { OccasionView } from "@/lib/archive";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -75,6 +77,7 @@ export default async function AdminOccasions({
 
   const paged = paginate(sorted, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
+  const returnTo = listPath("/admin/occasions", query, FILTER_KEYS, paged.page);
   const missing = all.filter((occasion) => !occasion.record).length;
 
   return (
@@ -193,6 +196,18 @@ export default async function AdminOccasions({
                           <Link href={`/occasions/${occasionSlug(occasion)}`} target="_blank">
                             View ↗
                           </Link>
+                          {/* An occasion the outfits mention but no record covers
+                              has nothing to delete. */}
+                          {occasion.record ? (
+                            <DeleteRowButton
+                              id={occasion.id}
+                              action={removeOccasion}
+                              label={occasion.name}
+                              returnTo={returnTo}
+                              title="Delete this occasion?"
+                              confirm={`Looks tagged ${occasion.name} stay on the site, but the guide copy and palette are gone for good.`}
+                            />
+                          ) : null}
                         </span>
                       </td>
                     </tr>

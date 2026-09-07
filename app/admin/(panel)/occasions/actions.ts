@@ -48,5 +48,10 @@ export async function saveOccasion(
 export async function removeOccasion(form: FormData) {
   await requireAdmin();
   await deleteOccasion(Number(form.get("id")));
-  redirect("/admin/occasions");
+
+  // Deleting from a row should land back on the page and filters that were
+  // open. Anything but a path on this list is ignored, so a posted field can
+  // never send the admin somewhere else.
+  const back = text(form, "returnTo");
+  redirect(back.startsWith("/admin/occasions") ? back : "/admin/occasions");
 }

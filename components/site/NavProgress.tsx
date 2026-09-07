@@ -133,12 +133,28 @@ function Bar() {
       start();
     };
 
+    /**
+     * The filter bars submit as plain GET forms, which the browser navigates
+     * itself — no anchor is ever clicked. Only GET is watched: a POST form is
+     * a server action, which React handles in place and which shows its own
+     * pending state on the button that submitted it.
+     */
+    const onSubmit = (event: SubmitEvent) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (form.method.toLowerCase() !== "get") return;
+      if (new URL(form.action, window.location.href).origin !== window.location.origin) return;
+      start();
+    };
+
     // Capture, so it runs before Link's own handler calls preventDefault.
     document.addEventListener("click", onClick, true);
+    document.addEventListener("submit", onSubmit, true);
     window.addEventListener("popstate", start);
     window.addEventListener(START_EVENT, start);
     return () => {
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("submit", onSubmit, true);
       window.removeEventListener("popstate", start);
       window.removeEventListener(START_EVENT, start);
     };
@@ -161,8 +177,9 @@ function Bar() {
  * Most of this site is a server render away — an outfit, a celebrity archive,
  * a filtered admin table — so a click can sit for a moment with nothing on
  * screen acknowledging it. Watching for anchor clicks means every link on the
- * site is covered, public and admin, without each one opting in; the two
- * places that navigate in code call startNavProgress() instead.
+ * site is covered, public and admin, without each one opting in; GET form
+ * submits (the admin filter bars) are watched too, and the two places that
+ * navigate in code call startNavProgress() instead.
  *
  * It is aria-hidden on purpose: Next announces route changes to screen readers
  * already, and a second live region would only talk over it.

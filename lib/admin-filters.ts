@@ -40,6 +40,27 @@ export function carry(
   );
 }
 
+/**
+ * The URL of the list as it is being looked at right now — filters, page and
+ * page size. A row action posts this so that finishing it returns the admin to
+ * the screen they were working through rather than an unfiltered page one.
+ */
+export function listPath(
+  basePath: string,
+  query: Record<string, string | undefined>,
+  keys: string[],
+  page: number,
+): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(carry(query, keys))) {
+    if (value) params.set(key, value);
+  }
+  if (page > 1) params.set("page", String(page));
+  if (query.per) params.set("per", query.per);
+  const search = params.toString();
+  return search ? `${basePath}?${search}` : basePath;
+}
+
 /** An <option> list with an "everything" row on top. */
 export const allOption = (label: string, values: string[]) => [
   { value: "all", label },

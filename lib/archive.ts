@@ -668,6 +668,23 @@ function unrecorded<T extends { name: string }>(
     .map((name, index) => ({ id: -(index + 1), name }));
 }
 
+/**
+ * Settles a typed name against the names already in use.
+ *
+ * Occasion and celebrity are typed by hand, and an archive keyed on those
+ * strings splits in two the moment someone types "airport" where every other
+ * look says "Airport": two directory rows, two public pages, the looks divided
+ * between them. Whitespace is tidied, and a name that already exists in any
+ * casing snaps to the spelling the archive is already using. Genuinely new
+ * names are kept exactly as typed.
+ */
+export function canonicalName(typed: string, known: readonly string[]): string {
+  const clean = typed.trim().replace(/\s+/g, " ");
+  if (!clean) return clean;
+  const match = known.find((name) => name.toLowerCase() === clean.toLowerCase());
+  return match ?? clean;
+}
+
 export function celebrityViews(
   celebrities: Celebrity[],
   outfits: Outfit[],

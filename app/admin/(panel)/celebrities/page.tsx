@@ -2,10 +2,12 @@ import Link from "next/link";
 import { celebritySlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { getCelebrityViews } from "@/lib/db/content";
+import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
-import { anyFilter, carry, matchesQuery } from "@/lib/admin-filters";
+import { anyFilter, carry, listPath, matchesQuery } from "@/lib/admin-filters";
+import { removeCelebrity } from "./actions";
 import type { CelebrityView } from "@/lib/archive";
 
 type Query = { page?: string; per?: string; q?: string; state?: string; sort?: string };
@@ -70,6 +72,7 @@ export default async function AdminCelebrities({
 
   const paged = paginate(sorted, query.page, readPerPage(query.per));
   const active = anyFilter(query, FILTER_KEYS);
+  const returnTo = listPath("/admin/celebrities", query, FILTER_KEYS, paged.page);
   const missing = all.filter((celebrity) => !celebrity.record).length;
 
   return (
@@ -171,6 +174,18 @@ export default async function AdminCelebrities({
                           <Link href={`/celebrities/${celebritySlug(celebrity)}`} target="_blank">
                             View ↗
                           </Link>
+                          {/* A name the outfits mention but no record covers has
+                              nothing to delete — and a negative placeholder id. */}
+                          {celebrity.record ? (
+                            <DeleteRowButton
+                              id={celebrity.id}
+                              action={removeCelebrity}
+                              label={celebrity.name}
+                              returnTo={returnTo}
+                              title="Delete this archive?"
+                              confirm={`${celebrity.name}'s decoded looks stay on the site, but the bio and record are gone for good.`}
+                            />
+                          ) : null}
                         </span>
                       </td>
                     </tr>

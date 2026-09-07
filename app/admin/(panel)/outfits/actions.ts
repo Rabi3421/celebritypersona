@@ -2,9 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
 import { lines, rows, text } from "@/lib/form-data";
+import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 
@@ -47,10 +48,21 @@ export async function saveOutfit(
 ): Promise<OutfitFormState> {
   await requireAdmin();
 
+  // Celebrity and occasion are typed by hand and become archive keys, so they
+  // are settled against the names already in use before anything is stored —
+  // otherwise a stray capital quietly forks a directory entry in two.
+  // The merged views, so a record with no looks yet counts as a known name
+  // just as much as a name only the outfits mention.
+  const [occasions, celebrities, outfitsNow] = await Promise.all([
+    getOccasionViews(),
+    getCelebrityViews(),
+    getOutfits(),
+  ]);
+
   const draft: OutfitDraft = {
-    celebrity: text(form, "celebrity"),
+    celebrity: canonicalName(text(form, "celebrity"), celebrities.map((c) => c.name)),
     event: text(form, "event"),
-    occasion: text(form, "occasion"),
+    occasion: canonicalName(text(form, "occasion"), occasions.map((o) => o.name)),
     date: text(form, "date"),
     slug: text(form, "slug"),
     seoTitle: text(form, "seoTitle"),
@@ -72,7 +84,7 @@ export async function saveOutfit(
 
   // Two looks sharing a slug would share a URL and a photo folder, and one of
   // them would become unreachable.
-  const taken = (await getOutfits()).some(
+  const taken = outfitsNow.some(
     (outfit) => outfit.id !== id && outfitSlug(outfit) === parsed.data.slug,
   );
   if (taken) {

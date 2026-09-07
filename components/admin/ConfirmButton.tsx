@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import styles from "@/app/admin/panel.module.css";
 
@@ -46,6 +46,15 @@ export function ConfirmButton({
   const { pending } = useFormStatus();
   const wasPending = useRef(false);
 
+  // The spinner is driven from the click, not only from useFormStatus. The
+  // submit here is programmatic (requestSubmit on a type="button"), and the
+  // form status it reports arrives a beat later and only for as long as the
+  // action runs — on a fast delete that can be over before it has painted.
+  // Confirming is the moment the admin needs acknowledged, so that is what
+  // turns the spinner on; the form status decides when it comes off.
+  const [confirmed, setConfirmed] = useState(false);
+  const busy = confirmed || pending;
+
   // A dialog left open across a hot reload or a route change would outlive the
   // row it belongs to.
   useEffect(() => () => dialog.current?.close(), []);
@@ -54,9 +63,20 @@ export function ConfirmButton({
   // An action that finishes in place instead — a validation failure, a lost
   // connection — would otherwise leave the dialog stuck on its spinner.
   useEffect(() => {
-    if (wasPending.current && !pending) dialog.current?.close();
+    if (wasPending.current && !pending) {
+      setConfirmed(false);
+      dialog.current?.close();
+    }
     wasPending.current = pending;
   }, [pending]);
+
+  // Nothing above releases the spinner if the submit never reaches the server
+  // at all, so the dialog cannot be left spinning at a wall.
+  useEffect(() => {
+    if (!confirmed) return;
+    const timer = setTimeout(() => setConfirmed(false), 20_000);
+    return () => clearTimeout(timer);
+  }, [confirmed]);
 
   return (
     <>
@@ -65,7 +85,7 @@ export function ConfirmButton({
         type="button"
         className={className}
         aria-label={ariaLabel}
-        disabled={pending}
+        disabled={busy}
         onClick={() => dialog.current?.showModal()}
       >
         {children}
@@ -75,11 +95,11 @@ export function ConfirmButton({
         ref={dialog}
         className={styles.confirm}
         aria-labelledby={titleId}
-        aria-busy={pending}
+        aria-busy={busy}
         // Esc reaches a dialog even mid-submit, and closing then would hide a
         // delete that is already on its way.
         onCancel={(event) => {
-          if (pending) event.preventDefault();
+          if (busy) event.preventDefault();
         }}
       >
         <h2 className={styles.confirmTitle} id={titleId}>
@@ -90,7 +110,7 @@ export function ConfirmButton({
           <button
             type="button"
             className={styles.confirmCancel}
-            disabled={pending}
+            disabled={busy}
             onClick={() => dialog.current?.close()}
           >
             Cancel
@@ -98,10 +118,13 @@ export function ConfirmButton({
           <button
             type="button"
             className={styles.confirmGo}
-            disabled={pending}
-            onClick={() => opener.current?.form?.requestSubmit()}
+            disabled={busy}
+            onClick={() => {
+              setConfirmed(true);
+              opener.current?.form?.requestSubmit();
+            }}
           >
-            {pending ? (
+            {busy ? (
               <>
                 <span className={styles.spinner} aria-hidden="true" />
                 <span role="status">{pendingLabel}</span>
