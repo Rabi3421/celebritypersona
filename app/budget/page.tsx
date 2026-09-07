@@ -12,7 +12,7 @@ export const metadata: Metadata = pageMetadata({
   title: "Celebrity-Inspired Outfits Under ₹2,000, ₹5,000 & ₹10,000",
   absoluteTitle: true,
   description:
-    "Start from what you can spend. Complete celebrity-inspired outfits you can build under ₹2,000, ₹5,000 or ₹10,000 — every piece priced, linked and matched to the look it copies.",
+    "Start from what you can spend. Complete celebrity-inspired outfits under ₹2,000, ₹5,000 or ₹10,000 — every piece priced and linked.",
   path: "/budget",
 });
 

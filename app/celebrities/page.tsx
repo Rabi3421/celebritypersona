@@ -11,9 +11,9 @@ import { site } from "@/lib/site-config";
 import { celebritySlug } from "@/lib/slugs";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Bollywood & Indian Celebrity Style Archives, A–Z",
+  title: "Indian Celebrity Style Archives, A–Z",
   description:
-    "Every Indian celebrity whose looks we have decoded, in one index — the labels she wore, what each piece cost, and affordable alternatives. Alia Bhatt to Rashmika Mandanna.",
+    "Every Indian celebrity whose looks we have decoded — the labels she wore, what each piece cost, and affordable alternatives you can buy.",
   path: "/celebrities",
 });
 

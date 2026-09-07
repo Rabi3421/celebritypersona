@@ -42,9 +42,10 @@ function Portrait({
 }: {
   celebrity: CelebrityView;
   index?: number;
-  /** Set on the large portraits, where the photograph is worth describing to
-   *  a reader who cannot see it and to image search. The thumbnail rows sit
-   *  beside her name already, so they stay decorative. */
+  /** Set wherever the photograph is a look in its own right rather than a
+   *  chip-sized avatar. The card thumbnails are 180×240 photographs of the
+   *  outfits themselves — the images Google Images ranks for her name — so
+   *  they carry a description too. */
   describe?: boolean;
 } & Omit<React.ComponentProps<typeof Image>, "src" | "alt">) {
   const src = portrait(celebrity, index);
@@ -254,7 +255,7 @@ function CelebrityCard({ celebrity, following, onFollow }: { celebrity: Celebrit
           <Portrait celebrity={celebrity} describe width={66} height={66} />
           <div><h2>{celebrity.name}</h2><p>{plural(celebrity.stats.looks, "look")} decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.stats.isNew && <em>New archive</em>}</span></div>
         </div>
-        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Portrait key={index} celebrity={celebrity} index={index} width={180} height={240} />)}</div>
+        <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Portrait key={index} celebrity={celebrity} index={index} describe width={180} height={240} />)}</div>
         <div className={styles.cardMeta}><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
         <p className={styles.brands}>{celebrity.stats.brands.slice(0, 5).map((brand) => brand.name).join(" · ")}</p>
       </Link>

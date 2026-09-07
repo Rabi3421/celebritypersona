@@ -8,8 +8,8 @@ import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 export const metadata: Metadata = pageMetadata({
-  title: "About CelebrityPersona — Who Decodes These Looks",
-  description: "Indian fashion media tells you what a celebrity spent. CelebrityPersona tells you what you could spend instead. Who writes it, how a look gets decoded, and how the site is funded.",
+  title: "About — Who Decodes These Looks",
+  description: "Indian fashion media tells you what a celebrity spent. We tell you what you could spend instead. Who writes it, and how the site is funded.",
   path: "/about",
 });
 

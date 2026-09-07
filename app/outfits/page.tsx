@@ -17,9 +17,9 @@ import { hasSubstance } from "@/lib/types";
 export const revalidate = 3600;
 
 export const metadata: Metadata = pageMetadata({
-  title: "Celebrity Outfits Decoded — Every Look, Every Price",
+  title: "Celebrity Outfits Decoded, Piece by Piece",
   description:
-    "Browse every Indian celebrity outfit we have decoded, piece by piece — the labels worn, the prices we could confirm, and affordable alternatives. Filter by celebrity, occasion or budget.",
+    "Every Indian celebrity outfit we have decoded, piece by piece — the labels worn, the prices we confirmed, and affordable alternatives.",
   path: "/outfits",
 });
 

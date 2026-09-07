@@ -8,8 +8,8 @@ import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How We Decode a Celebrity Look — Our Method",
-  description: "The five steps behind every decode: sourcing the photograph, identifying each piece by hand, pricing the original, finding an affordable alternative, and re-checking the links.",
+  title: "How We Decode a Celebrity Look",
+  description: "The five steps behind every decode: sourcing the photo, identifying each piece by hand, pricing it, and finding an affordable alternative.",
   path: "/how-we-work",
 });
 

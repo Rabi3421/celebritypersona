@@ -39,6 +39,35 @@ export type SeoInput = {
   modifiedTime?: string;
 };
 
+/**
+ * A description Google will print in full.
+ *
+ * Roughly 155 characters survive in a result; past that the snippet is cut
+ * mid-thought, and the sentence that would have earned the click is the half
+ * that goes. Descriptions here are built from counted facts and vary in length
+ * with the archive, so rather than asking every caller to keep an eye on it,
+ * the trim happens once — at the last sentence that fits, falling back to a
+ * word boundary so nothing is ever cut mid-word.
+ */
+export const MAX_DESCRIPTION = 155;
+
+export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+
+  const window = clean.slice(0, max + 1);
+  const sentence = Math.max(
+    window.lastIndexOf(". "),
+    window.lastIndexOf("? "),
+    window.lastIndexOf("! "),
+  );
+  // Only end on a sentence if doing so keeps most of the snippet.
+  if (sentence > max * 0.55) return clean.slice(0, sentence + 1);
+
+  const space = window.lastIndexOf(" ");
+  return `${clean.slice(0, space > 0 ? space : max).replace(/[\s,;:—–-]+$/, "")}…`;
+}
+
 export function pageMetadata({
   title,
   description,
@@ -50,13 +79,15 @@ export function pageMetadata({
   publishedTime,
   modifiedTime,
 }: SeoInput): Metadata {
+  const snippet = clampDescription(description);
+
   const cards = images?.length
     ? images.slice(0, 4).map((image) => ({ url: image.url, alt: image.alt ?? title }))
     : [DEFAULT_OG_IMAGE];
 
   return {
     title: absoluteTitle ? { absolute: title } : title,
-    description,
+    description: snippet,
     alternates: { canonical: path },
     robots: index ? undefined : { index: false, follow: true },
     openGraph: {
@@ -64,7 +95,7 @@ export function pageMetadata({
       siteName: site.name,
       locale: "en_IN",
       title,
-      description,
+      description: snippet,
       url: path,
       images: cards,
       ...(publishedTime ? { publishedTime } : {}),
@@ -73,7 +104,7 @@ export function pageMetadata({
     twitter: {
       card: "summary_large_image",
       title,
-      description,
+      description: snippet,
       images: cards.map((card) => card.url),
     },
   };
