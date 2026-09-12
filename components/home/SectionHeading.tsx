@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -22,10 +23,23 @@ export function SectionHeading({
         <h2>{title}</h2>
         {blurb ? <p>{blurb}</p> : null}
       </div>
+      {/* These are the homepage's hub links — "All outfits", "A–Z index",
+          "All occasions", "Full leaderboard" — and the strongest internal
+          links on the site. Written as a bare <a>, every one of them tore the
+          app down and booted it again on click, with no prefetch. `Link`
+          renders the same <a class="more">, so nothing about it looks or
+          reads differently; external hrefs (the Instagram follow) stay a
+          plain anchor, since Link is for routes this app owns. */}
       {moreLabel ? (
-        <a href={moreHref} className="more">
-          {moreLabel}
-        </a>
+        moreHref.startsWith("/") ? (
+          <Link href={moreHref} className="more">
+            {moreLabel}
+          </Link>
+        ) : (
+          <a href={moreHref} className="more">
+            {moreLabel}
+          </a>
+        )
       ) : null}
     </div>
   );

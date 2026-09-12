@@ -7,7 +7,7 @@ import { navLinks } from "@/lib/navigation";
 /** Sticky top bar. The `stuck` class is toggled on scroll by ScrollEffects. */
 export function Nav({ active }: { active?: string }) {
   return (
-    <nav className="nav" id="nav">
+    <nav className="nav" id="nav" aria-label="Primary">
       <div className="nav-in shell">
         <Brand />
         <div className="navlinks">

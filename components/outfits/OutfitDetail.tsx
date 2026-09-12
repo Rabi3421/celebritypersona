@@ -119,7 +119,13 @@ export function OutfitDetail({
         <nav className={styles.crumb} aria-label="Breadcrumb">
           <Link href="/">Home</Link><i>›</i>
           <Link href="/outfits">Outfits</Link><i>›</i>
-          <span>{outfit.celebrity}</span><i>›</i>
+          {/* Her crumb was plain text while the page's BreadcrumbList told
+              Google it was a link to her archive — the markup has to describe
+              the trail the reader can actually walk. It is now the link the
+              schema always claimed, which also gives every look on the site a
+              crumb-level link to its celebrity hub. `.crumb a` carries only a
+              hover colour, so at rest it looks exactly as it did. */}
+          <Link href={`/celebrities/${nameSlug(outfit.celebrity)}`}>{outfit.celebrity}</Link><i>›</i>
           <span>{outfit.event}</span>
         </nav>
 
@@ -199,7 +205,17 @@ export function OutfitDetail({
             <header className={styles.title}>
               <p>Decoded · {outfit.items.length} {pieceWord(outfit.items.length)}</p>
               <h1>{heading}</h1>
-              <div>{longDate.format(published)} · <Link href={`/occasions/${outfit.occasion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.occasion} looks</Link> · <Link href={`/celebrities/${outfit.celebrity.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{outfit.celebrity} archive</Link></div>
+              {/* These two links were slugged inline, with a rule that did not
+                  strip the leading or trailing hyphen `nameSlug` removes — so a
+                  name or occasion ending in anything but a letter or digit
+                  ("Sabyasachi x H&M", "Red carpet.") linked to a URL no page
+                  answers on. `nameSlug` was already imported here; the whole
+                  site now derives these two the one way. */}
+              <div>
+                <time dateTime={outfit.date}>{longDate.format(published)}</time> ·{" "}
+                <Link href={`/occasions/${nameSlug(outfit.occasion)}`}>{outfit.occasion} looks</Link> ·{" "}
+                <Link href={`/celebrities/${nameSlug(outfit.celebrity)}`}>{outfit.celebrity} archive</Link>
+              </div>
             </header>
 
             {money.anySwapped ? (
@@ -396,9 +412,15 @@ export function OutfitDetail({
 
         <div className={styles.byline}>
           <div className={styles.authorAvatar}>R</div>
+          {/* Both dates were plain text, so the one date a reader most wants
+              from a price page — when the prices were last checked — was
+              readable by a person and by nothing else. `<time>` is inline and
+              unstyled, so the byline looks exactly as it did. */}
           <div><p>Decoded by Rabi</p><span>
-            Published {shortDate.format(published)}
-            {checked ? ` · Prices last checked ${shortDate.format(checked)}` : ""}
+            Published <time dateTime={outfit.date}>{shortDate.format(published)}</time>
+            {checked && outfit.pricesCheckedAt ? (
+              <> · Prices last checked <time dateTime={outfit.pricesCheckedAt}>{shortDate.format(checked)}</time></>
+            ) : null}
           </span></div>
           <Link href={`/report-a-price?outfit=${encodeURIComponent(slug)}&issue=${encodeURIComponent("Price is wrong")}`}>
             Report a wrong price

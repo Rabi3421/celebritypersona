@@ -54,7 +54,7 @@ export function LegalDocument({ doc }: { doc: LegalDoc }) {
     <main className={styles.page}>
       <header className={styles.band}>
         <div className={styles.shell}>
-          <nav className={styles.crumb}>
+          <nav className={styles.crumb} aria-label="Breadcrumb">
             <Link href="/">Home</Link>
             <i>›</i>
             <span>{doc.title}</span>

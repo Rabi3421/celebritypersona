@@ -83,9 +83,12 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
               <span>{plural(stats.looks, "look")}</span>
             </figure>
             <div className={styles.heroCopy}>
-              <h1>{celebrity.name} outfits</h1><p className={styles.subtitle}>Style archive · {agoLabel(stats.lastDecoded)}</p>
+              {/* "Updated 3 days ago" is the right thing to read and the wrong
+                  thing to parse, so the day it counts from rides along in the
+                  `datetime` attribute. Same for the re-check date below. */}
+              <h1>{celebrity.name} outfits</h1><p className={styles.subtitle}>Style archive · {stats.lastDecoded ? <time dateTime={stats.lastDecoded}>{agoLabel(stats.lastDecoded)}</time> : agoLabel(stats.lastDecoded)}</p>
               {bio.map((paragraph) => <p className={styles.bio} key={paragraph}>{paragraph}</p>)}
-              <p className={styles.byline}>Written by <b>Rabi</b>{checked ? <> · Prices re-checked <b>{checked}</b></> : null} · <Link href={`/report-a-price?piece=${encodeURIComponent(celebrity.name)}`}>Report a correction</Link></p>
+              <p className={styles.byline}>Written by <b>Rabi</b>{checked ? <> · Prices re-checked <b><time dateTime={stats.lastChecked ?? undefined}>{checked}</time></b></> : null} · <Link href={`/report-a-price?piece=${encodeURIComponent(celebrity.name)}`}>Report a correction</Link></p>
               <div className={styles.heroStats}>
                 <div><b>{stats.looks}</b><span>Looks decoded</span></div><div><b>{stats.pieces}</b><span>Pieces identified</span></div>
                 {stats.averageSaving === null ? null : <div><b className={styles.green}>{stats.averageSaving}%</b><span>Avg saving</span></div>}

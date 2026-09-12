@@ -33,10 +33,20 @@ export const revalidate = 3600;
  * for. It is the page most likely to be linked to and the one Google reads
  * first, so it says plainly what the archive holds.
  */
+/**
+ * `absoluteTitle` was false here, which read as "let the root append the site
+ * name" — and it never could. Next's `title.template` applies to child route
+ * segments only, and `app/page.tsx` is the same segment as `app/layout.tsx`,
+ * so the homepage title has always rendered bare. That is the better title
+ * anyway: 57 characters, the words people search, and Google prints the site
+ * name above it on its own from the WebSite graph rather than from the tag.
+ * Marked absolute so the flag now says what actually happens, and so nobody
+ * "fixes" it into a 77-character title Google would cut.
+ */
 export const metadata: Metadata = pageMetadata({
   title:
     "Indian Celebrity Outfits, Prices & Affordable Alternatives",
-  absoluteTitle: false,
+  absoluteTitle: true,
   description:
     "See what Indian celebrities actually wore, decoded piece by piece — the exact brand, the price we could confirm, and an affordable alternative you can buy. Airport looks, red carpets, sangeet and festive edits.",
   path: "/",

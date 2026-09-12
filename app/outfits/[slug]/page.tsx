@@ -211,7 +211,21 @@ export default async function OutfitPage({ params }: Props) {
           url: `${site.url}/celebrities/${nameSlug(outfit.celebrity)}`,
           ...(profiles?.length ? { sameAs: profiles } : {}),
         },
-        ...(photos.length ? { image: photos.map((photo) => photo.url) } : {}),
+        /**
+         * The photographs as objects rather than bare URLs, so the caption the
+         * editor wrote and the agency the page credits travel with the image
+         * into Google Images instead of stopping at the figcaption.
+         */
+        ...(photos.length
+          ? {
+              image: photos.map((photo) => ({
+                "@type": "ImageObject",
+                url: photo.url,
+                ...(photo.alt?.trim() ? { caption: photo.alt.trim() } : {}),
+                ...(photo.credit?.trim() ? { creditText: photo.credit.trim() } : {}),
+              })),
+            }
+          : {}),
         // Only pieces with a confirmed price carry an offer: the old shape
         // emitted price "undefined" for anything still being checked.
         mentions: outfit.items.map((item) => ({
@@ -228,12 +242,55 @@ export default async function OutfitPage({ params }: Props) {
                   // A link is not stock. Saying InStock because a URL exists is
                   // a guess dressed as a fact, and a reader who clicks through
                   // to a sold-out page has been told something untrue by us.
-                  availability: item.soldOut
-                    ? "https://schema.org/OutOfStock"
+                  //
+                  // Nor is "no link" a discontinued product, which is what this
+                  // used to claim for every piece whose price we had confirmed
+                  // but whose stockist we had not found. Unknown availability
+                  // is said by not saying it.
+                  ...(item.soldOut
+                    ? { availability: "https://schema.org/OutOfStock" }
                     : item.wornUrl
-                      ? "https://schema.org/InStock"
-                      : "https://schema.org/Discontinued",
+                      ? { availability: "https://schema.org/InStock" }
+                      : {}),
                   ...(item.wornUrl ? { url: item.wornUrl } : {}),
+                },
+              }
+            : {}),
+          /**
+           * The alternative, marked as an alternative.
+           *
+           * This is the one thing the site is for and the only part of a look
+           * that was invisible to a machine: the swap sits behind the "The
+           * swap" tab, so it is not in the served HTML, and it was in no
+           * structured data either. `isSimilarTo` is schema.org's own word for
+           * it, which means the graph can carry the swap's brand, price and
+           * link without any reading of it mistaking the alternative for the
+           * piece she actually wore — those stay on the Product itself.
+           *
+           * Named by garment and by the alternative's brand, which is exactly
+           * what the tab shows. Nothing is asserted that a reader cannot read.
+           */
+          ...(item.swapBrand
+            ? {
+                isSimilarTo: {
+                  "@type": "Product",
+                  name: item.name,
+                  brand: { "@type": "Brand", name: item.swapBrand },
+                  ...(typeof item.swap === "number"
+                    ? {
+                        offers: {
+                          "@type": "Offer",
+                          price: String(item.swap),
+                          priceCurrency: "INR",
+                          ...(item.swapUrl
+                            ? {
+                                availability: "https://schema.org/InStock",
+                                url: item.swapUrl,
+                              }
+                            : {}),
+                        },
+                      }
+                    : {}),
                 },
               }
             : {}),

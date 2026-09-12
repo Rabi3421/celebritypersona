@@ -20,6 +20,10 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/admin", "/admin/", "/api/"],
     },
     sitemap: `${site.url}/sitemap.xml`,
-    host: site.url,
+    // `Host:` takes a bare hostname. Given `site.url` it emitted
+    // "Host: https://www.celebritypersona.com", which is not a hostname, so
+    // the one crawler that still reads the directive could not use it. The
+    // sitemap line above is the one that needs the full URL.
+    host: site.host,
   };
 }
