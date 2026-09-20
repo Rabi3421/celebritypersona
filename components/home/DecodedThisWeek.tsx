@@ -20,7 +20,7 @@ export async function DecodedThisWeek() {
     <section className="sec">
       <SectionHeading
         eyebrow="Fresh"
-        title="Decoded this week"
+        title={fellBack ? "Latest decoded looks" : "Decoded this week"}
         blurb={blurb}
         moreLabel="All outfits →"
         moreHref="/outfits"

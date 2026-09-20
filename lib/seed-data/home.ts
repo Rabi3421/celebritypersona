@@ -22,8 +22,8 @@ export const homeContent: HomeContent = {
     },
     {
       n: "03",
-      title: "We test every link weekly",
-      body: "Sold out gets labelled. Dead links get removed, not hidden.",
+      title: "We show when links were checked",
+      body: "Every look carries its verification date. Sold out and missing links are labelled clearly.",
     },
   ],
   trustPoints: [
@@ -34,8 +34,8 @@ export const homeContent: HomeContent = {
     },
     {
       n: "02",
-      title: "Prices re-checked weekly",
-      body: "Each outfit page shows when its prices were last verified. If it's gone stale, you'll see that too.",
+      title: "Freshness shown on every look",
+      body: "Each outfit page shows when its prices were last verified. If review is due, you'll see that too.",
     },
     {
       n: "03",

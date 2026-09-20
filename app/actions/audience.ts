@@ -24,6 +24,8 @@ import { site } from "@/lib/site-config";
 export type AudienceState = {
   errors?: FieldErrors;
   done?: boolean;
+  /** True only when this submission started a new confirmation flow. */
+  subscribed?: boolean;
   /** Set when the address was already confirmed, so the page can say so. */
   already?: boolean;
   /** A likely correction the reader can accept or overrule. */
@@ -132,5 +134,5 @@ export async function subscribe(
     };
   }
 
-  return { done: true };
+  return { done: true, subscribed: true };
 }

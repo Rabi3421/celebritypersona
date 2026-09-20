@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getDb } from "@/lib/mongodb";
 import { celebrityViews, occasionViews } from "@/lib/archive";
+import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
@@ -82,11 +83,41 @@ export const getOccasionBySlug = cache(async (slug: string) => {
 
 export const getTrendingSearches = cache(async (): Promise<TrendingSearch[]> => {
   const db = await getDb();
-  return db
+  const searches = await db
     .collection<TrendingSearch>("trendingSearches")
     .find({}, NO_ID)
     .sort({ volume: -1 })
     .toArray();
+
+  const [outfits, celebrities, occasions] = await Promise.all([
+    getOutfits(),
+    getCelebrityViews(),
+    getOccasionViews(),
+  ]);
+  const livePaths = new Set([
+    "/",
+    "/outfits",
+    "/celebrities",
+    "/occasions",
+    "/budget",
+    "/trending",
+    "/saved",
+    "/search",
+    ...outfits.map((outfit) => `/outfits/${outfitSlug(outfit)}`),
+    ...celebrities.map((celebrity) => `/celebrities/${celebritySlug(celebrity)}`),
+    ...occasions.map((occasion) => `/occasions/${occasionSlug(occasion)}`),
+  ]);
+
+  return searches.map((search) => {
+    // A leaderboard row is editorial and can outlive the page it once linked
+    // to. Keep the question visible, but never publish a dead destination.
+    const pathname = search.href.startsWith("/") && !search.href.startsWith("//")
+      ? search.href.split(/[?#]/)[0]
+      : "";
+    return livePaths.has(pathname)
+      ? search
+      : { ...search, href: `/search?q=${encodeURIComponent(search.term)}` };
+  });
 });
 
 type SiteDoc<T> = { key: string; value: T };
@@ -106,7 +137,20 @@ export const getHomeContent = cache(async () => {
 });
 
 export const getTrendingFaqs = cache(async () => {
-  return (await siteContent<{ q: string; a: string }[]>("trendingFaqs")) ?? [];
+  const faqs = (await siteContent<{ q: string; a: string }[]>("trendingFaqs")) ?? [];
+  return faqs.map((faq) => {
+    const question = faq.q.toLowerCase();
+    if (question.includes("decide what is trending")) {
+      return { ...faq, a: TRENDING_METHOD_ANSWER };
+    }
+    if (question.includes("prices") && question.includes("current")) {
+      return {
+        ...faq,
+        a: "Every outfit page shows its exact verification date and warns when a recheck is due. Retailers change prices without warning, so always confirm the current figure on the retailer page.",
+      };
+    }
+    return faq;
+  });
 });
 
 export const getCelebrityRequests = cache(async (): Promise<CelebrityRequest[]> => {

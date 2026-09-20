@@ -10,6 +10,7 @@ import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } fro
 import { removeOutfit } from "./actions";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { outfitPhotos, pricing, type Outfit } from "@/lib/types";
+import { needsPriceReview, priceFreshness } from "@/lib/freshness";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -37,6 +38,8 @@ const STATES = [
   { value: "needs-price", label: "Missing a worn price" },
   { value: "needs-photo", label: "No photo" },
   { value: "needs-notes", label: "No editor's note" },
+  { value: "needs-review", label: "Price verification overdue" },
+  { value: "needs-link", label: "Retailer link pending" },
 ];
 
 const SORTS = [
@@ -60,6 +63,14 @@ function inState(outfit: Outfit, state: string | undefined) {
       return outfitPhotos(outfit).length === 0;
     case "needs-notes":
       return !outfit.notes?.length;
+    case "needs-review":
+      return needsPriceReview(outfit.pricesCheckedAt);
+    case "needs-link":
+      return outfit.items.some(
+        (item) =>
+          ((!item.soldOut && Boolean(item.wornBrand || item.worn !== undefined)) && !item.wornUrl) ||
+          (Boolean(item.swapBrand || item.swap !== undefined) && !item.swapUrl),
+      );
     default:
       return true;
   }
@@ -92,7 +103,7 @@ export default async function AdminOutfits({
   const sorted = [...filtered].sort((a, b) => {
     switch (query.sort) {
       case "oldest":
-        return a.date.localeCompare(b.date);
+        return (a.pricesCheckedAt ?? "").localeCompare(b.pricesCheckedAt ?? "") || a.date.localeCompare(b.date);
       case "saving":
         return pricing(b).savingTotal - pricing(a).savingTotal;
       case "priciest":
@@ -180,6 +191,7 @@ export default async function AdminOutfits({
                   <th>Event</th>
                   <th>Occasion</th>
                   <th>Date</th>
+                  <th>Price check</th>
                   <th>Pieces</th>
                   <th>As worn</th>
                   <th>Swap</th>
@@ -191,6 +203,7 @@ export default async function AdminOutfits({
                   const money = pricing(outfit);
                   const pending = money.pieces - money.swapped;
                   const photos = outfitPhotos(outfit).length;
+                  const freshness = priceFreshness(outfit.pricesCheckedAt);
                   return (
                     <tr key={outfit.id}>
                       <td>
@@ -207,6 +220,12 @@ export default async function AdminOutfits({
                         <span className={styles.chip}>{outfit.occasion}</span>
                       </td>
                       <td className={`${styles.num} ${styles.muted}`}>{outfit.date}</td>
+                      <td className={`${styles.num} ${styles.muted}`}>
+                        {outfit.pricesCheckedAt ?? "Never"}
+                        {freshness.tone !== "current" ? (
+                          <> <span className={styles.chip}>{freshness.label}</span></>
+                        ) : null}
+                      </td>
                       <td className={styles.num}>
                         {money.pieces}
                         {pending > 0 ? (

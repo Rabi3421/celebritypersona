@@ -1,5 +1,5 @@
-import { daysSince } from "@/lib/archive";
 import type { CelebrityView, OccasionView } from "@/lib/archive";
+import { needsPriceReview, PRICE_REVIEW_DAYS } from "@/lib/freshness";
 import {
   hasSubstance,
   outfitPhotos,
@@ -20,7 +20,7 @@ import {
  */
 
 /** After this long, a price on the page is a claim we can no longer stand behind. */
-export const STALE_DAYS = 30;
+export const STALE_DAYS = PRICE_REVIEW_DAYS;
 
 export type HealthCheck = {
   key: string;
@@ -52,9 +52,13 @@ export function archiveHealth({
   const needsPhoto = outfits.filter((outfit) => outfitPhotos(outfit).length === 0);
   const needsPrice = outfits.filter((outfit) => !pricing(outfit).allPriced);
   const thin = outfits.filter((outfit) => !hasSubstance(outfit));
-  const stale = outfits.filter(
-    (outfit) =>
-      !outfit.pricesCheckedAt || daysSince(outfit.pricesCheckedAt, now) > STALE_DAYS,
+  const stale = outfits.filter((outfit) => needsPriceReview(outfit.pricesCheckedAt, now));
+  const linksPending = outfits.filter((outfit) =>
+    outfit.items.some(
+      (item) =>
+        ((!item.soldOut && Boolean(item.wornBrand || item.worn !== undefined)) && !item.wornUrl) ||
+        (Boolean(item.swapBrand || item.swap !== undefined) && !item.swapUrl),
+    ),
   );
   const unrecordedPeople = celebrities.filter((celebrity) => !celebrity.record);
   const unrecordedOccasions = occasions.filter((occasion) => !occasion.record);
@@ -107,12 +111,21 @@ export function archiveHealth({
     },
     {
       key: "stale",
-      label: `Prices not re-checked in ${STALE_DAYS} days`,
+      label: `Prices due for review (${STALE_DAYS}+ days)`,
       detail:
         "The public pages print the date they were last verified, so an old date is visible to readers.",
       count: stale.length,
-      href: "/admin/outfits?sort=oldest",
+      href: "/admin/outfits?state=needs-review&sort=oldest",
       ok: stale.length === 0,
+    },
+    {
+      key: "links",
+      label: "Looks with retailer links pending",
+      detail:
+        "A named or priced original/swap has no live destination. Sold-out originals are excluded.",
+      count: linksPending.length,
+      href: "/admin/outfits?state=needs-link",
+      ok: linksPending.length === 0,
     },
     {
       key: "photos",

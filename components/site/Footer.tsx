@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
 import { footerColumns } from "@/lib/navigation";
+import { site } from "@/lib/site-config";
 
 export function Footer() {
+  const currentYear = String(new Date().getFullYear());
+  const copyrightYear = currentYear === site.launched ? currentYear : `${site.launched}–${currentYear}`;
   return (
     <footer className="foot">
       <div className="shell">
@@ -45,7 +48,7 @@ export function Footer() {
           ))}
         </div>
         <div className="fbot">
-          <span>© 2026 CelebrityPersona</span>
+          <span>© {copyrightYear} CelebrityPersona</span>
           <span>Photos credited to their agencies</span>
           <span>We earn commission on some links</span>
         </div>

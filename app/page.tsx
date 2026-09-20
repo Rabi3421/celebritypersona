@@ -21,6 +21,7 @@ import { Ticker } from "@/components/site/Ticker";
 import { heroLook, homeStats, looksInGroup } from "@/lib/archive";
 import { getHomeContent, getOccasions, getOutfits } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
+import { needsPriceReview } from "@/lib/freshness";
 
 /** The rail labels looks "2 days ago", so a page prerendered once and never
  *  rebuilt would keep saying it. An hour is finer than the labels' own
@@ -62,6 +63,18 @@ export default async function Home() {
   // The demo needs a look with two sides priced. Until one exists the section
   // is left out rather than animated against invented totals.
   const hero = heroLook(outfits);
+  const reviewDue = outfits.some((outfit) => needsPriceReview(outfit.pricesCheckedAt));
+  const honestSwapSteps = swapSteps.map((step) =>
+    /weekly/i.test(`${step.title} ${step.body}`)
+      ? {
+          ...step,
+          title: "We show when links were checked",
+          body: reviewDue
+            ? "Every look carries its verification date and warns when a link or price is due for review."
+            : "Every look carries its verification date, with sold-out and missing links labelled clearly.",
+        }
+      : step,
+  );
 
   return (
     <>
@@ -76,7 +89,7 @@ export default async function Home() {
         <DecodedThisWeek />
       </div>
 
-      {hero ? <SwapDemo heroLook={hero} swapSteps={swapSteps} /> : null}
+      {hero ? <SwapDemo heroLook={hero} swapSteps={honestSwapSteps} /> : null}
 
       <div className="shell">
         <Budget />

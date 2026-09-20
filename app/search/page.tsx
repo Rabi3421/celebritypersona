@@ -5,6 +5,7 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
+import { SearchAnalytics } from "@/components/site/SearchAnalytics";
 import { buildSearchIndex, searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
 import { celebrityTiles, occasionTiles } from "@/lib/archive";
 import {
@@ -70,6 +71,7 @@ export default async function SearchPage({
   return (
     <>
       <Nav />
+      <SearchAnalytics queryLength={query.length} resultCount={results.length} />
       <main className={styles.page}>
         <header className={styles.band}>
           <div className={`${styles.shell} ${styles.bandInner}`}>

@@ -50,7 +50,7 @@ export const howWeWorkFaqs = [
   },
   {
     q: "How current are the prices?",
-    a: "Every outfit page carries the date its prices were last verified. We re-check weekly, but retailers change prices whenever they like, so always confirm on the retailer's own page before buying.",
+    a: "Every outfit page carries the exact date its prices were last verified and warns when a review is due. Retailers change prices whenever they like, so always confirm on the retailer's own page before buying.",
   },
 ];
 
@@ -147,7 +147,7 @@ export function HowWeWorkPage() {
                 <h3>Check it, then keep checking it</h3>
                 <p>
                   Before publishing we open every link ourselves. After
-                  publishing we re-check weekly, because a dead link on a
+                  publishing we keep the verification date visible and flag overdue reviews, because a dead link on a
                   shopping site is worse than no link at all.
                 </p>
               </div>

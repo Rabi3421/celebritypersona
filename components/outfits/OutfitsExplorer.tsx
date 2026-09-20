@@ -2,9 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { startNavProgress } from "@/components/site/NavProgress";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, sameName, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
@@ -50,7 +48,6 @@ function toggleValue(values: string[], value: string) {
 }
 
 export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
-  const router = useRouter();
   const [occasions, setOccasions] = useState<string[]>([]);
   const [celebrities, setCelebrities] = useState<string[]>([]);
   // Every rail below is built from the outfits themselves: a chip is never
@@ -163,10 +160,10 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
       <section className={styles.trending} aria-labelledby="trending-title">
         <div className={styles.shell}>
           <div className={styles.trendingHeading}>
-            <span id="trending-title">◆ Most viewed this week</span><i />
+            <span id="trending-title">◆ Latest decoded looks</span><i />
           </div>
           <div className={styles.trendingRail}>
-            {outfits.slice(0, 8).map((outfit, index) => (
+            {[...outfits].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8).map((outfit, index) => (
               <Link
                 href={`/outfits/${outfitSlug(outfit)}`}
                 className={styles.trendingCard}
@@ -261,7 +258,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
               <div className={styles.activeFilters} aria-label="Active filters">
                 {occasions.map((occasion) => <FilterPill key={occasion} label={occasion} onRemove={() => setOccasions(occasions.filter((value) => value !== occasion))} />)}
                 {celebrities.map((celebrity) => <FilterPill key={celebrity} label={celebrity} onRemove={() => setCelebrities(celebrities.filter((value) => value !== celebrity))} />)}
-                {budget < 8000 && <FilterPill label={`Under ${inr.format(budget)}`} onRemove={() => setBudget(8000)} />}
+                {budget < anyBudget && <FilterPill label={`Under ${inr.format(budget)}`} onRemove={() => setBudget(anyBudget)} />}
                 {minimumSaving && <FilterPill label={`${minimumSaving}%+ saving`} onRemove={() => setMinimumSaving(null)} />}
                 <button className={styles.clearAll} type="button" onClick={clearAll}>Clear all</button>
               </div>
@@ -276,10 +273,6 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                       featured={index === 0 && sort === "new" && occasions.length === 0}
                       saved={saved.has(outfitSlug(outfit))}
                       onSave={() => saved.toggle(outfitSlug(outfit))}
-                      onNavigate={() => {
-                        startNavProgress();
-                        router.push(`/outfits/${outfitSlug(outfit)}`);
-                      }}
                       onQuickView={() => openQuickView(outfit)}
                     />
                     {index === 4 && <PromoCard outfits={outfits} />}
@@ -372,22 +365,22 @@ function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }
   return <span className={styles.filterPill}>{label}<button type="button" onClick={onRemove} aria-label={`Remove ${label} filter`}>×</button></span>;
 }
 
-function OutfitCard({ outfit, featured, saved, onSave, onNavigate, onQuickView }: { outfit: Outfit; featured: boolean; saved: boolean; onSave: () => void; onNavigate: () => void; onQuickView: () => void }) {
+function OutfitCard({ outfit, featured, saved, onSave, onQuickView }: { outfit: Outfit; featured: boolean; saved: boolean; onSave: () => void; onQuickView: () => void }) {
   const percentage = saving(outfit);
   const money = pricing(outfit);
   return (
-    <article
-      className={`${styles.card} ${featured ? styles.featured : ""}`}
-      tabIndex={0}
-      onClick={onNavigate}
-      onKeyDown={(event) => { if (event.key === "Enter") onNavigate(); }}
-    >
+    <article className={`${styles.card} ${featured ? styles.featured : ""}`}>
+      <Link
+        className={styles.cardLink}
+        href={`/outfits/${outfitSlug(outfit)}`}
+        aria-label={`View ${outfit.celebrity} at ${outfit.event}`}
+      />
       <div className={styles.cardImage}>
         <OutfitThumb
           outfit={outfit}
           sizes={featured ? "(max-width: 1023px) 100vw, 55vw" : "(max-width: 700px) 50vw, 30vw"}
         />
-        {featured ? <span className={styles.featuredLabel}>Look of the week</span> : (
+        {featured ? <span className={styles.featuredLabel}>Latest decode</span> : (
           <>
             <div className={styles.badges}>
               <span>{shortDate(outfit.date)}</span>
@@ -462,15 +455,52 @@ function QuickViewTotal({ outfit, mode }: { outfit: Outfit; mode: PriceMode }) {
 }
 
 function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mode: PriceMode; onModeChange: (mode: PriceMode) => void; onClose: () => void }) {
+  const dialog = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+    return () => {
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
+  }, []);
+
+  function keepFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(
+      dialog.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   return (
-    <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-view-title">
+    <div ref={dialog} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-view-title" onKeyDown={keepFocus}>
       <div className={styles.modalImage}>
         <OutfitThumb outfit={outfit} sizes="(max-width: 800px) 94vw, 540px" />
-        <button type="button" onClick={onClose} aria-label="Close quick view">×</button>
+        <button type="button" data-autofocus onClick={onClose} aria-label="Close quick view">×</button>
       </div>
       <div className={styles.modalBody}>
         <h2 id="quick-view-title">{outfit.celebrity}</h2>
-        <p className={styles.modalMeta}>{outfit.event} · {shortDate(outfit.date)} 2026 · {outfit.items.length} pieces</p>
+        <p className={styles.modalMeta}>{outfit.event} · {new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(`${outfit.date}T00:00:00`))} · {outfit.items.length} pieces</p>
         <div className={`${styles.priceToggle} ${mode === "swap" ? styles.swapMode : ""}`} role="tablist">
           <i />
           <button type="button" role="tab" aria-selected={mode === "worn"} onClick={() => onModeChange("worn")}>As worn</button>

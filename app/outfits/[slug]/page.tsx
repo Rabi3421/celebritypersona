@@ -284,7 +284,6 @@ export default async function OutfitPage({ params }: Props) {
                           priceCurrency: "INR",
                           ...(item.swapUrl
                             ? {
-                                availability: "https://schema.org/InStock",
                                 url: item.swapUrl,
                               }
                             : {}),

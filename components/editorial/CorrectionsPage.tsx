@@ -47,7 +47,7 @@ export function CorrectionsPage() {
               <strong>Price</strong>
               <p>
                 We published the wrong figure for an original or a swap, beyond
-                the normal drift a retailer causes between weekly checks.
+                the normal drift a retailer causes between checks.
               </p>
             </div>
             <div>

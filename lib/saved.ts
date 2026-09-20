@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * Saved looks and followed archives, held in the visitor's own browser.
@@ -155,6 +156,7 @@ export function useSavedList(kind: SavedKind): SavedList {
       if (current.includes(id)) return;
       // Newest first, so a long list drops what was saved longest ago.
       set(kind, [id, ...current]);
+      if (kind === "looks") trackEvent("save_outfit", { outfit_id: id });
     },
     [kind],
   );
@@ -172,10 +174,9 @@ export function useSavedList(kind: SavedKind): SavedList {
     (id: string) => {
       if (!id) return;
       const current = snapshot(kind);
-      set(
-        kind,
-        current.includes(id) ? current.filter((value) => value !== id) : [id, ...current],
-      );
+      const removing = current.includes(id);
+      set(kind, removing ? current.filter((value) => value !== id) : [id, ...current]);
+      if (kind === "looks" && !removing) trackEvent("save_outfit", { outfit_id: id });
     },
     [kind],
   );

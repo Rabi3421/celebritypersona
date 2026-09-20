@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { subscribe, type AudienceState } from "@/app/actions/audience";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * The mailing list.
@@ -13,6 +14,14 @@ import { subscribe, type AudienceState } from "@/app/actions/audience";
  */
 export function Signup() {
   const [state, action, pending] = useActionState<AudienceState, FormData>(subscribe, {});
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    if (state.subscribed && !tracked.current) {
+      tracked.current = true;
+      trackEvent("newsletter_signup", { source_page: "homepage" });
+    }
+  }, [state.subscribed]);
 
   const message = state.already
     ? "You were already on the list. Nothing more to do."

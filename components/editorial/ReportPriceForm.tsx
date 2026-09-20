@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitPriceReport, type ReportState } from "@/app/actions/reports";
 import { contacts } from "@/lib/site-config";
 import { PRICE_REPORT_ISSUES, type PriceReportIssue } from "@/lib/types";
+import { trackEvent } from "@/lib/analytics";
 import styles from "./editorial.module.css";
 
 const HINTS: Record<PriceReportIssue, string> = {
@@ -40,6 +41,18 @@ export function ReportPriceForm({ prefill }: { prefill?: ReportPrefill }) {
     prefill?.issue ?? PRICE_REPORT_ISSUES[0],
   );
   const errors = state.errors;
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    if (state.sent && !tracked.current) {
+      tracked.current = true;
+      trackEvent("report_price", {
+        issue,
+        outfit_id: prefill?.outfit,
+        source_page: "/report-a-price",
+      });
+    }
+  }, [issue, prefill?.outfit, state.sent]);
 
   if (state.sent) {
     return (

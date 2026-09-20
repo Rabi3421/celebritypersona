@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CelebrityThumb, OutfitThumb } from "@/components/site/Thumb";
 import { plural } from "@/lib/format";
 import { celebrityBio } from "@/lib/celebrity-bio";
@@ -20,6 +20,7 @@ import type { Outfit } from "@/lib/types";
 import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/[slug]/celebrity-profile.module.css";
 import { sameName } from "@/lib/archive";
+import { trackEvent } from "@/lib/analytics";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";
 const inr = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
@@ -47,6 +48,17 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
   const stats = celebrity.stats;
   const checked = formatDay(stats.lastChecked);
   const isFollowed = followed.has(celebritySlug(celebrity));
+  const viewTracked = useRef(false);
+
+  useEffect(() => {
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    trackEvent("celebrity_view", {
+      celebrity_id: celebrity.id,
+      celebrity_name: celebrity.name,
+      source_page: `/celebrities/${celebritySlug(celebrity)}`,
+    });
+  }, [celebrity]);
 
   const results = useMemo(() => {
     const filtered = outfits.filter((outfit) => !occasion || sameName(outfit.occasion, occasion));
@@ -96,7 +108,6 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
               </div>
               <div className={styles.actions}>
                 <button type="button" aria-pressed={isFollowed} onClick={() => followed.toggle(celebritySlug(celebrity))}>{isFollowed ? `✓ Following ${firstName(celebrity.name)}` : `♡ Follow ${firstName(celebrity.name)}`}</button>
-                <button type="button">Get her looks on WhatsApp</button>
               </div>
             </div>
           </div>

@@ -87,7 +87,7 @@ export const trendingSearches: TrendingSearch[] = [
 export const trendingFaqs = [
   {
     q: "How do you decide what is trending?",
-    a: "Two inputs, both ours. The leaderboard ranks what visitors typed into the search box on this site over the last seven days. Everything below it is computed from the outfit archive itself, so a look only appears once a person has decoded it and checked its prices.",
+    a: "The leaderboard is an editor-maintained ranking of the questions readers ask us most; this site does not claim measured search volume. The sections below it are computed from the decoded outfit archive.",
   },
   {
     q: "What is a dupe, exactly?",
@@ -95,7 +95,7 @@ export const trendingFaqs = [
   },
   {
     q: "Are the prices on this page current?",
-    a: "Prices are re-checked weekly and every outfit page shows the date it was last verified. Retailers change prices without warning, so treat the figure as accurate to the last check rather than to this second.",
+    a: "Every outfit page shows its exact verification date and warns when a recheck is due. Retailers change prices without warning, so always confirm the current figure on the retailer page.",
   },
   {
     q: "Can I find a full celebrity look under ₹5,000?",

@@ -9,6 +9,8 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import { outfitPhotos, pricing, wornLabel } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
+import { priceFreshness } from "@/lib/freshness";
+import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
 type PriceMode = "worn" | "swap";
@@ -50,12 +52,15 @@ export function OutfitDetail({
   const [highlighted, setHighlighted] = useState<number | null>(null);
   const [mobileBarVisible, setMobileBarVisible] = useState(false);
   const [shot, setShot] = useState(0);
+  const [shareCopied, setShareCopied] = useState(false);
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const viewTracked = useRef(false);
   const published = new Date(`${outfit.date}T00:00:00`);
   // Was a hardcoded "2 days ago" on every look, whatever the truth.
   const checked = outfit.pricesCheckedAt
     ? new Date(`${outfit.pricesCheckedAt}T00:00:00`)
     : null;
+  const freshness = priceFreshness(outfit.pricesCheckedAt);
   const money = pricing(outfit);
   // The look sheet beside the write-up. Every line is read off the pieces
   // themselves, so a look with one label and no colour in its piece names
@@ -86,6 +91,15 @@ export function OutfitDetail({
   const isSaved = saved.has(slug);
 
   useEffect(() => {
+    if (!viewTracked.current) {
+      viewTracked.current = true;
+      trackEvent("outfit_view", {
+        outfit_id: slug,
+        celebrity_name: outfit.celebrity,
+        source_page: `/outfits/${slug}`,
+      });
+    }
+
     const target = ctaRef.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -94,7 +108,30 @@ export function OutfitDetail({
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, []);
+  }, [outfit.celebrity, slug]);
+
+  function trackProductClick(index: number) {
+    const item = outfit.items[index];
+    const url = mode === "worn" ? item.wornUrl : item.swapUrl;
+    const brand = mode === "worn" ? item.wornBrand : item.swapBrand;
+    let retailer: string | undefined;
+    try {
+      retailer = url ? new URL(url).hostname.replace(/^www\./, "") : undefined;
+    } catch {
+      retailer = undefined;
+    }
+    const metadata = {
+      celebrity_name: outfit.celebrity,
+      outfit_id: slug,
+      brand,
+      retailer,
+      product_type: item.name,
+      original_or_swap: mode,
+      source_page: `/outfits/${slug}`,
+    };
+    trackEvent("affiliate_click", metadata);
+    trackEvent(mode === "worn" ? "original_product_click" : "swap_click", metadata);
+  }
 
   function selectMode(nextMode: PriceMode) {
     setMode(nextMode);
@@ -111,6 +148,30 @@ export function OutfitDetail({
 
   function handleCta() {
     if (mode === "worn") setMode("swap");
+  }
+
+  async function shareLook() {
+    const data = {
+      title: heading,
+      text: `${outfit.celebrity} at ${outfit.event}, decoded on CelebrityPersona`,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+        trackEvent("share", { outfit_id: slug, source_page: `/outfits/${slug}`, method: "native" });
+        return;
+      }
+      await navigator.clipboard.writeText(data.url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+      trackEvent("share", { outfit_id: slug, source_page: `/outfits/${slug}`, method: "clipboard" });
+    } catch (error) {
+      // Closing the native share sheet is not an error the page needs to show.
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        setShareCopied(false);
+      }
+    }
   }
 
   return (
@@ -258,6 +319,7 @@ export function OutfitDetail({
                         href={mode === "worn" ? item.wornUrl : item.swapUrl}
                         target="_blank"
                         rel="nofollow sponsored noopener"
+                        onClick={() => trackProductClick(index)}
                       >
                         Buy
                       </a>
@@ -290,7 +352,11 @@ export function OutfitDetail({
               </b>
             </div>
             <div className={styles.purchaseBox}>
-              <p>◷ {checked ? `Prices checked ${shortDate.format(checked)}` : "Prices not yet re-checked"}</p>
+              <p className={`${styles.freshness} ${styles[freshness.tone]}`}>
+                ◷ <strong>{freshness.label}</strong>
+                {checked ? ` · ${shortDate.format(checked)}` : ""}
+                {freshness.tone === "current" ? "" : ` · ${freshness.warning}`}
+              </p>
 
               {money.anySwapped ? (
                 <>
@@ -425,6 +491,7 @@ export function OutfitDetail({
           <Link href={`/report-a-price?outfit=${encodeURIComponent(slug)}&issue=${encodeURIComponent("Price is wrong")}`}>
             Report a wrong price
           </Link>
+          <button type="button" onClick={shareLook}>{shareCopied ? "Link copied" : "Share this look"}</button>
         </div>
       </div>
 

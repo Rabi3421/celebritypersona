@@ -101,7 +101,7 @@ export async function TrendingBoard() {
           <div className={styles.sectionHeading}>
             <div>
               <p>Just decoded</p>
-              <h2>Trending looks this week</h2>
+              <h2>Latest decoded looks</h2>
               <span>
                 The eight most recent decodes, newest first. Each one is priced
                 twice, once as she wore it and once as you can order it.
@@ -214,7 +214,7 @@ export async function TrendingBoard() {
           <div className={styles.sectionHeading}>
             <div>
               <p>The widest gaps</p>
-              <h2>Most saved this week</h2>
+              <h2>Biggest complete-look savings</h2>
               <span>
                 Complete looks ranked by the rupee distance between the original
                 and the rebuild.
@@ -258,11 +258,11 @@ export async function TrendingBoard() {
             </div>
             <div>
               <span>03</span>
-              <strong>Re-checked weekly</strong>
+              <strong>Freshness shown clearly</strong>
               <p>
                 Prices move and stock runs out. Every outfit page carries the
-                date its prices were last verified, and sold out is labelled
-                rather than quietly left up.
+                date its prices were last verified, warns when a review is due,
+                and labels sold out rather than quietly leaving it up.
               </p>
             </div>
           </div>

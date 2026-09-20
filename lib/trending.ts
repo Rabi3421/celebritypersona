@@ -19,6 +19,9 @@ import type { Outfit, SwappedItem } from "@/lib/types";
  */
 export { savingPercent };
 
+export const TRENDING_METHOD_ANSWER =
+  "The leaderboard is an editor-maintained ranking of the questions readers ask us most; this site does not claim measured search volume. The sections below it are computed from the decoded outfit archive.";
+
 /** Looks with the widest gap between what she paid and what you would. */
 export const biggestSavers = (outfits: Outfit[]) =>
   [...outfits].sort((a, b) => savingSortKey(b) - savingSortKey(a)).slice(0, 6);

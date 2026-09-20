@@ -9,7 +9,7 @@ import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Trending Celebrity Outfits This Week",
+  title: "Trending Celebrity Outfit Questions & Latest Looks",
   description:
     "The Indian celebrity looks people are searching for right now, each decoded — every piece identified, priced, and matched to an alternative.",
   path: "/trending",

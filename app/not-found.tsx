@@ -67,8 +67,8 @@ const ROUTES = [
   },
   {
     tag: "Right now",
-    title: "Trending this week",
-    body: "The looks people are searching for at the moment, each one decoded.",
+    title: "What readers ask for",
+    body: "The editor-maintained leaderboard, plus the latest looks and biggest price gaps.",
     action: "See the leaderboard →",
     href: "/trending",
   },

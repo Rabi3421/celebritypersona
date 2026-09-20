@@ -64,7 +64,7 @@ and re-checking the links. Corrections are published at ${site.url}/corrections.
 - [Celebrities](${site.url}/celebrities): one archive per person, with her labels and typical price range
 - [Occasions](${site.url}/occasions): sangeet, mehendi, reception, Diwali, airport, red carpet and more
 - [By budget](${site.url}/budget): complete looks grouped by what they cost to rebuild
-- [Trending](${site.url}/trending): what people are searching for this week
+- [Trending](${site.url}/trending): an editor-maintained question ranking plus archive-derived latest looks and price gaps
 
 ## Celebrities (${celebrities.filter((celebrity) => celebrity.stats.looks > 0).length})
 

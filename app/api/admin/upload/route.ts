@@ -57,6 +57,9 @@ export async function POST(request: Request) {
       { status: 413 },
     );
   }
+  if (file.size === 0) {
+    return NextResponse.json({ error: "That image file is empty." }, { status: 400 });
+  }
 
   // Every photo for a look lands in one folder named by its slug, so the
   // bucket mirrors the site: outfits/amyra-dastur-savanna-co-ord/....
@@ -85,9 +88,9 @@ export async function POST(request: Request) {
     const url = await getDownloadURL(handle);
     return NextResponse.json({ url, path });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed.";
+    console.error("Admin image upload failed", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json(
-      { error: `Firebase rejected the upload. ${message}` },
+      { error: "The image service could not accept that upload. Try again shortly." },
       { status: 502 },
     );
   }
@@ -119,9 +122,9 @@ export async function DELETE(request: Request) {
     await deleteObject(ref(firebaseStorage(), path));
     return NextResponse.json({ path });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Delete failed.";
+    console.error("Admin image delete failed", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json(
-      { error: `Firebase would not delete the file. ${message}` },
+      { error: "The image service could not remove that file. Try again shortly." },
       { status: 502 },
     );
   }

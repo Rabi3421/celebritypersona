@@ -10,6 +10,13 @@ import {
 
 const required = (label: string) => z.string().trim().min(1, `${label} is required`);
 
+function isCalendarDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 /**
  * Numbers arrive as strings. An empty box must be an error, not a silent zero:
  * coercing "" to 0 was creating outfits priced at ₹0.
@@ -57,14 +64,23 @@ export const outfitItemSchema = z
   .superRefine((item, ctx) => {
     for (const [key, label] of [["worn", "Worn price"], ["swap", "Swap price"]] as const) {
       const value = item[key];
-      if (value && !/^\d+$/.test(value)) {
-        ctx.addIssue({ code: "custom", path: [key], message: `${label} must be a whole number` });
+      if (value && (!/^\d+$/.test(value) || Number(value) < 1)) {
+        ctx.addIssue({ code: "custom", path: [key], message: `${label} must be a positive whole number` });
       }
     }
     for (const [key, label] of [["wornUrl", "Worn link"], ["swapUrl", "Swap link"]] as const) {
       const value = item[key];
       if (value && !/^https?:\/\/\S+$/i.test(value)) {
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must start with http:// or https://` });
+      }
+    }
+    if (Boolean(item.hotspotX) !== Boolean(item.hotspotY)) {
+      ctx.addIssue({ code: "custom", path: ["hotspotX"], message: "Set both hotspot coordinates" });
+    }
+    for (const [key, label] of [["hotspotX", "Hotspot X"], ["hotspotY", "Hotspot Y"]] as const) {
+      const value = item[key];
+      if (value && (!/^\d+(?:\.\d+)?$/.test(value) || Number(value) < 0 || Number(value) > 100)) {
+        ctx.addIssue({ code: "custom", path: [key], message: `${label} must be between 0 and 100` });
       }
     }
   })
@@ -98,7 +114,10 @@ export const outfitSchema = z.object({
   celebrity: required("Celebrity"),
   event: required("Event"),
   occasion: required("Occasion"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").refine(
+    isCalendarDate,
+    "Use a real calendar date",
+  ),
   // The slug is the public URL segment and the storage folder, so it has to be
   // safe in both places: lowercase words joined by single hyphens.
   slug: required("Slug").regex(
@@ -110,7 +129,7 @@ export const outfitSchema = z.object({
   images: z
     .array(
       z.object({
-        url: z.string().trim().min(1),
+        url: z.string().trim().regex(/^https?:\/\/\S+$/i, "Image URL must start with http:// or https://"),
         path: z.string().trim().min(1),
         alt: seoText("Alt text", 160),
         credit: seoText("Photo credit", 120),
@@ -164,9 +183,15 @@ export const occasionSchema = z.object({
     .trim()
     .optional()
     .transform((value) => value || undefined)
-    .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), "Use YYYY-MM-DD"),
+    .refine(
+      (value) => !value || isCalendarDate(value),
+      "Use a real date in YYYY-MM-DD",
+    ),
   colours: z
-    .array(z.object({ name: required("Colour name"), value: required("Hex") }))
+    .array(z.object({
+      name: required("Colour name"),
+      value: required("Hex").regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex colour, e.g. #AABBCC"),
+    }))
     .min(1, "Add at least one colour"),
 });
 
@@ -177,7 +202,7 @@ export const trendingSearchSchema = z.object({
     .transform((value) => Number(value))
     .pipe(z.number("Change must be a number").int("Change must be a whole number")),
   intent: z.enum(["Celebrity", "Occasion", "Budget", "Brand", "How to"]),
-  href: required("Destination"),
+  href: required("Destination").regex(/^\/(?!\/)/, "Destination must be a site path beginning with /"),
   answer: required("Answer"),
 });
 
@@ -255,7 +280,7 @@ export const homeContentSchema = z.object({
     title: required("Campaign title"),
     body: required("Campaign body"),
     cta: required("Campaign button"),
-    href: required("Campaign link"),
+    href: required("Campaign link").regex(/^\/(?!\/)/, "Campaign link must be a site path beginning with /"),
   }),
 });
 

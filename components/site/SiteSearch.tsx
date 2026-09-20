@@ -6,6 +6,7 @@ import { startNavProgress } from "./NavProgress";
 import { useEffect, useId, useRef, useState } from "react";
 import { SearchIcon } from "./Icons";
 import { searchEntries, type SearchEntry } from "@/lib/search";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * The header search. It was a placeholder input that did nothing.
@@ -53,12 +54,18 @@ export function SiteSearch() {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
-  function go(href: string) {
+  function go(entry: SearchEntry) {
     setOpen(false);
     setQuery("");
+    trackEvent("search", {
+      query_length: query.trim().length,
+      result_count: results.length,
+      selected_kind: entry.kind,
+      source_page: "header",
+    });
     // Pushed rather than clicked, so the site's progress bar has to be told.
     startNavProgress();
-    router.push(href);
+    router.push(entry.href);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -77,7 +84,7 @@ export function SiteSearch() {
       // Only intercept when something is highlighted; otherwise let the form
       // submit through to the full results page.
       event.preventDefault();
-      go(results[active].href);
+      go(results[active]);
     }
   }
 
@@ -124,7 +131,7 @@ export function SiteSearch() {
                   aria-selected={position === active}
                   className={position === active ? "on" : undefined}
                   onMouseEnter={() => setActive(position)}
-                  onClick={() => go(entry.href)}
+                  onClick={() => go(entry)}
                 >
                   <i>
                     {entry.image ? (
