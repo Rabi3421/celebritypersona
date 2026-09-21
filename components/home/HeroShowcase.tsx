@@ -11,8 +11,16 @@ export function HeroShowcase() {
   return (
     <section className="hx" aria-labelledby="home-hero-title">
       <div className="hx-media" aria-hidden="true">
+        {/*
+          WebP rather than the 1.7MB PNG master, which is kept only as the
+          source of truth and for the Open Graph card. The hero is the
+          homepage's LCP element, and the optimizer had to pull that whole PNG
+          out of the origin filesystem and transcode it on the first request of
+          every new size — the same picture at the same 1672×941 is 66KB here,
+          so the transform is cheap and the cold path is short.
+        */}
         <Image
-          src="/images/home/celebritypersona-hero-v2.png"
+          src="/images/home/celebritypersona-hero-v2.webp"
           alt=""
           fill
           preload

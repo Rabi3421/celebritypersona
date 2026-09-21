@@ -17,6 +17,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/occasions",
 });
 
+/** A TTL backstop behind the panel's own revalidation. See the note in
+ *  app/outfits/[slug]/page.tsx. */
+export const revalidate = 3600;
+
 export default async function OccasionsPage() {
   const occasions = await getOccasionViews();
   const stocked = occasions.filter((occasion) => occasion.stats.looks > 0);

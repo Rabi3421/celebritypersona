@@ -287,6 +287,28 @@ export function OutfitDetail({
               </div>
             ) : null}
 
+            {/*
+              The disclosure, at the point of use.
+
+              /affiliate-disclosure has always existed and is linked from every
+              footer, which satisfies nobody: the FTC asks for the disclosure to
+              be clear and conspicuous where the endorsement is, and a reader
+              who clicks Buy from this list never passes the footer. So it is
+              stated here, immediately above the first affiliate link on the
+              page, in the reader's own words rather than as a legal formula —
+              and it says the part that actually matters to them, which is that
+              the commission does not decide what gets recommended.
+            */}
+            <p className={styles.disclosure}>
+              <i aria-hidden="true">Heads up</i>
+              <span>
+                Some links below are affiliate links, and we may earn a small
+                commission if you buy through one — at no extra cost to you. It
+                never changes which piece we pick or the price we print.{" "}
+                <Link href="/affiliate-disclosure">How this works</Link>
+              </span>
+            </p>
+
             <div className={styles.lines}>
               {outfit.items.map((item, index) => (
                 <article id={`outfit-item-${index}`} className={`${styles.line} ${highlighted === index ? styles.highlighted : ""}`} key={item.name}>

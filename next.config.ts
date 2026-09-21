@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   images: {
+    // Next only emits WebP by default. AVIF is typically 20–30% smaller again
+    // at the same quality, and the optimizer picks per request from the
+    // browser's Accept header, falling back to WebP and then to the source
+    // format — so nothing regresses on a browser that cannot take it.
+    //
+    // Order matters: the first configured format the Accept header matches is
+    // the one used, so AVIF is listed first.
+    formats: ["image/avif", "image/webp"],
+
+    // deviceSizes is deliberately left at its default. Capping it would trim
+    // the srcSet on 180px thumbnails, but the same list feeds the full-bleed
+    // hero images, where dropping the 3840 candidate visibly softens the
+    // picture on a retina laptop. A few KB of (gzipped) markup is not worth
+    // that trade.
     remotePatterns: [
       // Firebase download URLs always carry ?alt=media&token=…, and the URL
       // form of this rule would forbid a query string, so spell it out and

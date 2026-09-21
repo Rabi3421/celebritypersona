@@ -15,6 +15,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/trending",
 });
 
+/** A TTL backstop behind the panel's own revalidation. See the note in
+ *  app/outfits/[slug]/page.tsx. */
+export const revalidate = 3600;
+
 export default async function TrendingPage() {
   const [trendingSearches, trendingFaqs] = await Promise.all([
     getTrendingSearches(),

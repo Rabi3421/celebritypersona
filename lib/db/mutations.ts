@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
+import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, MAILABLE, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
@@ -32,9 +33,22 @@ import type {
  * Public pages are prerendered, so each mutation revalidates the site. That is
  * deliberately broad: this archive is small, and a stale price is a worse
  * outcome than an extra render.
+ *
+ * The same call tells IndexNow, so Bing and Copilot learn about a change when
+ * it happens rather than on their own schedule. `touched` names the specific
+ * pages this write created or altered, when the caller knows them; the hubs
+ * are always included because every published record moves the counts and the
+ * "latest decoded" rails.
+ *
+ * The ping is not awaited. Revalidation is what the editor is waiting on, and
+ * a search engine's availability is not allowed to hold up a save — or to fail
+ * one, which is why `pingIndexNow` swallows its own errors and this adds a
+ * second catch for the rejection an unawaited promise would otherwise leave
+ * unhandled.
  */
-function revalidateSite() {
+function revalidateSite(touched: string[] = []) {
   revalidatePath("/", "layout");
+  void pingIndexNow([...ARCHIVE_HUBS, ...touched]).catch(() => {});
 }
 
 /** Totals are always the sum of the pieces, never typed in by hand. A piece
@@ -89,8 +103,20 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
     publishedAt: today(),
     id,
   });
-  revalidateSite();
+  // A new look is the whole reason IndexNow is worth having: name the page
+  // itself, and the two archives it has just joined.
+  revalidateSite(outfitTouched({ ...input, id } as Outfit));
   return id;
+}
+
+/** The public pages a single look owns or appears on, for IndexNow. Her
+ *  archive and the occasion archive both gain a card, so both changed. */
+function outfitTouched(outfit: Outfit): string[] {
+  return [
+    `/outfits/${outfitSlug(outfit)}`,
+    `/celebrities/${nameSlug(outfit.celebrity)}`,
+    `/occasions/${nameSlug(outfit.occasion)}`,
+  ];
 }
 
 /**
@@ -198,7 +224,12 @@ export async function updateOutfit(
       : [],
   );
 
-  revalidateSite();
+  // Both URLs when the edit moved the look: the old one so the engines see the
+  // redirect, the new one so they find where it went.
+  revalidateSite([
+    ...(previous ? outfitTouched(previous) : []),
+    ...outfitTouched({ ...previous, ...input, id } as Outfit),
+  ]);
 }
 
 export async function deleteOutfit(id: number) {

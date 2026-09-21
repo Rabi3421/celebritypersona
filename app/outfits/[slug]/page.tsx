@@ -10,7 +10,7 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import { getCelebrities, getOutfitBySlug, getOutfits, movedOutfitSlug } from "@/lib/db/content";
-import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
+import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -18,6 +18,19 @@ type Props = { params: Promise<{ slug: string }> };
 // Records added in the admin panel render on demand instead of 404ing
 // until the next build.
 export const dynamicParams = true;
+
+/**
+ * A backstop, not the main mechanism.
+ *
+ * Publishing from the panel already calls `revalidatePath("/", "layout")`, so
+ * an edit reaches readers immediately. Without a TTL, though, a page rendered
+ * on demand for a slug that was not in `generateStaticParams` is cached
+ * indefinitely — and nothing outside the panel (a price that quietly went
+ * stale, a record touched directly in the database) would ever dislodge it.
+ * An hour is short enough that Googlebot never sees a badly aged page and long
+ * enough that the archive is still served from cache.
+ */
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const outfits = await getOutfits();
@@ -213,19 +226,11 @@ export default async function OutfitPage({ params }: Props) {
         },
         /**
          * The photographs as objects rather than bare URLs, so the caption the
-         * editor wrote and the agency the page credits travel with the image
-         * into Google Images instead of stopping at the figcaption.
+         * editor wrote, the agency the page credits and the licensing terms
+         * travel with the image into Google Images instead of stopping at the
+         * figcaption. See `imageObject` in lib/seo.ts.
          */
-        ...(photos.length
-          ? {
-              image: photos.map((photo) => ({
-                "@type": "ImageObject",
-                url: photo.url,
-                ...(photo.alt?.trim() ? { caption: photo.alt.trim() } : {}),
-                ...(photo.credit?.trim() ? { creditText: photo.credit.trim() } : {}),
-              })),
-            }
-          : {}),
+        ...(photos.length ? { image: photos.map(imageObject) } : {}),
         // Only pieces with a confirmed price carry an offer: the old shape
         // emitted price "undefined" for anything still being checked.
         mentions: outfit.items.map((item) => ({

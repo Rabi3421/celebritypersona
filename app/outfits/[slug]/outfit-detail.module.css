@@ -84,6 +84,14 @@
 .toggle button[aria-selected="true"] { color: var(--ink); }
 .toggle > i { position: absolute; top: 3px; left: 3px; height: calc(100% - 6px); width: calc(50% - 4px); background: var(--paper); border-radius: 6px; box-shadow: var(--e1); z-index: 1; transition: transform var(--slow) var(--ease); }
 .toggle.swapMode > i { transform: translateX(calc(100% + 2px)); }
+/* The FTC's "clear and conspicuous" standard asks for the disclosure where
+   the link is, not only on a policy page, so this sits directly above the
+   first Buy button rather than in the footer. Sized to be read, not to be
+   technically present: same size as the piece notes, not fine print. */
+.disclosure { display: flex; gap: 8px; align-items: baseline; margin-top: var(--s5); padding: 11px var(--s3); border-radius: var(--r-sm); background: var(--line-soft); font-size: 13px; line-height: 1.55; color: var(--ash); }
+.disclosure > i { font-family: var(--mono); font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); flex: none; }
+.disclosure a { color: var(--ink); border-bottom: 1px solid var(--line); }
+.disclosure a:hover { color: var(--rani); border-bottom-color: var(--rani); }
 .lines { margin-top: var(--s2); }
 .line { display: grid; grid-template-columns: 1fr auto; gap: var(--s4); align-items: start; padding: var(--s5) var(--s3); border-bottom: 1px solid var(--line-soft); border-radius: var(--r-md); transition: background var(--slow) var(--ease); scroll-margin-top: 120px; }
 .line.highlighted { background: var(--rani-tint); }

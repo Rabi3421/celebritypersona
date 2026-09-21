@@ -17,6 +17,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/celebrities",
 });
 
+/** A TTL backstop behind the panel's own revalidation. See the note in
+ *  app/outfits/[slug]/page.tsx. */
+export const revalidate = 3600;
+
 export default async function CelebritiesPage() {
   const [celebrities, outfits] = await Promise.all([getCelebrityViews(), getOutfits()]);
 

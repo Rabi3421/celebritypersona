@@ -19,6 +19,10 @@ type Props = { params: Promise<{ slug: string }> };
 // until the next build.
 export const dynamicParams = true;
 
+/** A TTL backstop behind the panel's own revalidation. See the note in
+ *  app/outfits/[slug]/page.tsx. */
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   const occasions = await getOccasionViews();
   return occasions.map((occasion) => ({ slug: occasionSlug(occasion) }));
