@@ -52,6 +52,9 @@ export function OutfitDetail({
 }) {
   const [mode, setMode] = useState<PriceMode>("worn");
   const [highlighted, setHighlighted] = useState<number | null>(null);
+  /** A piece to scroll to once the swap tab has actually rendered. A ref, not
+   *  state: it schedules work, it does not describe anything on screen. */
+  const pendingJump = useRef<number | null>(null);
   const [mobileBarVisible, setMobileBarVisible] = useState(false);
   const [shot, setShot] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
@@ -64,6 +67,8 @@ export function OutfitDetail({
     : null;
   const freshness = priceFreshness(outfit.pricesCheckedAt);
   const money = pricing(outfit);
+  /** At least one swap a reader could actually click through and buy. */
+  const shoppable = outfit.items.some((item) => isBuyable(pieceLink(item, "swap")));
   // The look sheet beside the write-up. Every line is read off the pieces
   // themselves, so a look with one label and no colour in its piece names
   // simply shows fewer rows rather than an invented one.
@@ -135,6 +140,21 @@ export function OutfitDetail({
     setMode(nextMode);
   }
 
+  // Runs once the tab has changed, so the swap list is on the page and the
+  // element is always there to scroll to.
+  useEffect(() => {
+    const target = pendingJump.current;
+    if (target === null) return;
+    pendingJump.current = null;
+    setHighlighted(target);
+    document.getElementById(`outfit-item-${target}`)?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+    });
+    const timer = window.setTimeout(() => setHighlighted(null), 1400);
+    return () => window.clearTimeout(timer);
+  }, [mode]);
+
   function jumpToItem(index: number) {
     setHighlighted(index);
     document.getElementById(`outfit-item-${index}`)?.scrollIntoView({
@@ -144,8 +164,30 @@ export function OutfitDetail({
     window.setTimeout(() => setHighlighted(null), 1400);
   }
 
+  /**
+   * The CTA under the totals, and the one in the sticky mobile bar.
+   *
+   * It used to be `if (mode === "worn") setMode("swap")` and nothing else —
+   * so on the swap tab, where it reads "Buy all 3 pieces · ₹4,280", the most
+   * commercial button on the site was a click that did nothing at all.
+   *
+   * A browser cannot open several tabs from one gesture and it should not try,
+   * so the button does the only useful thing left: it puts the reader in front
+   * of the pieces they can actually buy, with the first one highlighted and
+   * its Buy button in view. `jumpToItem` already existed for the hotspot dots.
+   */
   function handleCta() {
-    if (mode === "worn") setMode("swap");
+    const first = outfit.items.findIndex((item) => isBuyable(pieceLink(item, "swap")));
+    if (first === -1) return;
+
+    if (mode === "worn") {
+      setMode("swap");
+      // The swap list has not rendered on this pass, so the scroll is left to
+      // the effect below rather than to a guess about when React flushes.
+      pendingJump.current = first;
+      return;
+    }
+    jumpToItem(first);
   }
 
   async function shareLook() {
@@ -381,7 +423,11 @@ export function OutfitDetail({
                 {freshness.tone === "current" ? "" : ` · ${freshness.warning}`}
               </p>
 
-              {money.anySwapped ? (
+              {/* A CTA promising to take you shopping is only shown when
+                  there is a working link behind at least one swap. A look
+                  whose swaps are all pending or dead still shows its prices;
+                  it just does not offer to sell you anything. */}
+              {shoppable ? (
                 <>
                   {mode === "swap" && money.savingPct !== null && (
                     <div>
@@ -518,7 +564,7 @@ export function OutfitDetail({
         </div>
       </div>
 
-      {money.anySwapped ? (
+      {shoppable ? (
         <div className={`${styles.mobileBar} ${mobileBarVisible ? styles.mobileBarVisible : ""}`}>
           <button type="button" onClick={handleCta}>
             {mode === "swap"
