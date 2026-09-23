@@ -4,7 +4,7 @@ import "./globals.css";
 import { Analytics } from "@/components/site/Analytics";
 import { NavProgress } from "@/components/site/NavProgress";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
-import { site, social } from "@/lib/site-config";
+import { author, site, social } from "@/lib/site-config";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -47,9 +47,29 @@ export const metadata: Metadata = {
   description:
     "What Indian celebrities actually wore, decoded piece by piece — the exact brands, the prices we could confirm, and affordable alternatives you can buy in India.",
   applicationName: site.name,
-  authors: [{ name: "Rabi", url: `${siteUrl}/about` }],
+  authors: [{ name: author.name, url: `${siteUrl}${author.path}` }],
   publisher: site.name,
   category: "Fashion",
+  /**
+   * Search Console and Bing Webmaster Tools, by meta tag.
+   *
+   * Both offer a verification file, a DNS record or a meta tag; the tag is the
+   * only one that survives a redeploy without anybody remembering to copy a
+   * file into public/. Set the value in the deploy environment and it appears;
+   * leave it unset and no empty tag is emitted.
+   *
+   * Neither adds a script to the page. Verification is a string a crawler
+   * reads once — there is nothing to execute, and nothing about a reader is
+   * sent anywhere.
+   */
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+      : {}),
+    ...(process.env.BING_SITE_VERIFICATION
+      ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }
+      : {}),
+  },
   formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
     type: "website",
