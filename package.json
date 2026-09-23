@@ -17,6 +17,7 @@
     "purge:seed": "tsx --env-file=.env scripts/purge-seed-content.ts",
     "audit:credits": "tsx --env-file=.env scripts/audit-photo-credits.ts",
     "migrate:links": "tsx --env-file=.env scripts/migrate-links.ts",
+    "check:links": "tsx --env-file=.env scripts/check-links.ts",
     "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts"
   },
   "dependencies": {
