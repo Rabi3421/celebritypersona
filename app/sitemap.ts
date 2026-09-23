@@ -89,6 +89,18 @@ function archiveTouched(outfits: Outfit[]): Date | undefined {
   return new Date(Math.max(...days.map((value) => value.getTime())));
 }
 
+/**
+ * The sitemap had no revalidate of its own, which made it the one public route
+ * that genuinely never refreshed: it was generated at build and served
+ * unchanged until the next deploy, so a look published on Tuesday was not
+ * offered to Google until something else happened to trigger a build.
+ *
+ * An hour, matching every other archive route. Publishing in the panel
+ * revalidates it immediately; `npm run check:links --revalidate` and the other
+ * scripts do it through /api/revalidate.
+ */
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [outfits, celebrities, occasions] = await Promise.all([
     getPublishedOutfits(),

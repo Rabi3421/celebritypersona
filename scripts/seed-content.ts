@@ -8,6 +8,7 @@
  */
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { revalidateSite } from "./revalidate";
 import { celebrities } from "../lib/seed-data/celebrities";
 import { homeContent } from "../lib/seed-data/home";
 import { occasions } from "../lib/seed-data/occasions";
@@ -96,6 +97,7 @@ async function main() {
 
   console.log("Done.");
   await client.close();
+  await revalidateSite();
 }
 
 main().catch((error) => {

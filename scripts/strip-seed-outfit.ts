@@ -29,6 +29,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { revalidateSite } from "./revalidate";
 
 /** The one record this touches. Nothing else is read or written. */
 const OUTFIT_ID = 1;
@@ -139,6 +140,7 @@ async function main() {
       `it is decoded at /admin/outfits/${OUTFIT_ID}.`,
   );
   await client.close();
+  await revalidateSite();
 }
 
 main().catch((error) => {

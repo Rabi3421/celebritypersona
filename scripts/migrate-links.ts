@@ -26,6 +26,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { revalidateSite } from "./revalidate";
 import { retailerFromUrl, type OutfitItem, type PieceLink } from "@/lib/types";
 
 const apply = process.argv.includes("--apply");
@@ -128,6 +129,7 @@ async function main() {
       `npm run check:links has actually been able to reach it.`,
   );
   await client.close();
+  await revalidateSite();
 }
 
 main().catch((error) => {

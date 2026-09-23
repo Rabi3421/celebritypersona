@@ -4,6 +4,10 @@
  *     npm run check:links                                # dry run
  *     npm run check:links -- --apply --i-know-this-is-prod
  *
+ * An --apply run that changed anything asks the live site to refresh, so a
+ * link marked dead stops being offered straight away rather than at the end of
+ * the page's cache window.
+ *
  * The hard part is not fetching. It is that Myntra, Ajio, Nykaa and most large
  * Indian retailers block automated requests, so a checker written the obvious
  * way marks half the archive dead the first time it runs and takes down every
@@ -33,6 +37,7 @@
 
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { revalidateSite } from "./revalidate";
 import type { LinkStatus, OutfitItem } from "@/lib/types";
 
 const apply = process.argv.includes("--apply");
@@ -265,6 +270,10 @@ async function main() {
       ? "\nWritten. Nothing was unpublished — a look whose links died is still a decoded look."
       : "\nDry run. Nothing was written. Re-run with --apply to save these statuses.",
   );
+
+  // A status change that nobody sees is not a status change: a link marked
+  // dead keeps its Buy button until the page it is on is rendered again.
+  if (apply && changes.length > 0) await revalidateSite();
 
   await client.close();
 }
