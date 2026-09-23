@@ -241,8 +241,11 @@ export function SwapDemo({
 
           <div className="demo-copy rv rv-d2">
             <h2>Everyone shows you the price. We show you the alternative.</h2>
+            {/* This read "the bag cost ₹5,86,000", a figure that came from no
+                look in the archive and no piece in the demo beside it. The
+                point survives without inventing a price to make it. */}
             <p>
-              Other sites tell you the bag cost ₹5,86,000 and stop there.
+              Other sites tell you what the bag cost and stop there.
               That&apos;s a fun fact, not a shopping decision.
             </p>
             <p>
