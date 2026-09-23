@@ -8,7 +8,7 @@ import { budgetTiers, completeLooks } from "@/lib/archive";
 import { getPublishedOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
 import { MIN_LOOKS_FOR_BUDGET_TIERS } from "@/lib/thresholds";
-import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
+import { archiveCards, breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 /**
@@ -38,6 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description:
         "Start from what you can spend, not from the celebrity. Set a ceiling and see the complete celebrity looks the archive can rebuild inside it — every piece priced and linked.",
       path: "/budget",
+      images: archiveCards(outfits),
     });
   }
 
@@ -49,6 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
       `Start from what you can spend. Complete celebrity-inspired outfits under ` +
       `${caps.join(", ")} — every piece priced and linked.`,
     path: "/budget",
+    images: archiveCards(outfits),
   });
 }
 

@@ -5,16 +5,23 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { TrendingBoard } from "@/components/trending/TrendingBoard";
 // TrendingBoard reads the questions itself; this page no longer marks them up.
-import { getPublicTrendingRows } from "@/lib/db/content";
-import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
+import { getPublishedOutfits, getPublicTrendingRows } from "@/lib/db/content";
+import { archiveCards, breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
-export const metadata: Metadata = pageMetadata({
+/**
+ * Its own photographs, not the brand hero. See `archiveCards` in lib/seo.ts:
+ * every hub used to share the same picture.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
   title: "Trending Celebrity Outfit Questions & Latest Looks",
   description:
     "The Indian celebrity outfit questions readers ask us most, each answered from the decoded archive — the pieces we identified, the prices we confirmed, and what a rebuild costs.",
   path: "/trending",
-});
+    images: archiveCards(await getPublishedOutfits()),
+  });
+}
 
 /** A TTL backstop behind the panel's own revalidation. See the note in
  *  app/outfits/[slug]/page.tsx. */

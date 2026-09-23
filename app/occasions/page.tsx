@@ -4,18 +4,28 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { getOccasionViews } from "@/lib/db/content";
+import { occasionTiles } from "@/lib/archive";
+import { getPublishedOutfits, getOccasionViews } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { occasionSlug } from "@/lib/slugs";
 
-export const metadata: Metadata = pageMetadata({
+/**
+ * Its own photographs, not the brand hero. See `archiveCards` in lib/seo.ts:
+ * every hub used to share the same picture.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
   title: "Outfit Ideas by Occasion: Sangeet, Mehendi, Diwali & More",
   absoluteTitle: true,
   description:
     "What to wear to a sangeet, mehendi, reception, Diwali party or the airport, taken from celebrity looks decoded piece by piece — with prices and affordable alternatives.",
   path: "/occasions",
-});
+    // The occasions themselves, which is what this page lists.
+    images: occasionTiles(await getPublishedOutfits(), 4)
+      .flatMap((tile) => (tile.image ? [{ url: tile.image, alt: `${tile.name} outfit ideas` }] : [])),
+  });
+}
 
 /** A TTL backstop behind the panel's own revalidation. See the note in
  *  app/outfits/[slug]/page.tsx. */

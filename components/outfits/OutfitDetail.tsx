@@ -258,7 +258,7 @@ export function OutfitDetail({
               <Image
                 src={shown.url}
                 // What the editor says the photo shows, when she has said it.
-                alt={shown.alt?.trim() || outfitAlt(outfit)}
+                alt={outfitAlt(outfit, photos.indexOf(shown))}
                 fill
                 // `priority` is deprecated in Next 16; this hero is the LCP.
                 preload

@@ -68,6 +68,32 @@ export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
   return `${clean.slice(0, space > 0 ? space : max).replace(/[\s,;:—–-]+$/, "")}…`;
 }
 
+/**
+ * Share-card images for a hub, taken from the archive it lists.
+ *
+ * Every listing page shared the same brand hero, so /outfits, /celebrities,
+ * /occasions, /budget and /trending all posted the same picture — five
+ * different pages presenting themselves identically in a feed. A hub that
+ * lists looks should show one.
+ *
+ * Newest first, and only photographs that exist; an empty archive falls back
+ * to the brand card rather than to nothing.
+ */
+export function archiveCards(
+  outfits: { date: string; celebrity: string; event: string; image?: { url: string; alt?: string }; images?: { url: string; alt?: string }[] }[],
+  limit = 4,
+) {
+  return [...outfits]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .flatMap((outfit) => {
+      const photo = outfit.images?.length ? outfit.images[0] : outfit.image;
+      return photo
+        ? [{ url: photo.url, alt: photo.alt?.trim() || `${outfit.celebrity} at ${outfit.event}` }]
+        : [];
+    })
+    .slice(0, limit);
+}
+
 export function pageMetadata({
   title,
   description,

@@ -4,18 +4,27 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { archiveTotals } from "@/lib/archive";
+import { archiveTotals, celebrityTiles } from "@/lib/archive";
 import { getCelebrityViews, getPublishedOutfits } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { celebritySlug } from "@/lib/slugs";
 
-export const metadata: Metadata = pageMetadata({
+/**
+ * Its own photographs, not the brand hero. See `archiveCards` in lib/seo.ts:
+ * every hub used to share the same picture.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
   title: "Indian Celebrity Style Archives, A–Z",
   description:
     "Every Indian celebrity whose looks we have decoded — the labels she wore, what each piece cost, and affordable alternatives you can buy.",
   path: "/celebrities",
-});
+    // Her own archives, not the newest look — this page is about people.
+    images: celebrityTiles(await getPublishedOutfits(), 4)
+      .flatMap((tile) => (tile.image ? [{ url: tile.image, alt: `${tile.name} outfits decoded` }] : [])),
+  });
+}
 
 /** A TTL backstop behind the panel's own revalidation. See the note in
  *  app/outfits/[slug]/page.tsx. */

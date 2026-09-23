@@ -5,7 +5,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { getPublishedOutfits } from "@/lib/db/content";
-import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
+import { archiveCards, breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { outfitSlug } from "@/lib/slugs";
 import { hasSubstance } from "@/lib/types";
@@ -16,12 +16,19 @@ import { hasSubstance } from "@/lib/types";
  *  revalidates the site immediately. */
 export const revalidate = 3600;
 
-export const metadata: Metadata = pageMetadata({
+/**
+ * Its own photographs, not the brand hero. See `archiveCards` in lib/seo.ts:
+ * every hub used to share the same picture.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
   title: "Celebrity Outfits Decoded, Piece by Piece",
   description:
     "Every Indian celebrity outfit we have decoded, piece by piece — the labels worn, the prices we confirmed, and affordable alternatives.",
   path: "/outfits",
-});
+    images: archiveCards(await getPublishedOutfits()),
+  });
+}
 
 export default async function OutfitsPage() {
   const outfits = await getPublishedOutfits();
