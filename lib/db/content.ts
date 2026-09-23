@@ -13,6 +13,7 @@ import type {
   Celebrity,
   CelebrityRequest,
   HomeContent,
+  LinkClick,
   MailJob,
   Occasion,
   Outfit,
@@ -314,6 +315,22 @@ export const getMailJobs = cache(async (): Promise<MailJob[]> => {
     .collection<MailJob>("mailJobs")
     .find({}, NO_ID)
     .sort({ createdAt: -1 })
+    .toArray();
+});
+
+/**
+ * Every recorded outbound click, newest first.
+ *
+ * Admin only; nothing public renders these. Not `cache`d across requests in
+ * any meaningful way beyond the render, because the revenue screen is the one
+ * place somebody is watching for a number to move.
+ */
+export const getLinkClicks = cache(async (): Promise<LinkClick[]> => {
+  const db = await getDb();
+  return db
+    .collection<LinkClick>("linkClicks")
+    .find({}, NO_ID)
+    .sort({ at: -1 })
     .toArray();
 });
 

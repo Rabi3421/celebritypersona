@@ -14,6 +14,7 @@ export type AdminIconKey =
   | "trending"
   | "reports"
   | "requests"
+  | "revenue"
   | "subscribers"
   | "broadcasts"
   | "settings";
@@ -101,6 +102,13 @@ export const adminRoutes: AdminRoute[] = [
     group: "Operations",
     countKey: "subscribers",
     description: "Email addresses collected by the homepage form",
+  },
+  {
+    href: "/admin/revenue",
+    label: "Revenue",
+    icon: "revenue",
+    group: "Operations",
+    description: "Outbound clicks, links that need a person, and looks still missing a swap",
   },
   {
     href: "/admin/broadcasts",
