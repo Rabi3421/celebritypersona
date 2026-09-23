@@ -1,6 +1,69 @@
 /** Content types shared by the seed data, the database layer and the views. */
 
+/**
+ * The affiliate networks a link can be monetised through.
+ *
+ * "none" is a real answer, not a missing one: a retailer we have no
+ * relationship with still gets linked, because the point of the page is to
+ * show you where the piece is. Revenue is a side effect of being useful, and a
+ * piece we cannot earn on is published exactly like one we can.
+ */
+export const LINK_NETWORKS = [
+  "none",
+  "amazon",
+  "cuelinks",
+  "earnkaro",
+  "inrdeals",
+  "other",
+] as const;
+
+export type LinkNetwork = (typeof LINK_NETWORKS)[number];
+
+/**
+ * What we currently believe about a link, and the only thing that decides
+ * whether a Buy button is drawn.
+ *
+ *  - ok          checked, and the product is there
+ *  - pending     we have named the retailer but have no URL yet
+ *  - sold_out    the page is up, the item is not
+ *  - dead        the URL 404s; nothing is shown and the panel flags it
+ *  - unverified  we have not been able to confirm it either way, usually
+ *                because the retailer blocks automated requests. The button
+ *                is shown, because a link we cannot check is not a link we
+ *                have reason to doubt, and the panel flags it for a person.
+ *
+ * Everything stored starts as `unverified` rather than `ok`: a URL that has
+ * never been checked has not earned a claim that it works.
+ */
+export const LINK_STATUSES = ["ok", "pending", "sold_out", "dead", "unverified"] as const;
+
+export type LinkStatus = (typeof LINK_STATUSES)[number];
+
+/** Which half of a piece a link belongs to. */
+export type PieceSide = "original" | "swap";
+
+export type PieceLink = {
+  /** Shown to the reader. Seeded from the hostname, edited by hand. */
+  retailer: string;
+  /** The product page itself, always stored, never replaced by the affiliate
+   *  form of it. This is what a person checks and what the link checker reads. */
+  url: string;
+  /** The monetised form, when one exists. Pasted by hand today. */
+  affiliateUrl?: string;
+  network: LinkNetwork;
+  status: LinkStatus;
+  /** YYYY-MM-DD, written by `npm run check:links`. */
+  checkedAt?: string;
+};
+
 export type OutfitItem = {
+  /**
+   * Stable per piece, so an outbound click can name what was clicked without
+   * depending on the position of the piece in the array. Assigned on save and
+   * backfilled by `npm run migrate:links`; absent only on a document neither
+   * has touched yet, which draws no Buy button.
+   */
+  id?: string;
   name: string;
   /** Absent when the label she wore has not been identified — a piece we have
    *  only found the high-street version of is still worth publishing. */
@@ -20,6 +83,15 @@ export type OutfitItem = {
   swap?: number;
   /** Where to buy the swap. */
   swapUrl?: string;
+  /**
+   * The link records that supersede `wornUrl`, `swapUrl` and `soldOut`.
+   *
+   * The old fields are still read through `pieceLink()`, so nothing has to be
+   * migrated before the page works, and a document written before the
+   * migration behaves exactly as it did.
+   */
+  wornLink?: PieceLink;
+  swapLink?: PieceLink;
   /** One line the merchant cannot supply: fabric, fit, why it works. This is
    *  the difference between a listing and a decoded piece. */
   note?: string;
@@ -54,6 +126,57 @@ export const outfitPhotos = (outfit: {
  *  hotspot dots are placed on. */
 export const outfitPhoto = (outfit: { image?: OutfitImage; images?: OutfitImage[] }) =>
   outfitPhotos(outfit)[0];
+
+/**
+ * A piece's link for one side, in whichever shape the document was written.
+ *
+ * `wornLink`/`swapLink` win. Falling back to the old `wornUrl`/`swapUrl` means
+ * an unmigrated document keeps working and keeps its Buy button, rather than
+ * every look going quiet the moment this ships. The derived record is marked
+ * `unverified`, never `ok` — an old URL has not been checked, and the whole
+ * point of the status is that it says what we actually know.
+ */
+export function pieceLink(item: OutfitItem, side: PieceSide): PieceLink | undefined {
+  const stored = side === "original" ? item.wornLink : item.swapLink;
+  if (stored) return stored;
+
+  const url = side === "original" ? item.wornUrl : item.swapUrl;
+  const brand = side === "original" ? item.wornBrand : item.swapBrand;
+  if (!url) return undefined;
+
+  return {
+    retailer: retailerFromUrl(url) ?? brand ?? "Retailer",
+    url,
+    network: "none",
+    status: side === "original" && item.soldOut ? "sold_out" : "unverified",
+  };
+}
+
+/** The hostname, tidied, as a first guess at a retailer's name. */
+export function retailerFromUrl(url: string): string | undefined {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
+/** Where a click should actually go. The affiliate form when we have one. */
+export const linkTarget = (link: PieceLink) => link.affiliateUrl?.trim() || link.url;
+
+/** Whether a click on this link can earn anything. */
+export const isMonetised = (link: PieceLink) =>
+  Boolean(link.affiliateUrl?.trim()) && link.network !== "none";
+
+/**
+ * Whether the reader gets a Buy button.
+ *
+ * `unverified` shows one: a retailer that blocks our checker is not a retailer
+ * whose link is broken, and hiding those would take down most of the archive
+ * on the strength of a 403. `pending`, `sold_out` and `dead` do not.
+ */
+export const isBuyable = (link: PieceLink | undefined): link is PieceLink =>
+  Boolean(link) && (link!.status === "ok" || link!.status === "unverified");
 
 /** A piece we have actually found an alternative for. */
 export type SwappedItem = OutfitItem & { swapBrand: string; swap: number };

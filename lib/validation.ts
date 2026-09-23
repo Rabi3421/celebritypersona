@@ -1,5 +1,13 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
+  LINK_NETWORKS,
+  LINK_STATUSES,
+  retailerFromUrl,
+  type LinkNetwork,
+  type LinkStatus,
+  type PieceLink,
+  type PieceSide,
   PRICE_REPORT_ISSUES,
   PRICE_REPORT_STATUSES,
   REQUEST_STATUSES,
@@ -31,6 +39,41 @@ const wholeNumber = (label: string) =>
         .min(0, `${label} cannot be negative`),
     );
 
+/**
+ * Folds one side's flat form fields into the stored `PieceLink`.
+ *
+ * No URL means no link record at all, rather than a record with an empty
+ * string in it: "we have not found this yet" and "we found nothing" are the
+ * same state here, and the page reads the absence.
+ *
+ * A link an editor has just typed or edited is `unverified` unless they said
+ * otherwise. Only `npm run check:links` promotes anything to `ok`, so the
+ * status always means something was actually checked.
+ */
+function buildLink(side: PieceSide, item: Record<string, string | undefined>) {
+  const key = side === "original" ? "worn" : "swap";
+  const url = item[`${key}Url`];
+  if (!url) return {};
+
+  const network = (LINK_NETWORKS as readonly string[]).includes(item[`${key}Network`] ?? "")
+    ? (item[`${key}Network`] as LinkNetwork)
+    : "none";
+  const status = (LINK_STATUSES as readonly string[]).includes(item[`${key}Status`] ?? "")
+    ? (item[`${key}Status`] as LinkStatus)
+    : "unverified";
+  const affiliateUrl = item[`${key}AffiliateUrl`];
+
+  const link: PieceLink = {
+    retailer: item[`${key}Retailer`] || retailerFromUrl(url) || item[`${key}Brand`] || "Retailer",
+    url,
+    network,
+    // `soldOut` is the old field and still the one the stock checkbox posts.
+    status: side === "original" && item.soldOut ? "sold_out" : status,
+    ...(affiliateUrl ? { affiliateUrl } : {}),
+  };
+  return { [side === "original" ? "wornLink" : "swapLink"]: link };
+}
+
 /** Only the piece's own name is asked for. Everything else — the label she
  *  wore, either price, the swap — is filled in as it is confirmed, so a piece
  *  we have only found the high-street version of can still be published. */
@@ -43,6 +86,17 @@ export const outfitItemSchema = z
     swapBrand: z.string().trim().optional(),
     swap: z.string().trim().optional(),
     swapUrl: z.string().trim().optional(),
+    // One set of link fields per side, flat because the form posts them flat;
+    // they are folded into wornLink/swapLink by the transform below.
+    id: z.string().trim().optional(),
+    wornRetailer: z.string().trim().optional(),
+    wornAffiliateUrl: z.string().trim().optional(),
+    wornNetwork: z.string().trim().optional(),
+    wornStatus: z.string().trim().optional(),
+    swapRetailer: z.string().trim().optional(),
+    swapAffiliateUrl: z.string().trim().optional(),
+    swapNetwork: z.string().trim().optional(),
+    swapStatus: z.string().trim().optional(),
     note: z.string().trim().optional(),
     soldOut: z.string().trim().optional(),
     hotspotX: z.string().trim().optional(),
@@ -56,6 +110,15 @@ export const outfitItemSchema = z
     swapBrand: item.swapBrand || undefined,
     swap: item.swap || undefined,
     swapUrl: item.swapUrl || undefined,
+    id: item.id || undefined,
+    wornRetailer: item.wornRetailer || undefined,
+    wornAffiliateUrl: item.wornAffiliateUrl || undefined,
+    wornNetwork: item.wornNetwork || undefined,
+    wornStatus: item.wornStatus || undefined,
+    swapRetailer: item.swapRetailer || undefined,
+    swapAffiliateUrl: item.swapAffiliateUrl || undefined,
+    swapNetwork: item.swapNetwork || undefined,
+    swapStatus: item.swapStatus || undefined,
     note: item.note || undefined,
     soldOut: item.soldOut || undefined,
     hotspotX: item.hotspotX || undefined,
@@ -68,7 +131,12 @@ export const outfitItemSchema = z
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must be a positive whole number` });
       }
     }
-    for (const [key, label] of [["wornUrl", "Worn link"], ["swapUrl", "Swap link"]] as const) {
+    for (const [key, label] of [
+      ["wornUrl", "Worn link"],
+      ["swapUrl", "Swap link"],
+      ["wornAffiliateUrl", "Worn affiliate link"],
+      ["swapAffiliateUrl", "Swap affiliate link"],
+    ] as const) {
       const value = item[key];
       if (value && !/^https?:\/\/\S+$/i.test(value)) {
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must start with http:// or https://` });
@@ -86,6 +154,11 @@ export const outfitItemSchema = z
   })
   .transform((item) => ({
     name: item.name,
+    // Assigned here so every piece written from now on can be named by an
+    // outbound click without depending on its position in the array.
+    id: item.id || randomUUID(),
+    ...buildLink("original", item),
+    ...buildLink("swap", item),
     ...(item.wornBrand ? { wornBrand: item.wornBrand } : {}),
     ...(item.note ? { note: item.note } : {}),
     ...(item.worn ? { worn: Number(item.worn) } : {}),

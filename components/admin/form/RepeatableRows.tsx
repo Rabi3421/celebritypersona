@@ -8,6 +8,9 @@ export type RowField = {
   label: string;
   type?: string;
   placeholder?: string;
+  /** Renders a <select> instead of an input. For the fields that are an enum
+   *  — a link's network and status — where a typo is a silent wrong value. */
+  options?: { value: string; label: string }[];
 };
 
 /**
@@ -82,6 +85,22 @@ export function RepeatableRows({
                   />
                   <span>{field.placeholder ?? "Yes"}</span>
                 </label>
+              ) : field.options ? (
+                <select
+                  id={`${name}.${index}.${field.key}`}
+                  name={`${name}.${index}.${field.key}`}
+                  defaultValue={
+                    typeof row.values[field.key] === "string"
+                      ? (row.values[field.key] as string)
+                      : field.options[0]?.value
+                  }
+                >
+                  {field.options.map((option) => (
+                    <option value={option.value} key={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               ) : (
                 <input
                   id={`${name}.${index}.${field.key}`}

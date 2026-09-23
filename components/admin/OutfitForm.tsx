@@ -13,11 +13,49 @@ import {
 import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
 import { OutfitImageEditor } from "@/components/admin/OutfitImageEditor";
 import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(panel)/outfits/actions";
-import { outfitPhotos, type Outfit } from "@/lib/types";
+import { LINK_STATUSES, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
+import { networkOptions } from "@/lib/affiliate/networks";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { ConfirmButton } from "./ConfirmButton";
+
+/** How each status reads in the dropdown, in the order an editor meets them. */
+const STATUS_LABELS: Record<(typeof LINK_STATUSES)[number], string> = {
+  unverified: "Unverified — not checked yet",
+  ok: "OK — checked, product is there",
+  pending: "Pending — no link yet",
+  sold_out: "Sold out",
+  dead: "Dead — URL 404s",
+};
+
+const statusOptions = LINK_STATUSES.map((value) => ({
+  value,
+  label: STATUS_LABELS[value],
+}));
+
+/**
+ * The stored link records, spread back out into the flat keys the row inputs
+ * post. `pieceLink` is used rather than the raw field, so a look that predates
+ * the migration shows its legacy URL in the new boxes instead of an empty form.
+ */
+function flattenItem(item: OutfitItem) {
+  const worn = pieceLink(item, "original");
+  const swap = pieceLink(item, "swap");
+  return {
+    ...item,
+    wornUrl: worn?.url ?? item.wornUrl,
+    wornRetailer: worn?.retailer,
+    wornAffiliateUrl: worn?.affiliateUrl,
+    wornNetwork: worn?.network,
+    wornStatus: worn?.status,
+    swapUrl: swap?.url ?? item.swapUrl,
+    swapRetailer: swap?.retailer,
+    swapAffiliateUrl: swap?.affiliateUrl,
+    swapNetwork: swap?.network,
+    swapStatus: swap?.status,
+  };
+}
 
 export function OutfitForm({
   outfit,
@@ -161,7 +199,7 @@ export function OutfitForm({
             hint="Only the piece name is required — totals are calculated from what you fill in"
             columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
             error={errors?.items}
-            initial={draft?.items ?? outfit?.items ?? []}
+            initial={draft?.items ?? outfit?.items.map(flattenItem) ?? []}
             addLabel="Add a piece"
             fields={[
               { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
@@ -184,6 +222,15 @@ export function OutfitForm({
                 type: "checkbox",
                 placeholder: "Sold out",
               },
+              { key: "wornRetailer", label: "Worn retailer", placeholder: "Named from the link" },
+              {
+                key: "wornAffiliateUrl",
+                label: "Worn affiliate link",
+                type: "url",
+                placeholder: "Paste once approved",
+              },
+              { key: "wornNetwork", label: "Worn network", options: networkOptions },
+              { key: "wornStatus", label: "Worn link status", options: statusOptions },
               { key: "swapBrand", label: "Swap brand (optional)", placeholder: "The retailer you found" },
               { key: "swap", label: "Swap ₹ (optional)", type: "number" },
               {
@@ -192,6 +239,15 @@ export function OutfitForm({
                 type: "url",
                 placeholder: "https://…",
               },
+              { key: "swapRetailer", label: "Swap retailer", placeholder: "Named from the link" },
+              {
+                key: "swapAffiliateUrl",
+                label: "Swap affiliate link",
+                type: "url",
+                placeholder: "Paste once approved",
+              },
+              { key: "swapNetwork", label: "Swap network", options: networkOptions },
+              { key: "swapStatus", label: "Swap link status", options: statusOptions },
             ]}
           />
         </div>
