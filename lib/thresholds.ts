@@ -54,3 +54,14 @@ export const MIN_LOOKS_FOR_UNDER_5K = 5;
 
 /** The ceiling that FAQ asks about. */
 export const UNDER_5K = 5000;
+
+/**
+ * Answerable rows needed before the trending leaderboard is published at all.
+ *
+ * A row is answerable when the archive holds looks the term actually finds.
+ * Rows it does not are still real questions readers ask, and they stay in the
+ * panel as the work queue — but "Not decoded yet" ten times over is a list of
+ * things the site cannot do, printed under a heading claiming to answer them.
+ * Below this, the board and the homepage band are absent instead.
+ */
+export const MIN_ANSWERABLE_TRENDING = 3;

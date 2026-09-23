@@ -4,7 +4,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { TrendingBoard } from "@/components/trending/TrendingBoard";
-import { getTrendingFaqs, getTrendingRows } from "@/lib/db/content";
+import { getTrendingFaqs, getPublicTrendingRows } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
@@ -21,7 +21,7 @@ export const revalidate = 3600;
 
 export default async function TrendingPage() {
   const [trendingSearches, trendingFaqs] = await Promise.all([
-    getTrendingRows(),
+    getPublicTrendingRows(),
     getTrendingFaqs(),
   ]);
 
@@ -37,7 +37,8 @@ export default async function TrendingPage() {
    * blurbs made, just in JSON-LD. With nothing decoded the list is dropped
    * rather than published empty.
    */
-  const decodedRows = trendingSearches.filter((search) => search.decoded);
+  // Already only the answered, published rows.
+  const decodedRows = trendingSearches;
   const structuredData = jsonLd([
     {
       "@type": "CollectionPage",

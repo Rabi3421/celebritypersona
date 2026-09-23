@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
-import { getTrendingRows } from "@/lib/db/content";
+import { getPublicTrendingRows } from "@/lib/db/content";
 
 export async function Trending() {
-  const trendingSearches = await getTrendingRows();
+  // Only rows the archive answers, and only once there are enough of them.
+  // Empty means the band is not published at all.
+  const trendingSearches = await getPublicTrendingRows();
+  if (trendingSearches.length === 0) return null;
 
   return (
     <section className="sec">

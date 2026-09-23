@@ -12,7 +12,7 @@ import {
   getCelebrityViews,
   getOccasionViews,
   getPublishedOutfits,
-  getTrendingRows,
+  getPublicTrendingRows,
 } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./search.module.css";
@@ -53,7 +53,7 @@ export default async function SearchPage({
     getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
-    getTrendingRows(),
+    getPublicTrendingRows(),
   ]);
 
   const query = (q ?? "").trim().slice(0, 120);

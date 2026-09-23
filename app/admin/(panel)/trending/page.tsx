@@ -7,6 +7,9 @@ import { ListFilters } from "@/components/admin/ListFilters";
 import { allOption, anyFilter, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { getCelebrityViews, getOccasionViews } from "@/lib/db/content";
 import { celebritySlug, occasionSlug } from "@/lib/slugs";
+import { trendingAnswerer } from "@/lib/trending-answers";
+import { MIN_ANSWERABLE_TRENDING } from "@/lib/thresholds";
+import { plural } from "@/lib/format";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -31,6 +34,19 @@ export default async function AdminTrending({
     searchParams,
   ]);
 
+  /**
+   * Whether the archive can answer each term, computed exactly as the public
+   * board computes it. The board publishes only the answered rows, and only
+   * once there are MIN_ANSWERABLE_TRENDING of them — so without this column
+   * the panel gives no way to tell why a row is not on the site.
+   */
+  const answerFor = trendingAnswerer({ outfits, celebrities, occasions });
+  const answers = new Map(
+    allSearches.map((search) => [search.term, answerFor(search.term)] as const),
+  );
+  const answeredCount = [...answers.values()].filter((answer) => answer.decoded).length;
+  const boardLive = answeredCount >= MIN_ANSWERABLE_TRENDING;
+
   const trendingSearches = allSearches.filter(
     (search) =>
       matchesQuery(query.q, search.term, search.answer, search.href) &&
@@ -51,13 +67,25 @@ export default async function AdminTrending({
 
   return (
     <>
+      {/* The old notice here warned that the public page claimed these rows
+          came from on-site search. It no longer does — the page describes the
+          order as an editor's ranking, and Volume and Change are not
+          published at all. What an editor needs to know now is whether the
+          board is live, and why not. */}
       <div className={styles.notice}>
-        <strong>These numbers are not measured yet</strong>
+        <strong>
+          {boardLive
+            ? `The board is live with ${plural(answeredCount, "answered row")}`
+            : "The board is not on the site"}
+        </strong>
         <p>
-          The public page states plainly that the leaderboard comes from
-          on-site search. Nothing records searches today, so the figures are
-          hand-set in the content file. Wire the search box to a collection
-          before leaving this claim up.
+          Each row&apos;s answer is counted from the looks its term actually
+          finds, so a term the archive cannot answer publishes nothing. Only
+          answered rows appear publicly, and only once there are{" "}
+          {MIN_ANSWERABLE_TRENDING} of them.{" "}
+          {boardLive
+            ? `${allSearches.length - answeredCount} of ${allSearches.length} rows are still unanswered and stay here until a look matches them.`
+            : `${answeredCount} of ${allSearches.length} rows are answered, so the leaderboard and the homepage band are both hidden. Decode a look one of these terms finds, or replace the terms with questions the archive can answer.`}
         </p>
       </div>
 
@@ -116,6 +144,7 @@ export default async function AdminTrending({
                 <tr>
                   <th>#</th>
                   <th>Term</th>
+                  <th>Status</th>
                   <th>Intent</th>
                   <th>Volume</th>
                   <th>Change</th>
@@ -129,6 +158,15 @@ export default async function AdminTrending({
                       {String(index + 1).padStart(2, "0")}
                     </td>
                     <td>{search.term}</td>
+                    <td>
+                      {answers.get(search.term)?.decoded ? (
+                        <span className={styles.chip}>
+                          {plural(answers.get(search.term)?.looks ?? 0, "look")}
+                        </span>
+                      ) : (
+                        <span className={`${styles.chip} ${styles.muted}`}>Not decoded</span>
+                      )}
+                    </td>
                     <td>
                       <span className={styles.chip}>{search.intent}</span>
                     </td>

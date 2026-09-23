@@ -3,7 +3,7 @@ import { cache } from "react";
 import { getDb } from "@/lib/mongodb";
 import { celebrityViews, completeLooks, occasionViews } from "@/lib/archive";
 import { inr, plural } from "@/lib/format";
-import { MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
+import { MIN_ANSWERABLE_TRENDING, MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
 import { isPublished, pricing } from "@/lib/types";
 import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
 import { trendingAnswerer } from "@/lib/trending-answers";
@@ -189,6 +189,18 @@ export const getTrendingRows = cache(async (): Promise<TrendingRow[]> => {
         : `/search?q=${encodeURIComponent(search.term)}`,
     };
   });
+});
+
+/**
+ * The rows a reader may see: only those the archive answers, and only once
+ * there are enough of them for the board to be worth printing.
+ *
+ * An empty array means the leaderboard is not published at all — the caller
+ * renders nothing rather than a heading over a gap.
+ */
+export const getPublicTrendingRows = cache(async (): Promise<TrendingRow[]> => {
+  const answered = (await getTrendingRows()).filter((row) => row.decoded);
+  return answered.length >= MIN_ANSWERABLE_TRENDING ? answered : [];
 });
 
 type SiteDoc<T> = { key: string; value: T };

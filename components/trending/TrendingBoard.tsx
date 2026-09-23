@@ -7,7 +7,7 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import {
   getPublishedOutfits,
   getTrendingFaqs,
-  getTrendingRows,
+  getPublicTrendingRows,
 } from "@/lib/db/content";
 import { biggestSavers, freshestLooks, savingPercent, trendingBrands, trendingDupes, trendingOccasions } from "@/lib/trending";
 import styles from "@/app/trending/trending.module.css";
@@ -21,7 +21,7 @@ const inr = new Intl.NumberFormat("en-IN", {
 export async function TrendingBoard() {
   const [outfits, trendingSearches, trendingFaqs] = await Promise.all([
     getPublishedOutfits(),
-    getTrendingRows(),
+    getPublicTrendingRows(),
     getTrendingFaqs(),
   ]);
 
@@ -88,6 +88,10 @@ export async function TrendingBoard() {
         </div>
       </header>
 
+      {/* Rows the archive cannot answer are not published, and below the
+          threshold the board is not printed at all — a heading over three
+          shrugs is worse than no heading. The questions stay in the panel. */}
+      {trendingSearches.length === 0 ? null : (
       <section className={styles.board}>
         <div className={styles.shell}>
           <div className={styles.boardHeading}>
@@ -106,6 +110,7 @@ export async function TrendingBoard() {
           ))}
         </div>
       </section>
+      )}
 
       <div className={styles.shell}>
         <section className={styles.section}>
