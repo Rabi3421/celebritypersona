@@ -35,6 +35,26 @@ export function OutfitForm({
       <FormError message={errors?.form} />
       <ErrorSummary errors={errors} />
 
+      {/* Saved, with something still outstanding. An update is never blocked
+          on a missing photo credit — that would make one unrelated gap freeze
+          the whole record — so the save stands and the gap is stated here,
+          beside the photographs it is about. */}
+      {state.saved && state.warnings?.length ? (
+        <div className={styles.notice} role="status">
+          <strong>Saved — but this look cannot be published as it stands</strong>
+          <p>
+            Every photograph here was taken by somebody else, and these name no
+            source. A new look cannot be created with them; this one is already
+            live, so the change was kept.
+          </p>
+          <ul className={styles.todo}>
+            {state.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <form action={action} id="outfit-form">
         {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
 

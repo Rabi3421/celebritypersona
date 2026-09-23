@@ -8,6 +8,7 @@ import { lines, rows, text } from "@/lib/form-data";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
+import { CREDIT_REQUIRED_MESSAGE, creditProblems } from "@/lib/photo-credit";
 
 /** Exactly what the form posted, echoed back so a rejected save keeps the
  *  typing. React resets an uncontrolled form after every action. */
@@ -24,7 +25,19 @@ export type OutfitDraft = {
   items: Record<string, string>[];
 };
 
-export type OutfitFormState = { attempt?: number; errors?: FieldErrors; values?: OutfitDraft };
+export type OutfitFormState = {
+  attempt?: number;
+  errors?: FieldErrors;
+  values?: OutfitDraft;
+  /**
+   * Saved, but with something outstanding. An update that only needs a photo
+   * credit is still a save worth keeping: refusing it blocks every unrelated
+   * edit on the look until an editor tracks down a credit for a photograph
+   * somebody uploaded months ago.
+   */
+  warnings?: string[];
+  saved?: boolean;
+};
 
 const IMAGE_FIELDS = ["url", "path", "alt", "credit"];
 
@@ -95,8 +108,46 @@ export async function saveOutfit(
     };
   }
 
-  if (Number.isFinite(id) && id > 0) {
+  const isUpdate = Number.isFinite(id) && id > 0;
+
+  /**
+   * Every photograph here was taken by somebody else, so publishing one
+   * uncredited is not ours to do — but the rule has to bite where publishing
+   * happens, not on every save.
+   *
+   * Creating a look is the act of publishing it, so it is blocked outright: no
+   * photographs at all, or any photograph that names no source, and the look
+   * is not created. Updating one that is already live cannot be blocked, or a
+   * single missing credit makes the whole record read-only and an editor
+   * cannot fix a wrong price without first solving an unrelated problem. Those
+   * save, and say what is still outstanding.
+   */
+  const problems = creditProblems(parsed.data.images);
+
+  if (!isUpdate) {
+    if (parsed.data.images.length === 0) {
+      return {
+        attempt: (previous.attempt ?? 0) + 1,
+        errors: { images: "Add at least one photo before publishing this look." },
+        values: draft,
+      };
+    }
+    if (problems.length > 0) {
+      return {
+        attempt: (previous.attempt ?? 0) + 1,
+        errors: { images: `${CREDIT_REQUIRED_MESSAGE} ${problems.join(" ")}` },
+        values: draft,
+      };
+    }
+  }
+
+  if (isUpdate) {
     await updateOutfit(id, parsed.data);
+    // Held on the form rather than redirected away, so the warning is read
+    // beside the photographs it is about.
+    if (problems.length > 0) {
+      return { attempt: (previous.attempt ?? 0) + 1, saved: true, warnings: problems, values: draft };
+    }
   } else {
     await createOutfit(parsed.data);
   }

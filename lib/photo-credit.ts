@@ -102,3 +102,21 @@ export const uncreditedPhotos = (outfit: {
   const photos = outfit.images?.length ? outfit.images : outfit.image ? [outfit.image] : [];
   return photos.filter((photo) => !isSpecificCredit(photo.credit));
 };
+
+/**
+ * What is wrong with a look's photographs, as lines an editor can act on.
+ *
+ * Empty means every photo names a source. The photo number leads each line
+ * because a look carries up to eleven of them and "a photo is uncredited" is
+ * not an instruction anybody can follow.
+ */
+export function creditProblems(images: { credit?: string }[]): string[] {
+  return images
+    .map((image, index) => ({ index, credit: image.credit?.trim() }))
+    .filter((image) => !isSpecificCredit(image.credit))
+    .map((image) =>
+      image.credit
+        ? `Photo ${image.index + 1}: “${image.credit}” names no source.`
+        : `Photo ${image.index + 1} has no credit.`,
+    );
+}

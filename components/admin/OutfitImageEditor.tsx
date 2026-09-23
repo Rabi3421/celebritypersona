@@ -312,7 +312,6 @@ export function OutfitImageEditor({
                 key={`credit-${images[shown]?.path ?? shown}`}
                 type="text"
                 maxLength={120}
-                required
                 aria-invalid={
                   images[shown] && !isSpecificCredit(images[shown].credit) ? true : undefined
                 }
@@ -322,9 +321,11 @@ export function OutfitImageEditor({
               />
               <small>
                 Shown on the photo. Name the source — an account, a
-                photographer, an agency or a label. The look will not save
-                while any photo is uncredited, and wording that credits nobody
-                (“Editorial archive”, “Courtesy of the brand”) is rejected.
+                photographer, an agency or a label. A new look cannot be
+                created while any photo is uncredited; editing one that is
+                already live saves and tells you what is outstanding. Wording
+                that credits nobody (“Editorial archive”, “Courtesy of the
+                brand”) is rejected either way.
               </small>
             </label>
           </div>
