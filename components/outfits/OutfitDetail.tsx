@@ -7,7 +7,7 @@ import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
+import { effectiveCredit, isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
 import { piecePrice, sideOf, tagFor } from "@/lib/link-display";
 
 /** Both halves of a look, rendered together so neither depends on hydration. */
@@ -280,8 +280,8 @@ export function OutfitDetail({
                   given one. */}
               {shown ? (
                 <figcaption>
-                  {isSpecificCredit(shown.credit)
-                    ? shown.credit
+                  {isSpecificCredit(effectiveCredit(outfit, shown))
+                    ? effectiveCredit(outfit, shown)
                     : "Photo · source not yet credited"}
                 </figcaption>
               ) : null}

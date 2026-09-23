@@ -104,6 +104,7 @@ export type OutfitImage = {
   url: string;
   /** Storage path, kept so the file can be deleted when it is replaced. */
   path: string;
+  /** Overrides the look's own `photoCredit`, for a photo from elsewhere. */
   credit?: string;
   /** What the photo shows, for a reader who cannot see it and for image
    *  search. Absent on photos saved before the field existed, which fall back
@@ -188,6 +189,16 @@ export const isMonetised = (link: PieceLink | undefined) =>
  */
 export const isBuyable = (link: PieceLink | undefined): link is PieceLink =>
   Boolean(link) && (link!.status === "ok" || link!.status === "unverified");
+
+/**
+ * The credit that actually applies to a photograph: its own if it has one,
+ * otherwise the look's. Read everywhere a credit is shown or checked, so the
+ * page, the validation, the audit and the sitemap cannot disagree.
+ */
+export const effectiveCredit = (
+  outfit: { photoCredit?: string },
+  image: { credit?: string } | undefined,
+) => image?.credit?.trim() || outfit.photoCredit?.trim() || undefined;
 
 /** A piece we have actually found an alternative for. */
 export type SwappedItem = OutfitItem & { swapBrand: string; swap: number };
@@ -330,6 +341,19 @@ export type Outfit = {
    *  them from the look itself, so a look is never untitled in a SERP. */
   seoTitle?: string;
   seoDescription?: string;
+  /**
+   * Where this look's photographs came from.
+   *
+   * One credit for the set, because that is how photographs actually arrive:
+   * one Instagram post, one lookbook, one shoot. Asking for the same string
+   * thirteen times encodes no more truth than asking once, and the form that
+   * did ask thirteen times only ever showed the box for whichever photo was
+   * selected — so the error named twelve missing credits with no visible field
+   * to put them in.
+   *
+   * A photograph from somewhere else overrides it with its own `credit`.
+   */
+  photoCredit?: string;
   /** Superseded by `images`. Still read, so older documents keep their photo. */
   image?: OutfitImage;
   images?: OutfitImage[];

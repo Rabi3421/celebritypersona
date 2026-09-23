@@ -210,6 +210,20 @@ export function OutfitForm({
             </small>
           </div>
 
+          {/* One credit for the whole set. The per-photo box inside the editor
+              is an override, for the rare look whose photographs come from
+              two places. */}
+          <TextField
+            name="photoCredit"
+            label="Photo credit"
+            hint="Where these photographs came from — an account, a photographer, an agency or a label. Covers every photo on the look; a photo from elsewhere can override it below."
+            defaultValue={draft?.photoCredit ?? outfit?.photoCredit}
+            placeholder="Instagram / @kayadulohar"
+            errors={errors}
+            wide
+            required
+          />
+
           <OutfitImageEditor
             key={`photo-${state.attempt ?? 0}`}
             initialImages={draft?.images ?? (outfit ? outfitPhotos(outfit) : [])}

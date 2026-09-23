@@ -20,6 +20,7 @@ export type OutfitDraft = {
   slug: string;
   seoTitle: string;
   seoDescription: string;
+  photoCredit: string;
   images: { url: string; path: string; alt?: string; credit?: string }[];
   notes: string;
   items: Record<string, string>[];
@@ -80,6 +81,7 @@ export async function saveOutfit(
     slug: text(form, "slug"),
     seoTitle: text(form, "seoTitle"),
     seoDescription: text(form, "seoDescription"),
+    photoCredit: text(form, "photoCredit"),
     images: rows(form, "images", IMAGE_FIELDS) as OutfitDraft["images"],
     notes: text(form, "notes"),
     items: rows(form, "items", ITEM_FIELDS),
@@ -122,7 +124,7 @@ export async function saveOutfit(
    * cannot fix a wrong price without first solving an unrelated problem. Those
    * save, and say what is still outstanding.
    */
-  const problems = creditProblems(parsed.data.images);
+  const problems = creditProblems(parsed.data);
 
   if (!isUpdate) {
     if (parsed.data.images.length === 0) {

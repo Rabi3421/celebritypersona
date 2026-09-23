@@ -199,6 +199,8 @@ export const outfitSchema = z.object({
   ),
   seoTitle: seoText("Search title", 60),
   seoDescription: seoText("Search description", 160),
+  /** One credit for the whole set of photographs. See lib/photo-credit.ts. */
+  photoCredit: seoText("Photo credit", 120),
   images: z
     .array(
       z.object({
@@ -218,7 +220,8 @@ export const outfitSchema = z.object({
 })
   // An empty optional is dropped rather than stored as an empty string, so a
   // cleared field reads the same as one that was never filled in.
-  .transform(({ seoTitle, seoDescription, images, ...outfit }) => ({
+  .transform(({ seoTitle, seoDescription, images, photoCredit, ...outfit }) => ({
+    ...(photoCredit ? { photoCredit } : {}),
     ...outfit,
     images: images.map(({ url, path, alt, credit }) => ({
       url,

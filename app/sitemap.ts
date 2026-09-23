@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { policyUpdated, site } from "@/lib/site-config";
-import { hasSubstance, outfitPhotos } from "@/lib/types";
+import { effectiveCredit, hasSubstance, outfitPhotos } from "@/lib/types";
 import { isSpecificCredit } from "@/lib/photo-credit";
 import type { Outfit } from "@/lib/types";
 
@@ -112,7 +112,7 @@ function latest(...days: (Date | undefined)[]): Date | undefined {
 /** Image entries for the photographs that carry a credit, and no others. */
 function images(outfit: Outfit) {
   const credited = outfitPhotos(outfit)
-    .filter((photo) => isSpecificCredit(photo.credit))
+    .filter((photo) => isSpecificCredit(effectiveCredit(outfit, photo)))
     .map((photo) => photo.url);
   return credited.length ? { images: credited } : {};
 }

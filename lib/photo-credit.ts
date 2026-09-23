@@ -1,3 +1,5 @@
+import { effectiveCredit } from "@/lib/types";
+
 /**
  * Whether a photo credit actually credits anybody.
  *
@@ -93,15 +95,25 @@ export const CREDIT_REQUIRED_MESSAGE =
   "an agency or a label, e.g. “Instagram / @handle”. Generic wording like " +
   "“Editorial archive” or “Courtesy of the brand” credits nobody.";
 
-/** Photos on a look that name nobody. Empty when every photo is credited —
- *  including a look with no photos at all, which has a different problem. */
-export const uncreditedPhotos = (outfit: {
+type CreditableOutfit = {
+  photoCredit?: string;
   image?: { credit?: string };
   images?: { credit?: string }[];
-}) => {
-  const photos = outfit.images?.length ? outfit.images : outfit.image ? [outfit.image] : [];
-  return photos.filter((photo) => !isSpecificCredit(photo.credit));
 };
+
+const photosOf = (outfit: CreditableOutfit) =>
+  outfit.images?.length ? outfit.images : outfit.image ? [outfit.image] : [];
+
+/**
+ * Photos on a look that name nobody.
+ *
+ * A photograph is credited by the look's own `photoCredit`, or by its own
+ * `credit` where it came from somewhere else. Empty when every photo is
+ * covered — including a look with no photos at all, which has a different
+ * problem.
+ */
+export const uncreditedPhotos = (outfit: CreditableOutfit) =>
+  photosOf(outfit).filter((photo) => !isSpecificCredit(effectiveCredit(outfit, photo)));
 
 /**
  * What is wrong with a look's photographs, as lines an editor can act on.
@@ -110,15 +122,27 @@ export const uncreditedPhotos = (outfit: {
  * because a look carries up to eleven of them and "a photo is uncredited" is
  * not an instruction anybody can follow.
  */
-export function creditProblems(images: { credit?: string }[]): string[] {
-  return images
-    .map((image, index) => ({ index, credit: image.credit?.trim() }))
-    .filter((image) => !isSpecificCredit(image.credit))
-    .map((image) =>
-      image.credit
-        ? `Photo ${image.index + 1}: “${image.credit}” names no source.`
-        : `Photo ${image.index + 1} has no credit.`,
-    );
+export function creditProblems(outfit: CreditableOutfit): string[] {
+  const look = outfit.photoCredit?.trim();
+  const photos = photosOf(outfit);
+
+  // One credit covers the set, so when it is the thing that is missing, say
+  // that once rather than naming every photograph it would have covered.
+  if (!look && photos.some((photo) => !isSpecificCredit(photo.credit))) {
+    return [
+      look === undefined || look === ""
+        ? "This look has no photo credit. One credit covers every photo on it."
+        : `“${look}” names no source.`,
+    ];
+  }
+  if (look && !isSpecificCredit(look)) {
+    return [`The look's photo credit, “${look}”, names no source.`];
+  }
+
+  return photos
+    .map((photo, index) => ({ index, credit: photo.credit?.trim() }))
+    .filter((photo) => !isSpecificCredit(effectiveCredit(outfit, { credit: photo.credit })))
+    .map((photo) => `Photo ${photo.index + 1}: “${photo.credit}” names no source.`);
 }
 
 /**
@@ -128,6 +152,5 @@ export function creditProblems(images: { credit?: string }[]): string[] {
  * line and `npm run audit:credits` can never disagree: one uncredited photo
  * anywhere and the site stops claiming it credits them.
  */
-export const allPhotosCredited = (
-  outfits: { image?: { credit?: string }; images?: { credit?: string }[] }[],
-) => outfits.every((outfit) => uncreditedPhotos(outfit).length === 0);
+export const allPhotosCredited = (outfits: CreditableOutfit[]) =>
+  outfits.every((outfit) => uncreditedPhotos(outfit).length === 0);

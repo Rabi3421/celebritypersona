@@ -17,6 +17,7 @@
 
 import { MongoClient } from "mongodb";
 import { isSpecificCredit } from "@/lib/photo-credit";
+import { effectiveCredit } from "@/lib/types";
 
 function requireUri(): string {
   const uri = process.env.MONGODB_URI;
@@ -30,6 +31,7 @@ function requireUri(): string {
 type StoredPhoto = { credit?: string; path?: string };
 type StoredOutfit = {
   id: number;
+  photoCredit?: string;
   celebrity: string;
   event: string;
   slug?: string;
@@ -60,8 +62,14 @@ async function main() {
         : [];
     totalPhotos += photos.length;
 
+    // The look's own credit covers every photo; a photo's own credit
+    // overrides it. See effectiveCredit in lib/types.ts.
     const missing = photos
-      .map((photo, index) => ({ index, credit: photo.credit, path: photo.path }))
+      .map((photo, index) => ({
+        index,
+        credit: effectiveCredit(outfit, photo),
+        path: photo.path,
+      }))
       .filter((photo) => !isSpecificCredit(photo.credit));
     totalMissing += missing.length;
 

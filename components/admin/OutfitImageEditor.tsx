@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { OutfitImage, OutfitItem } from "@/lib/types";
 import { nameSlug } from "@/lib/slugs";
 import { compressImage, formatBytes, TARGET_BYTES } from "@/lib/image-compress";
-import { isSpecificCredit } from "@/lib/photo-credit";
 import styles from "@/app/admin/panel.module.css";
 
 type Spot = { x: number; y: number } | null;
@@ -307,25 +306,19 @@ export function OutfitImageEditor({
               </small>
             </label>
             <label>
-              <span>Photo credit (required)</span>
+              <span>Credit override · photo {shown + 1}</span>
               <input
                 key={`credit-${images[shown]?.path ?? shown}`}
                 type="text"
                 maxLength={120}
-                aria-invalid={
-                  images[shown] && !isSpecificCredit(images[shown].credit) ? true : undefined
-                }
                 defaultValue={images[shown]?.credit ?? ""}
-                placeholder="Instagram / @ritikanayak"
+                placeholder="Only if this photo came from somewhere else"
                 onChange={(event) => describe(shown, "credit", event.target.value)}
               />
               <small>
-                Shown on the photo. Name the source — an account, a
-                photographer, an agency or a label. A new look cannot be
-                created while any photo is uncredited; editing one that is
-                already live saves and tells you what is outstanding. Wording
-                that credits nobody (“Editorial archive”, “Courtesy of the
-                brand”) is rejected either way.
+                Leave this empty. The look&apos;s own Photo credit above covers
+                every photograph on it — this box is only for the rare one that
+                came from a different source.
               </small>
             </label>
           </div>
