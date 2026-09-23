@@ -21,6 +21,7 @@ import { assertWritable } from "@/lib/prod-guard";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
 import { revalidateSite } from "./revalidate";
+import { backupDocuments } from "./backup";
 
 const apply = process.argv.includes("--apply");
 
@@ -42,12 +43,21 @@ async function main() {
   const outfits = await collection.find({}, { projection: { _id: 0 } }).sort({ id: 1 }).toArray();
 
   const floating = outfits.filter((outfit) => !outfit.slug?.trim());
+
   for (const outfit of floating) {
-    const frozen = outfitSlug(outfit);
     console.log(`id ${outfit.id} · ${outfit.celebrity} — ${outfit.event}`);
-    console.log(`   freezing at: ${frozen}`);
+    console.log(`   freezing at: ${outfitSlug(outfit)}`);
     console.log(`   unchanged URL, so no redirect is needed\n`);
-    if (apply) await collection.updateOne({ id: outfit.id }, { $set: { slug: frozen } });
+  }
+
+  if (apply && floating.length > 0) {
+    // Exactly the documents about to change, exactly as they stand, written
+    // before the first update. See scripts/backup.ts.
+    await backupDocuments("freeze-slugs", floating);
+
+    for (const outfit of floating) {
+      await collection.updateOne({ id: outfit.id }, { $set: { slug: outfitSlug(outfit) } });
+    }
   }
 
   console.log(
