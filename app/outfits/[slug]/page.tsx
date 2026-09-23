@@ -134,7 +134,18 @@ function headline(outfit: Outfit) {
   const garment = garmentOf(piece.name);
   const occasion = OCCASION_PHRASE[outfit.occasion];
   const label = piece.wornBrand;
+  /**
+   * The house formula is "<Celebrity> at <Event>: <Piece> by <Label>", and it
+   * leads the list below. The rest are the same sentence shortened, in the
+   * order that keeps the most useful words, because Google truncates at around
+   * sixty characters and a cut title is worse than a narrower one.
+   *
+   * An editor's own seoTitle still wins over all of it, so nothing here
+   * rewrites a title somebody has already chosen.
+   */
   const candidates = [
+    label && `${outfit.celebrity} at ${outfit.event}: ${piece.name} by ${label}`,
+    label && `${outfit.celebrity} at ${outfit.event}: ${garment} by ${label}`,
     label && occasion && `${outfit.celebrity} ${occasion}: ${piece.name} by ${label}`,
     label && occasion && `${outfit.celebrity} ${occasion}: ${garment} by ${label}`,
     label && `${outfit.celebrity}'s ${piece.name} — ${label}`,

@@ -16,6 +16,7 @@
     "mail:test": "node --env-file=.env scripts/mail-test.mjs",
     "purge:seed": "tsx --env-file=.env scripts/purge-seed-content.ts",
     "audit:credits": "tsx --env-file=.env scripts/audit-photo-credits.ts",
+    "audit:slugs": "tsx --env-file=.env scripts/audit-slugs.ts",
     "migrate:links": "tsx --env-file=.env scripts/migrate-links.ts",
     "check:links": "tsx --env-file=.env scripts/check-links.ts",
     "retag:occasions": "tsx --env-file=.env scripts/retag-occasions.ts",

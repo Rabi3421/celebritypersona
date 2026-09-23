@@ -16,7 +16,7 @@ import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(pan
 import { LINK_STATUSES, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
 import { networkOptions } from "@/lib/affiliate/networks";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
-import { outfitSlug } from "@/lib/slugs";
+import { outfitSlug, suggestOutfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
 import { ConfirmButton } from "./ConfirmButton";
 
@@ -57,12 +57,59 @@ function flattenItem(item: OutfitItem) {
   };
 }
 
+/**
+ * Fills the slug from what is already typed into the form.
+ *
+ * Reads the live inputs rather than taking props, because the celebrity and
+ * the pieces are edited independently and the suggestion is only useful once
+ * they are filled in. Same approach the photo editor already uses to mirror
+ * the piece names.
+ */
+function SuggestSlug({ taken }: { taken: string[] }) {
+  const fill = () => {
+    const form = document.getElementById("outfit-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const value = (name: string) =>
+      (form.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ?? "").trim();
+
+    const items = Array.from(
+      form.querySelectorAll<HTMLInputElement>('input[name^="items."][name$=".name"]'),
+    ).map((input, index) => ({
+      name: input.value.trim(),
+      wornBrand: value(`items.${index}.wornBrand`),
+      swapBrand: value(`items.${index}.swapBrand`),
+      worn: Number(value(`items.${index}.worn`)) || undefined,
+    }));
+
+    const slug = suggestOutfitSlug(
+      { celebrity: value("celebrity"), event: value("event"), date: value("date"), items },
+      taken,
+    );
+    const field = form.querySelector<HTMLInputElement>('[name="slug"]');
+    if (field && slug) {
+      field.value = slug;
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+
+  return (
+    <div className={styles.field}>
+      <button type="button" className={styles.ghost} onClick={fill}>
+        Suggest slug from the form
+      </button>
+    </div>
+  );
+}
+
 export function OutfitForm({
   outfit,
   occasions,
+  takenSlugs = [],
 }: {
   outfit?: Outfit;
   occasions: string[];
+  /** Slugs already in use, so a suggestion never collides with a live URL. */
+  takenSlugs?: string[];
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
   const errors = state.errors;
@@ -134,12 +181,19 @@ export function OutfitForm({
           <TextField
             name="slug"
             label="Slug"
-            hint="The look's URL segment, and the folder its photos are uploaded into"
+            hint={
+              outfit
+                ? "The look's URL segment, and the folder its photos are uploaded into. Changing it on a live look breaks every link to it."
+                : "celebrity-key-piece-label, no date. Fill the celebrity and the pieces, then press Suggest."
+            }
             defaultValue={draft?.slug ?? (outfit ? outfitSlug(outfit) : undefined)}
-            placeholder="amyra-dastur-savanna-co-ord"
+            placeholder="sonal-chauhan-diva-pink-cape-set-aum-ashima-asit"
             errors={errors}
             required
           />
+          {/* Only when creating. An existing slug is a promise to everyone who
+              linked to it, so nothing offers to rewrite one. */}
+          {outfit ? null : <SuggestSlug taken={takenSlugs} />}
           {/* The badge is no longer a checkbox. It is counted from the day a
               look is added, so nobody has to remember to come back and untick
               it three days later. */}
