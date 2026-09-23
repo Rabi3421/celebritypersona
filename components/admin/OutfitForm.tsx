@@ -43,7 +43,7 @@ export function OutfitForm({
             name="celebrity"
             label="Celebrity"
             defaultValue={draft?.celebrity ?? outfit?.celebrity}
-            placeholder="Alia Bhatt"
+            placeholder="Full name, as she is credited"
             errors={errors}
             required
           />
@@ -144,13 +144,13 @@ export function OutfitForm({
             initial={draft?.items ?? outfit?.items ?? []}
             addLabel="Add a piece"
             fields={[
-              { key: "name", label: "Piece", placeholder: "Ivory kurta" },
+              { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
               {
                 key: "note",
                 label: "Note (optional)",
                 placeholder: "Chikankari on cotton mul, elbow sleeves",
               },
-              { key: "wornBrand", label: "Worn brand (optional)", placeholder: "Anita Dongre" },
+              { key: "wornBrand", label: "Worn brand (optional)", placeholder: "The label she wore" },
               { key: "worn", label: "Worn ₹ (optional)", type: "number" },
               {
                 key: "wornUrl",
@@ -164,7 +164,7 @@ export function OutfitForm({
                 type: "checkbox",
                 placeholder: "Sold out",
               },
-              { key: "swapBrand", label: "Swap brand (optional)", placeholder: "Libas" },
+              { key: "swapBrand", label: "Swap brand (optional)", placeholder: "The retailer you found" },
               { key: "swap", label: "Swap ₹ (optional)", type: "number" },
               {
                 key: "swapUrl",

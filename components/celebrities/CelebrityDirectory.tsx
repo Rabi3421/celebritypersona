@@ -81,6 +81,23 @@ export function CelebrityDirectory({
     {},
   );
 
+  /**
+   * The hint named "alia" and "kap", suggesting two searches that return
+   * nothing: neither has ever been in this archive. A placeholder that invites
+   * a query the site cannot answer is the same failure as a stat nobody can
+   * stand behind, so it is taken from the archive — the two busiest names
+   * actually in it, shortened to the fragment a person would type.
+   */
+  const searchHint = useMemo(() => {
+    const examples = [...celebrities]
+      .filter((celebrity) => celebrity.stats.looks > 0)
+      .sort((a, b) => b.stats.looks - a.stats.looks)
+      .slice(0, 2)
+      .map((celebrity) => celebrity.name.split(" ")[0].toLowerCase());
+    if (examples.length === 0) return "Search a name";
+    return `Search a name — try “${examples.join("” or “")}”`;
+  }, [celebrities]);
+
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filtered = celebrities.filter((celebrity) => {
@@ -125,7 +142,7 @@ export function CelebrityDirectory({
               onChange={(event) => { setQuery(event.target.value); setLetter(null); }}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Search a name — try “alia” or “kap”"
+              placeholder={searchHint}
               aria-label="Search celebrities"
               autoComplete="off"
             />

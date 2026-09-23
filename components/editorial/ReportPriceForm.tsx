@@ -151,8 +151,8 @@ export function ReportPriceForm({ prefill }: { prefill?: ReportPrefill }) {
           required
           placeholder={
             suggesting
-              ? "The Libas embroidered kurta is a much closer cut, and it is ₹1,299."
-              : "₹1,499 on Myntra"
+              ? "The embroidered kurta on this retailer is a much closer cut, and it is cheaper."
+              : "The price on the retailer page right now"
           }
           aria-invalid={errors?.detail ? true : undefined}
         />
