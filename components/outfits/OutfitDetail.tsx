@@ -7,14 +7,15 @@ import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { outfitPhotos, pricing, wornLabel } from "@/lib/types";
+import { isBuyable, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
+import { sideOf, tagFor } from "@/lib/link-display";
 import type { Outfit } from "@/lib/types";
 import { priceFreshness } from "@/lib/freshness";
 import { isSpecificCredit } from "@/lib/photo-credit";
 import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
-type PriceMode = "worn" | "swap";
+import type { PriceMode } from "@/lib/link-display";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -113,14 +114,10 @@ export function OutfitDetail({
 
   function trackProductClick(index: number) {
     const item = outfit.items[index];
-    const url = mode === "worn" ? item.wornUrl : item.swapUrl;
     const brand = mode === "worn" ? item.wornBrand : item.swapBrand;
-    let retailer: string | undefined;
-    try {
-      retailer = url ? new URL(url).hostname.replace(/^www\./, "") : undefined;
-    } catch {
-      retailer = undefined;
-    }
+    // The retailer is recorded on the link now rather than guessed from the
+    // hostname each time, so this and the click log name it the same way.
+    const retailer = pieceLink(item, sideOf(mode))?.retailer;
     const metadata = {
       celebrity_name: outfit.celebrity,
       outfit_id: slug,
@@ -326,20 +323,8 @@ export function OutfitDetail({
                   <div>
                     <h2>{item.name}</h2>
                     <p>{mode === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</p>
-                    <span className={`${styles.stockTag} ${mode === "worn" && (!item.wornUrl || item.soldOut) ? styles.archived : ""}`}>
-                      {mode === "swap"
-                        ? item.swapBrand
-                          ? item.swapUrl
-                            ? "Similar · buy it"
-                            : "Similar · link pending"
-                          : "Still looking"
-                        : item.soldOut
-                          ? "Exact · sold out"
-                          : item.worn === undefined
-                            ? "Exact · price unconfirmed"
-                            : item.wornUrl
-                              ? "Exact · buy it"
-                              : "Exact · link pending"}
+                    <span className={`${styles.stockTag} ${tagFor(item, mode).archived ? styles.archived : ""}`}>
+                      {tagFor(item, mode).text}
                     </span>
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
                   </div>
@@ -347,20 +332,25 @@ export function OutfitDetail({
                     <b>{(mode === "worn" ? item.worn : item.swap) === undefined
                         ? "—"
                         : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
-                    {(mode === "worn" ? item.wornUrl : item.swapUrl) ? (
+                    {/*
+                      A button is drawn only where there is somewhere to send
+                      somebody. This used to render a disabled "Buy" beside the
+                      words "link pending" — an offer and its own refusal in
+                      the same row, which reads as a broken page rather than as
+                      an honest gap. Sold out, dead and pending links now say
+                      what they are in the tag to the left and put no control
+                      here at all.
+                    */}
+                    {isBuyable(pieceLink(item, sideOf(mode))) ? (
                       <a
-                        href={mode === "worn" ? item.wornUrl : item.swapUrl}
+                        href={`/go/${item.id}?side=${sideOf(mode)}&from=${encodeURIComponent(`/outfits/${slug}`)}`}
                         target="_blank"
-                        rel="nofollow sponsored noopener"
+                        rel="sponsored nofollow noopener"
                         onClick={() => trackProductClick(index)}
                       >
                         Buy
                       </a>
-                    ) : (
-                      <button type="button" disabled>
-                        Buy
-                      </button>
-                    )}
+                    ) : null}
                   </div>
                 </article>
               ))}
