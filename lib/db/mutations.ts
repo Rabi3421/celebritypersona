@@ -17,6 +17,7 @@ import type {
   OptInRecord,
   CelebrityRequest,
   HomeContent,
+  LinkClick,
   Occasion,
   Outfit,
   OutfitItem,
@@ -431,6 +432,28 @@ export async function deletePriceReport(id: string) {
   const db = await getDb();
   await db.collection<PriceReport>("priceReports").deleteOne({ id });
   revalidatePath("/admin/reports");
+}
+
+/* ------------------------------------------------------------- link clicks */
+
+/**
+ * Counts one outbound click.
+ *
+ * Never throws at the caller. A click is a redirect the reader is waiting on,
+ * and losing a row from an analytics table is not a reason to make somebody
+ * stare at an error instead of arriving at the shop. The insert is not
+ * awaited for correctness, only for ordering.
+ *
+ * No page is revalidated: the admin revenue screen reads these fresh, and
+ * nothing public renders them.
+ */
+export async function recordLinkClick(click: Omit<LinkClick, "id">) {
+  try {
+    const db = await getDb();
+    await db.collection<LinkClick>("linkClicks").insertOne({ ...click, id: randomUUID() });
+  } catch (error) {
+    console.error("Link click was not recorded", error instanceof Error ? error.name : "Unknown");
+  }
 }
 
 /* ------------------------------------------------- requests & subscribers */

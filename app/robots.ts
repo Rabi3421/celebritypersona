@@ -17,7 +17,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       // The panel and its endpoints are behind a session anyway; keeping them
       // out of the crawl saves the redirect chase.
-      disallow: ["/admin", "/admin/", "/api/"],
+      // /go/ is the outbound redirector. There is nothing at any of these
+      // URLs to index, and a crawler following them would count as clicks on
+      // links nobody pressed.
+      disallow: ["/admin", "/admin/", "/api/", "/go/"],
     },
     sitemap: `${site.url}/sitemap.xml`,
     // `Host:` takes a bare hostname. Given `site.url` it emitted

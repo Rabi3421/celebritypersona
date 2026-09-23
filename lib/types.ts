@@ -415,6 +415,37 @@ export const PRICE_REPORT_ISSUES = [
   "Swap suggestion",
 ] as const;
 
+/**
+ * One outbound click on a retailer link.
+ *
+ * Deliberately not a record of a person. There is no IP address, no
+ * user-agent, no cookie, no session and no identifier of any kind here — not
+ * hashed, not truncated, not "anonymised". What is stored is what was clicked
+ * and when, which is enough to know which looks earn and which retailers
+ * readers actually go to, and not enough to describe anybody.
+ *
+ * The privacy policy says exactly this, so anything added to this type has to
+ * be added there first.
+ */
+export type LinkClick = {
+  id: string;
+  /** ISO timestamp. */
+  at: string;
+  outfitId: number;
+  outfitSlug: string;
+  pieceId: string;
+  /** The piece's name, copied so a renamed or deleted piece keeps its history. */
+  piece: string;
+  side: PieceSide;
+  retailer: string;
+  network: LinkNetwork;
+  /** The page the click came from, always a path on this site. */
+  sourcePage: string;
+  /** Whether the click went to a monetised URL, so revenue can be separated
+   *  from traffic we send for nothing. */
+  affiliate: boolean;
+};
+
 export type PriceReportIssue = (typeof PRICE_REPORT_ISSUES)[number];
 
 export const PRICE_REPORT_STATUSES = [

@@ -110,6 +110,7 @@ export const legalDocs: LegalDoc[] = [
               "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
               "Automatically, on every visit: your IP address, browser and device type, the pages you opened and the page that referred you. This is ordinary web server and analytics data.",
+              "When you click through to a retailer: we count the click, recording which piece and which page it came from. That record holds nothing about you — no IP address, no device, no identifier of any kind — so it tells us which looks people shop and nothing about who shopped them.",
             ],
           },
           {
