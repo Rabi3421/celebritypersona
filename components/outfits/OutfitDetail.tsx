@@ -7,7 +7,7 @@ import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { isBuyable, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
+import { isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
 import { sideOf, tagFor } from "@/lib/link-display";
 import type { Outfit } from "@/lib/types";
 import { priceFreshness } from "@/lib/freshness";
@@ -69,6 +69,19 @@ export function OutfitDetail({
   const money = pricing(outfit);
   /** At least one swap a reader could actually click through and buy. */
   const shoppable = outfit.items.some((item) => isBuyable(pieceLink(item, "swap")));
+  /**
+   * Whether anything on this page can earn us a commission.
+   *
+   * The disclosure was printed on every outfit page whatever it linked to, so
+   * a look with no monetised link at all still told the reader we might be
+   * paid for it. Saying we may earn a commission where we cannot is the same
+   * kind of untruth as saying we do not where we can — it just costs us
+   * credibility rather than theirs.
+   */
+  const hasAffiliate = outfit.items.some(
+    (item) =>
+      isMonetised(pieceLink(item, "original")) || isMonetised(pieceLink(item, "swap")),
+  );
   // The look sheet beside the write-up. Every line is read off the pieces
   // themselves, so a look with one label and no colour in its piece names
   // simply shows fewer rows rather than an invented one.
@@ -349,6 +362,7 @@ export function OutfitDetail({
               and it says the part that actually matters to them, which is that
               the commission does not decide what gets recommended.
             */}
+            {hasAffiliate ? (
             <p className={styles.disclosure}>
               <i aria-hidden="true">Heads up</i>
               <span>
@@ -358,6 +372,7 @@ export function OutfitDetail({
                 <Link href="/affiliate-disclosure">How this works</Link>
               </span>
             </p>
+            ) : null}
 
             <div className={styles.lines}>
               {outfit.items.map((item, index) => (
@@ -445,9 +460,13 @@ export function OutfitDetail({
                         : `See the ${money.swapped} ${pieceWord(money.swapped)} we have swapped`}
                   </button>
                   <small>
+                    {/* The commission half is only said where one can be
+                        earned; the swap-count half is true either way. */}
                     {money.allSwapped
-                      ? "We earn a commission on some links. It never changes what we pick or what you pay."
-                      : `${money.pieces - money.swapped} ${pieceWord(money.pieces - money.swapped)} still ${money.pieces - money.swapped === 1 ? "needs" : "need"} a swap. We earn a commission on some links.`}
+                      ? hasAffiliate
+                        ? "We earn a commission on some links. It never changes what we pick or what you pay."
+                        : "We never change what we pick or what you pay."
+                      : `${money.pieces - money.swapped} ${pieceWord(money.pieces - money.swapped)} still ${money.pieces - money.swapped === 1 ? "needs" : "need"} a swap.${hasAffiliate ? " We earn a commission on some links." : ""}`}
                   </small>
                 </>
               ) : (

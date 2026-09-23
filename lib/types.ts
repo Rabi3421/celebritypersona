@@ -164,9 +164,20 @@ export function retailerFromUrl(url: string): string | undefined {
 /** Where a click should actually go. The affiliate form when we have one. */
 export const linkTarget = (link: PieceLink) => link.affiliateUrl?.trim() || link.url;
 
-/** Whether a click on this link can earn anything. */
-export const isMonetised = (link: PieceLink) =>
-  Boolean(link.affiliateUrl?.trim()) && link.network !== "none";
+/**
+ * Whether a click on this link is a commercial one.
+ *
+ * The presence of an affiliate URL decides it, and the network deliberately
+ * does not. An editor who pastes a monetised link and forgets to set the
+ * network would otherwise publish an affiliate link the page does not mark
+ * and the disclosure does not cover — a disclosure failure caused by a
+ * dropdown. This errs toward disclosing; the panel flags the mismatch so the
+ * network can be set for reporting.
+ *
+ * Undefined is not monetised, so callers can pass a side with no link at all.
+ */
+export const isMonetised = (link: PieceLink | undefined) =>
+  Boolean(link?.affiliateUrl?.trim());
 
 /**
  * Whether the reader gets a Buy button.

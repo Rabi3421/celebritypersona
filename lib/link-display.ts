@@ -1,4 +1,4 @@
-import { pieceLink, type OutfitItem, type PieceSide } from "@/lib/types";
+import { isMonetised, pieceLink, type OutfitItem, type PieceSide } from "@/lib/types";
 
 /**
  * How a piece's link reads on the page.
@@ -32,7 +32,14 @@ export function tagFor(item: OutfitItem, mode: PriceMode): { text: string; archi
   switch (link?.status) {
     case "ok":
     case "unverified":
-      return { text: `${prefix} · buy it`, archived: false };
+      // The disclosure page promises that outbound commercial links are
+      // marked. rel="sponsored" marks them for a crawler; this marks them for
+      // a person, in the row the link is actually in, using the word rather
+      // than a symbol they would have to go and look up.
+      return {
+        text: `${prefix} · buy it${isMonetised(link) ? " · affiliate" : ""}`,
+        archived: false,
+      };
     case "sold_out":
       return { text: `${prefix} · sold out`, archived: true };
     case "dead":
