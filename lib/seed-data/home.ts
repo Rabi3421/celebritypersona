@@ -5,6 +5,11 @@
  * the ticker, the budget tiers, the occasion and archive tiles, the brand
  * marquee, the dupe pick and the swap demo's pieces — is counted from the
  * outfits collection at render time.
+ *
+ * There used to be a `reels` list here too, six captions each with a view
+ * count typed beside it ("142k", "Alia ka Rs 4.4 lakh look"), describing reels
+ * that did not exist. The strip reads the account's real posts now, mirrored
+ * by `npm run instagram:mirror`, so there is nothing for an editor to type.
  */
 import type { HomeContent } from "@/lib/types";
 
@@ -47,14 +52,6 @@ export const homeContent: HomeContent = {
       title: "Swaps are labelled swaps",
       body: "A lookalike is never presented as the real piece. You always know which one you're buying.",
     },
-  ],
-  reels: [
-    { views: "142k", caption: "Alia ka ₹4.4 lakh look → ₹5,489 mein" },
-    { views: "98k", caption: "Sangeet lehenga under ₹5,000" },
-    { views: "211k", caption: "Deepika airport look decode" },
-    { views: "76k", caption: "Yeh bag actually kitne ka hai?" },
-    { views: "134k", caption: "Diwali kurta sets — 5 dupes" },
-    { views: "89k", caption: "Red carpet vs Myntra" },
   ],
   // The look count in front of `body` is filled in from the archive.
   campaign: {

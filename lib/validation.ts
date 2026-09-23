@@ -297,9 +297,6 @@ export const homeContentSchema = z.object({
   trustPoints: z
     .array(z.object({ n: required("Number"), title: required("Title"), body: required("Body") }))
     .min(1, "Add at least one point"),
-  reels: z
-    .array(z.object({ views: required("Views"), caption: required("Caption") }))
-    .min(1, "Add at least one reel"),
   campaign: z.object({
     eyebrow: required("Campaign eyebrow"),
     title: required("Campaign title"),

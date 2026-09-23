@@ -1,88 +1,20 @@
-/** Seed source for the `trendingSearches` collection. Not read by the app. */
+/**
+ * Seed source for the `trendingSearches` collection. Not read by the app.
+ *
+ * The ten rows that used to be here were invented questions with invented
+ * answers: a Rs 4,43,500 airport look rebuilding for Rs 5,489 under Alia
+ * Bhatt's name, "nine decoded sangeet looks" against none, Rs 22,000 juttis
+ * swapping to Rs 400. They shipped to production and stayed live.
+ *
+ * The leaderboard is an editor's list of what readers actually ask, so the
+ * rows belong in the panel rather than in a seed file — and their answers are
+ * no longer stored at all. lib/trending-answers.ts computes each one from the
+ * looks the term actually finds at render time, so a row can only say what the
+ * archive can support. See lib/db/content.ts, getTrendingRows().
+ */
 import type { TrendingSearch } from "@/lib/types";
 
-export const trendingSearches: TrendingSearch[] = [
-  {
-    term: "alia bhatt airport look",
-    volume: 1240,
-    changePct: 34,
-    intent: "Celebrity",
-    href: "/celebrities/alia-bhatt",
-    answer: "The ₹4,43,500 Mumbai airport look rebuilds for ₹5,489.",
-  },
-  {
-    term: "sangeet lehenga under 5000",
-    volume: 940,
-    changePct: 61,
-    intent: "Budget",
-    href: "/occasions/sangeet",
-    answer: "Nine decoded sangeet looks land a complete outfit under ₹5,000.",
-  },
-  {
-    term: "deepika saree",
-    volume: 870,
-    changePct: 12,
-    intent: "Celebrity",
-    href: "/celebrities/deepika-padukone",
-    answer: "Her Sabyasachi drapes swap to Nykaa and Libas for under ₹3,000.",
-  },
-  {
-    term: "ananya panday co-ord",
-    volume: 610,
-    changePct: 48,
-    intent: "Celebrity",
-    href: "/celebrities/ananya-panday",
-    answer: "The ₹1,40,000 Fendi co-ord has a ₹2,190 Westside match.",
-  },
-  {
-    term: "diwali kurta set",
-    volume: 580,
-    changePct: 96,
-    intent: "Occasion",
-    href: "/occasions/diwali",
-    answer: "Festive sets decoded with swaps you can order before the date.",
-  },
-  {
-    term: "bollywood dupe myntra",
-    volume: 520,
-    changePct: 27,
-    intent: "Brand",
-    href: "/outfits",
-    answer: "Every swap names the exact retailer, Myntra listings included.",
-  },
-  {
-    term: "kiara advani red carpet",
-    volume: 440,
-    changePct: 19,
-    intent: "Celebrity",
-    href: "/celebrities/kiara-advani",
-    answer: "A ₹3,40,000 Filmfare gown, rebuilt for ₹5,210.",
-  },
-  {
-    term: "mehendi outfit ideas",
-    volume: 390,
-    changePct: 41,
-    intent: "Occasion",
-    href: "/occasions/mehendi",
-    answer: "Sharara and lehenga looks priced twice, as worn and as swapped.",
-  },
-  {
-    term: "sara ali khan jutti",
-    volume: 310,
-    changePct: 8,
-    intent: "Celebrity",
-    href: "/celebrities/sara-ali-khan",
-    answer: "Her ₹22,000 Fizzy Goblet juttis swap to Mochi at ₹400.",
-  },
-  {
-    term: "janhvi kapoor casual look",
-    volume: 270,
-    changePct: 23,
-    intent: "Celebrity",
-    href: "/celebrities/janhvi-kapoor",
-    answer: "Tee, denim and sneakers for ₹2,140 against ₹1,12,000 worn.",
-  },
-];
+export const trendingSearches: TrendingSearch[] = [];
 
 export const trendingFaqs = [
   {
@@ -99,6 +31,9 @@ export const trendingFaqs = [
   },
   {
     q: "Can I find a full celebrity look under ₹5,000?",
-    a: "Often, yes. Sort the archive by budget and you will see complete looks that rebuild for less than ₹5,000, mostly in the airport, casual and sangeet categories where the original relies on one expensive piece rather than four.",
+    // Answered from the archive at read time — see underBudgetAnswer() in
+    // lib/db/content.ts. This text is the fallback, and it promises nothing
+    // a count could contradict.
+    a: "Sometimes. A complete look only counts once every piece in it has an alternative we have found and priced. Sort the archive by budget to see exactly which ones rebuild under ₹5,000 today, rather than taking our word for how common it is.",
   },
 ];

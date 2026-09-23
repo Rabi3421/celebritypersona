@@ -17,7 +17,6 @@ export async function saveHome(
   const parsed = homeContentSchema.safeParse({
     swapSteps: rows(form, "swapSteps", ["n", "title", "body"]),
     trustPoints: rows(form, "trustPoints", ["n", "title", "body"]),
-    reels: rows(form, "reels", ["views", "caption"]),
     campaign: {
       eyebrow: text(form, "campaign.eyebrow"),
       title: text(form, "campaign.title"),

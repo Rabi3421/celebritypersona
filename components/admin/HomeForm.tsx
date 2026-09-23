@@ -89,9 +89,6 @@ export function HomeForm({
             <RepeatableRows name="trustPoints" title="Trust points" columns="70px minmax(0,1fr) minmax(0,2fr)"
               error={errors?.trustPoints} initial={home.trustPoints} addLabel="Add a point"
               fields={[{ key: "n", label: "No." }, { key: "title", label: "Title" }, { key: "body", label: "Body" }]} />
-            <RepeatableRows name="reels" title="Reels" columns="120px minmax(0,1fr)"
-              error={errors?.reels} initial={home.reels} addLabel="Add a reel"
-              fields={[{ key: "views", label: "Views" }, { key: "caption", label: "Caption" }]} />
           </div>
         </section>
 

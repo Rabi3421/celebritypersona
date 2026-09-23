@@ -436,7 +436,6 @@ export type TickerEntry = {
 export type HomeContent = {
   swapSteps: { n: string; title: string; body: string }[];
   trustPoints: { n: string; title: string; body: string }[];
-  reels: { views: string; caption: string }[];
   /** The campaign band. Its look count is filled in from the archive. */
   campaign: { eyebrow: string; title: string; body: string; cta: string; href: string };
 };

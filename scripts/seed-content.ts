@@ -10,7 +10,6 @@ import { MongoClient } from "mongodb";
 import { celebrities } from "../lib/seed-data/celebrities";
 import { homeContent } from "../lib/seed-data/home";
 import { occasions } from "../lib/seed-data/occasions";
-import { outfits } from "../lib/seed-data/outfits";
 import { trendingFaqs, trendingSearches } from "../lib/seed-data/trending";
 
 async function main() {
@@ -55,7 +54,20 @@ async function main() {
   }
 
   console.log(`Seeding ${dbName}`);
-  await upsertAll("outfits", outfits, "id");
+  /**
+   * Outfits are not seeded, and the celebrity and trending seeds are empty.
+   *
+   * This script used to inject twenty invented looks, eighteen celebrity
+   * records and ten "trending search" rows -- outfits, brands, prices and
+   * dates nobody wore, attributed by name to real people. They reached
+   * production and stayed live, and re-running the seed would have put them
+   * back. Everything about a look is reporting, so it is entered in the panel.
+   *
+   * What is still seeded is the structural content a fresh install needs and
+   * nobody has to verify: the occasion vocabulary with its real calendar
+   * dates, the homepage's editorial copy, and the FAQ wording.
+   */
+  await upsertAll("outfits", [], "id");
   await upsertAll("celebrities", celebrities, "id");
   await upsertAll("occasions", occasions, "id");
   await upsertAll("trendingSearches", trendingSearches, "term");
