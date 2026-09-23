@@ -3,9 +3,9 @@
  *
  * The credit field used to be optional, so most photographs in the archive
  * have none, and the public page captioned those "Photo · Editorial archive" —
- * an attribution to nobody, printed over somebody else's work. Saving a look
- * now requires a real credit on every photo, which means a look already
- * carrying an uncredited one cannot be saved again until it is fixed.
+ * an attribution to nobody, printed over somebody else's work. Creating a look
+ * now requires a real credit on every photo. Editing a look that is already
+ * live is never blocked: it saves, and the panel says what is outstanding.
  *
  * This is the worklist for that. Read-only; it changes nothing.
  *
@@ -89,8 +89,10 @@ async function main() {
   console.log(
     failing.length === 0
       ? "Every photo names a source."
-      : `${failing.length} of ${outfits.length} looks need credits before they can be saved again` +
-        `${clean ? `; ${clean} ${clean === 1 ? "is" : "are"} clean` : ""}.`,
+      : `${failing.length} of ${outfits.length} looks have an uncredited photo` +
+        `${clean ? `; ${clean} ${clean === 1 ? "is" : "are"} clean` : ""}.\n` +
+        `These still save. A new look cannot be created with an uncredited ` +
+        `photo; editing one that is already live is never blocked.`,
   );
 
   await client.close();
