@@ -153,3 +153,71 @@ export function searchEntries(index: SearchEntry[], query: string, limit = 40) {
     .slice(0, limit)
     .map((hit) => hit.entry);
 }
+
+export type SearchOutcome = {
+  entries: SearchEntry[];
+  /** True when nothing matched every word and these are the next best thing. */
+  partial: boolean;
+  /** Words that matched the best entry, and words in the query. */
+  matched: number;
+  words: number;
+};
+
+/**
+ * A search that answers something when it can.
+ *
+ * Requiring every word is right when it works: "alia airport" should narrow
+ * rather than return everything either word touches. But a reader typing the
+ * way people actually search — "alia bhatt airport look", four words, the
+ * shape of a headline — got nothing at all, even when the archive held an
+ * airport look, because "alia" and "bhatt" matched nothing in it.
+ *
+ * So the strict pass runs first and wins whenever it finds anything. Only when
+ * it finds nothing does this fall back to entries matching *some* of the
+ * words, ranked by how many, and it tells the caller that is what happened so
+ * the page can say so. Results a reader has not been told are partial are
+ * worse than no results: they look like the site misunderstood the question.
+ */
+export function searchWithFallback(
+  index: SearchEntry[],
+  query: string,
+  limit = 40,
+): SearchOutcome {
+  const tokens = normalise(query).split(" ").filter(Boolean);
+  if (tokens.length === 0) return { entries: [], partial: false, matched: 0, words: 0 };
+
+  const strict = searchEntries(index, query, limit);
+  if (strict.length > 0) {
+    return { entries: strict, partial: false, matched: tokens.length, words: tokens.length };
+  }
+
+  const scored = index
+    .map((entry) => {
+      let score = 0;
+      let matched = 0;
+      for (const token of tokens) {
+        const value = scoreToken(entry, token);
+        if (value > 0) {
+          matched += 1;
+          score += value;
+        }
+      }
+      return { entry, score: score + entry.weight, matched };
+    })
+    .filter((hit) => hit.matched > 0)
+    // More of the question answered beats a better answer to less of it.
+    .sort(
+      (a, b) =>
+        b.matched - a.matched ||
+        b.score - a.score ||
+        a.entry.title.localeCompare(b.entry.title),
+    )
+    .slice(0, limit);
+
+  return {
+    entries: scored.map((hit) => hit.entry),
+    partial: scored.length > 0,
+    matched: scored[0]?.matched ?? 0,
+    words: tokens.length,
+  };
+}

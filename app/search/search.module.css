@@ -34,6 +34,11 @@
 .heading h2 { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: -.03em; }
 .heading span { font-family: var(--mono); font-size: 11px; color: var(--ash); }
 
+/* A partial-results notice. Same type, colour and rhythm as .empty p, which is
+   the page's existing voice for "here is what we could and could not do"; it
+   sits left-aligned above the groups rather than centred in an empty page. */
+.partial { font-size: 15px; color: var(--ash); line-height: 1.66; max-width: 62ch; margin-bottom: var(--s5); }
+
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
 .hit { display: flex; align-items: center; gap: var(--s4); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s4) var(--s3) var(--s3); transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
 .hit:hover { border-color: var(--rani); transform: translateY(-2px); }

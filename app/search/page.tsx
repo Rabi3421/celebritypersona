@@ -6,13 +6,12 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { SearchAnalytics } from "@/components/site/SearchAnalytics";
-import { buildSearchIndex, searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
+import { buildSearchIndex, searchWithFallback, type SearchEntry, type SearchKind } from "@/lib/search";
 import { celebrityTiles, occasionTiles } from "@/lib/archive";
 import {
   getCelebrityViews,
   getOccasionViews,
   getPublishedOutfits,
-  getPublicTrendingRows,
 } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./search.module.css";
@@ -48,25 +47,45 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const [{ q }, outfits, celebrities, occasions, trending] = await Promise.all([
+  const [{ q }, outfits, celebrities, occasions] = await Promise.all([
     searchParams,
     getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
-    getPublicTrendingRows(),
   ]);
 
   const query = (q ?? "").trim().slice(0, 120);
   const index = buildSearchIndex({ outfits, celebrities, occasions });
-  const results = query ? searchEntries(index, query, 60) : [];
+  const outcome = query
+    ? searchWithFallback(index, query, 60)
+    : { entries: [] as SearchEntry[], partial: false, matched: 0, words: 0 };
+  const results = outcome.entries;
 
   // Something to click when there is nothing to show: what the site is busiest
   // with, taken from the archive rather than a list of guesses.
+  /**
+   * Things to click when there is nothing to show — and never the query that
+   * just failed, which the list could previously repeat straight back when a
+   * leaderboard term happened to match what was typed. Built from the people,
+   * occasions and labels actually in the archive, so every suggestion returns
+   * something.
+   */
+  const labels = [
+    ...new Set(
+      outfits.flatMap((outfit) =>
+        outfit.items.map((item) => item.wornBrand ?? item.swapBrand).filter(Boolean),
+      ),
+    ),
+  ].slice(0, 3) as string[];
+
+  const asked = query.trim().toLowerCase();
   const ideas = [
-    ...trending.slice(0, 4).map((search) => search.term),
     ...celebrityTiles(outfits, 3).map((tile) => tile.name),
     ...occasionTiles(outfits, 3).map((tile) => tile.name),
-  ].filter((value, position, all) => all.indexOf(value) === position);
+    ...labels,
+  ]
+    .filter((value, position, all) => all.indexOf(value) === position)
+    .filter((value) => value.trim().toLowerCase() !== asked);
 
   return (
     <>
@@ -114,8 +133,8 @@ export default async function SearchPage({
               <span aria-hidden="true">⌕</span>
               <h2>Nothing matches “{query}”</h2>
               <p>
-                We may not have decoded it yet. Every word has to match, so a
-                shorter search often finds more.
+                Not one word of that is in the archive yet. These are the
+                people, occasions and labels we have decoded so far.
               </p>
               <div className={styles.suggestions}>
                 {ideas.map((idea) => (
@@ -143,6 +162,20 @@ export default async function SearchPage({
                 ))}
               </div>
             </div>
+          ) : null}
+
+          {/*
+            A partial answer has to say it is partial. Results a reader was not
+            told were partial look like the site misunderstood the question —
+            and this is the case where it half did: "alia bhatt airport look"
+            used to return nothing at all, because every word had to match.
+          */}
+          {outcome.partial ? (
+            <p className={styles.partial} role="status">
+              Nothing matches all {outcome.words} words of “{query}”. Showing
+              the closest {results.length === 1 ? "match" : "matches"}, on{" "}
+              {outcome.matched === 1 ? "one word" : `${outcome.matched} of those words`}.
+            </p>
           ) : null}
 
           {GROUPS.map(({ kind, label }) => {
