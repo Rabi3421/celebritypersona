@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
 import { footerColumns } from "@/lib/navigation";
-import { site } from "@/lib/site-config";
+import { photoPolicy, site } from "@/lib/site-config";
+import { getPublishedOutfits } from "@/lib/db/content";
+import { allPhotosCredited } from "@/lib/photo-credit";
 
-export function Footer() {
+export async function Footer() {
+  // Earned, not asserted: the crediting line appears only once every
+  // published photograph names a source.
+  const credited = allPhotosCredited(await getPublishedOutfits());
   const currentYear = String(new Date().getFullYear());
   const copyrightYear = currentYear === site.launched ? currentYear : `${site.launched}–${currentYear}`;
   return (
@@ -49,7 +54,7 @@ export function Footer() {
         </div>
         <div className="fbot">
           <span>© {copyrightYear} CelebrityPersona</span>
-          <span>Photos credited to their agencies</span>
+          <span>{credited ? photoPolicy.credited : photoPolicy.neutral}</span>
           <span>We earn commission on some links</span>
         </div>
       </div>

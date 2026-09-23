@@ -120,3 +120,14 @@ export function creditProblems(images: { credit?: string }[]): string[] {
         : `Photo ${image.index + 1} has no credit.`,
     );
 }
+
+/**
+ * Whether every photograph on every one of these looks names a source.
+ *
+ * The footer's crediting claim is published on this and nothing else, so the
+ * line and `npm run audit:credits` can never disagree: one uncredited photo
+ * anywhere and the site stops claiming it credits them.
+ */
+export const allPhotosCredited = (
+  outfits: { image?: { credit?: string }; images?: { credit?: string }[] }[],
+) => outfits.every((outfit) => uncreditedPhotos(outfit).length === 0);

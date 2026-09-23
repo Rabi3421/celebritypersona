@@ -101,6 +101,24 @@ export const dataProtection = {
   board: "Data Protection Board of India",
 };
 
+/**
+ * What the footer is allowed to say about photographs.
+ *
+ * It said "Photos credited to their agencies", which was false twice over:
+ * there are no agency licences, and 45 of the archive's 49 photographs carry
+ * no credit at all. A standing claim in the footer of every page is the worst
+ * place to be wrong, because it is the one line a reader takes as policy.
+ *
+ * `credited` is published only when every photograph on every published look
+ * names a source — the same test `npm run audit:credits` applies. Until then
+ * `neutral` runs, which states who the photographs belong to and claims
+ * nothing about what we have done about it.
+ */
+export const photoPolicy = {
+  credited: "Photo sources credited on each image",
+  neutral: "Photographs belong to their original owners",
+};
+
 export const social = {
   instagram: "https://www.instagram.com/celebritypersona",
   youtube: "https://www.youtube.com/@celebritypersona",
