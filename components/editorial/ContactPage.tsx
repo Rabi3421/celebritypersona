@@ -5,6 +5,7 @@ import {
   dataProtection,
   grievanceOfficer,
   legalEntity,
+  pending,
 } from "@/lib/site-config";
 import styles from "./editorial.module.css";
 
@@ -98,11 +99,19 @@ export function ContactPage() {
         <section className={styles.section}>
           <div className={styles.callout}>
             <h2>Grievance Officer</h2>
+            {/* The Rules require the officer to be published by name, not
+                just by mailbox, so the name leads the sentence as soon as
+                site-config carries one. Until it does the copy describes the
+                route without asserting a person. */}
             <p>
               Published as required by the Information Technology Rules, 2021.
-              Any complaint about content on this site reaches the officer,
-              gets acknowledged within {grievanceOfficer.acknowledgeWithin}, and
-              is resolved within {grievanceOfficer.resolveWithin}. Data
+              Any complaint about content on this site reaches{" "}
+              {pending(grievanceOfficer.name)
+                ? "our Grievance Officer"
+                : `${grievanceOfficer.name}, our Grievance Officer,`}{" "}
+              at <a href={`mailto:${grievanceOfficer.email}`}>{grievanceOfficer.email}</a>.
+              It gets acknowledged within {grievanceOfficer.acknowledgeWithin},
+              and is resolved within {grievanceOfficer.resolveWithin}. Data
               protection complaints under the DPDP Act run to a{" "}
               {dataProtection.resolveWithin} outer limit and can be escalated to
               the {dataProtection.board}.

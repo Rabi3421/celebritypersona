@@ -100,7 +100,7 @@ export const adminRoutes: AdminRoute[] = [
     icon: "subscribers",
     group: "Operations",
     countKey: "subscribers",
-    description: "WhatsApp numbers collected by the homepage form",
+    description: "Email addresses collected by the homepage form",
   },
   {
     href: "/admin/broadcasts",

@@ -1,6 +1,7 @@
 import {
   contacts,
   dataProtection,
+  pending,
   grievanceOfficer,
   legalEntity,
   policyUpdated,
@@ -37,6 +38,27 @@ export type LegalDoc = {
   sections: LegalSection[];
 };
 
+/**
+ * How the operator is named in running prose.
+ *
+ * The DPDP Act requires the Data Fiduciary to be identifiable, and a policy
+ * saying only "we are the Data Fiduciary" identifies nobody. Once the name is
+ * filled in at site-config.ts it is stated outright; until then the sentence
+ * falls back to describing the publisher rather than asserting a name we do
+ * not have. Either way it never renders the PENDING marker at a reader.
+ */
+const fiduciaryName = pending(legalEntity.name)
+  ? `the publisher of ${site.host}`
+  : legalEntity.name;
+
+/** The identity rows every document that has to publish them shares. */
+const publisherRows = [
+  { label: "Published by", value: legalEntity.name },
+  { label: "Registered address", value: legalEntity.address },
+  { label: "Registration", value: legalEntity.cin },
+  { label: "Contact", value: contacts.general },
+];
+
 const grievanceRows = [
   { label: "Grievance Officer", value: grievanceOfficer.name },
   { label: "Email", value: grievanceOfficer.email },
@@ -62,7 +84,14 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: `This policy covers ${site.domain} and any subdomain we run. It explains what personal data we handle when you read the site, save a look, or sign up for updates. In the language of the DPDP Act, we are the Data Fiduciary and you are the Data Principal.`,
+            text: `This policy covers ${site.domain} and any subdomain we run. It explains what personal data we handle when you read the site, save a look, or sign up for updates. In the language of the DPDP Act, ${fiduciaryName} is the Data Fiduciary and you are the Data Principal — which means we decide why and how your personal data is handled, and we answer for it.`,
+          },
+          {
+            type: "details",
+            rows: [
+              ...publisherRows,
+              { label: "Data protection contact", value: dataProtection.contact },
+            ],
           },
           {
             type: "p",
@@ -78,7 +107,7 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "If you sign up for updates: the WhatsApp number or email address you give us, and the date you gave it.",
+              "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
               "Automatically, on every visit: your IP address, browser and device type, the pages you opened and the page that referred you. This is ordinary web server and analytics data.",
             ],
@@ -118,7 +147,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: `You can withdraw consent at any time and it takes effect from then on. Reply STOP to any WhatsApp message, use the unsubscribe link in any email, or write to ${dataProtection.contact}. Withdrawing is as easy as giving it was.`,
+            text: `You can withdraw consent at any time and it takes effect from then on. Use the unsubscribe link at the foot of any email we send, or write to ${dataProtection.contact}. Withdrawing is as easy as giving it was: one click, no reason required, and no attempt to talk you out of it.`,
           },
         ],
       },
@@ -159,7 +188,7 @@ export const legalDocs: LegalDoc[] = [
             items: [
               "Our hosting and content delivery provider, which processes server logs.",
               "Our analytics provider, which processes page views in aggregate.",
-              "Our email and WhatsApp sending provider, if you subscribed.",
+              "Our email sending provider, if you subscribed.",
               "Affiliate networks, when you click through to a retailer. They set their own attribution cookie and their own privacy policy applies from that point.",
             ],
           },
@@ -232,12 +261,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "details",
-            rows: [
-              { label: "Published by", value: legalEntity.name },
-              { label: "Registered address", value: legalEntity.address },
-              { label: "Registration", value: legalEntity.cin },
-              { label: "Contact", value: contacts.general },
-            ],
+            rows: publisherRows,
           },
         ],
       },
