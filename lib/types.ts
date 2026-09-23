@@ -205,7 +205,16 @@ export const hasWornBrand = (item: OutfitItem): item is LabelledItem =>
 
 /** What the original half of a piece is called on the page. The label when we
  *  have it, and an honest blank when we do not — never an empty line. */
-export const wornLabel = (item: OutfitItem) => item.wornBrand ?? "Label not confirmed";
+/**
+ * What the original half of a piece is called on the page.
+ *
+ * "Unidentified" rather than "Label not confirmed", because that is the word
+ * the site uses everywhere else it describes this state — the about page, the
+ * method page and the homepage all promise that an unconfirmed label is
+ * "marked unidentified". Two vocabularies for one state made the promise
+ * impossible to check against the page.
+ */
+export const wornLabel = (item: OutfitItem) => item.wornBrand ?? "Unidentified";
 
 /**
  * True only when every piece has an alternative. A look still missing a swap

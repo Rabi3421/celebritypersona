@@ -8,7 +8,7 @@ import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import { isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
-import { sideOf, tagFor } from "@/lib/link-display";
+import { piecePrice, sideOf, tagFor } from "@/lib/link-display";
 import type { Outfit } from "@/lib/types";
 import { priceFreshness } from "@/lib/freshness";
 import { isSpecificCredit } from "@/lib/photo-credit";
@@ -386,9 +386,7 @@ export function OutfitDetail({
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
                   </div>
                   <div className={styles.linePrice}>
-                    <b>{(mode === "worn" ? item.worn : item.swap) === undefined
-                        ? "—"
-                        : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
+                    <b>{piecePrice(item, mode)}</b>
                     {/*
                       A button is drawn only where there is somewhere to send
                       somebody. This used to render a disabled "Buy" beside the

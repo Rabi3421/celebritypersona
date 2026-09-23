@@ -1,5 +1,12 @@
 import { isMonetised, pieceLink, type OutfitItem, type PieceSide } from "@/lib/types";
 
+const inrFormat = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+
 /**
  * How a piece's link reads on the page.
  *
@@ -10,6 +17,21 @@ import { isMonetised, pieceLink, type OutfitItem, type PieceSide } from "@/lib/t
 
 /** Which half of a piece the "As worn" / "The swap" tabs are showing. */
 export type PriceMode = "worn" | "swap";
+
+/**
+ * What a piece costs on the side being shown.
+ *
+ * Both the quick view and the detail page printed an em dash here, which is a
+ * mark standing in for data — and it appeared most often on the side the
+ * reader had *not* asked about, so a look with a swap and no confirmed
+ * original showed "—" under "As worn" as though the price were missing rather
+ * than never established. The site already has words for both states.
+ */
+export function piecePrice(item: OutfitItem, mode: PriceMode): string {
+  const value = mode === "worn" ? item.worn : item.swap;
+  if (value !== undefined) return inrFormat(value);
+  return mode === "worn" ? "Price unconfirmed" : "No swap yet";
+}
 
 export const sideOf = (mode: PriceMode): PieceSide => (mode === "worn" ? "original" : "swap");
 
@@ -25,7 +47,13 @@ export function tagFor(item: OutfitItem, mode: PriceMode): { text: string; archi
   const side = sideOf(mode);
   const link = pieceLink(item, side);
   const named = side === "original" ? item.wornBrand : item.swapBrand;
-  const prefix = side === "original" ? "Exact" : "Similar";
+  /**
+   * "Exact" is a claim that this is the very piece she wore, and it was
+   * printed whether or not the label had been identified. A piece we have not
+   * confirmed cannot be called exact — that is the difference between
+   * reporting and guessing, and it is the one the whole site rests on.
+   */
+  const prefix = side === "swap" ? "Similar" : named ? "Exact" : "Unidentified";
 
   if (side === "swap" && !named) return { text: "Still looking", archived: false };
 

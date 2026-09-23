@@ -6,6 +6,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, publishableSavingPct, sameName, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
+import { piecePrice } from "@/lib/link-display";
 import { plural } from "@/lib/format";
 import { useSavedList } from "@/lib/saved";
 import {
@@ -393,9 +394,32 @@ function OutfitCard({ outfit, featured, saved, onSave, onQuickView }: { outfit: 
               {money.allSwapped && percentage !== null && percentage >= 97 && <em>Top swap</em>}
             </div>
             <span className={styles.occasion}>{outfit.occasion}</span>
-            <span className={styles.saving}>{money.allSwapped && percentage !== null ? `−${percentage}%` : "No swap yet"}</span>
+            {/*
+              The pill and the price disagreed. The price says "No swap yet"
+              only when nothing is swapped; the pill said it whenever a
+              *saving* could not be computed — which includes a look that has
+              a swap but no confirmed original to compare it against. Sara Ali
+              Khan's card therefore carried a "No swap yet" pill next to a
+              ₹3,999 swap price. Both read `anySwapped` now. Where there is a
+              swap but no comparable original, the pill is left off rather than
+              inventing a percentage or contradicting the figure beside it.
+            */}
+            {percentage !== null && money.allSwapped ? (
+              <span className={styles.saving}>−{percentage}%</span>
+            ) : money.anySwapped ? null : (
+              <span className={styles.saving}>No swap yet</span>
+            )}
             <div className={styles.peek}>
-              {outfit.items.slice(0, 3).map((item) => <span key={item.name}>{item.name}<b>{item.swap === undefined ? "—" : inr.format(item.swap)}</b></span>)}
+              {/* The peek printed "—" for every piece on a look with no
+                  swaps, which is nine of the ten looks in the archive. The
+                  piece name is the real information; the price element is
+                  simply absent when there is no swap price to put in it. */}
+              {outfit.items.slice(0, 3).map((item) => (
+                <span key={item.name}>
+                  {item.name}
+                  {item.swap === undefined ? null : <b>{inr.format(item.swap)}</b>}
+                </span>
+              ))}
               <button type="button" onClick={(event) => { event.stopPropagation(); onQuickView(); }}>Quick view</button>
             </div>
           </>
@@ -515,7 +539,7 @@ function QuickView({ outfit, mode, onModeChange, onClose }: { outfit: Outfit; mo
           {outfit.items.map((item) => (
             <div className={styles.modalLine} key={item.name}>
               <div>{item.name}<small>{mode === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</small></div>
-              <b>{(mode === "worn" ? item.worn : item.swap) === undefined ? "—" : inr.format((mode === "worn" ? item.worn : item.swap) as number)}</b>
+              <b>{piecePrice(item, mode)}</b>
             </div>
           ))}
         </div>
