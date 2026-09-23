@@ -314,14 +314,63 @@ export function budgetTiers(outfits: Outfit[], count = 3): BudgetTier[] {
 
 /** Where the budget slider starts, stops and snaps. All three follow the
  *  cheapest and dearest complete look in the archive. */
+/** Rounds up to the next multiple, so a bound always contains the value. */
+const ceilTo = (value: number, step: number) => Math.ceil(value / step) * step;
+
+/** A step that gives the control some travel without a hundred stops. */
+const stepFor = (spread: number) =>
+  spread > 20000 ? 1000 : spread > 8000 ? 500 : spread > 2000 ? 250 : 100;
+
+export type SwapPriceRange = { min: number; max: number; step: number };
+
+/**
+ * Bounds for the outfits index's "Max swap price" control.
+ *
+ * This used `budgetRange()`, which is built from *complete* looks — looks
+ * where every piece has an alternative. The archive holds one of those, so the
+ * control ran from ₹3,750 to ₹4,750: a slider with a single look in it, whose
+ * lowest position excluded that look as well, because ₹3,999 is above ₹3,750.
+ *
+ * It is built from every look that has a swap total now, and both ends are
+ * rounded *up* so the cheapest look is inside the lowest position rather than
+ * just below it.
+ *
+ * Null when fewer than two distinct totals exist. A filter that cannot
+ * separate anything is not a filter, and the caller leaves it out rather than
+ * rendering a control that only removes looks.
+ */
+export function swapPriceRange(outfits: Outfit[]): SwapPriceRange | null {
+  const totals = [...new Set(outfits.map(swapTotalOf).filter((value): value is number => value !== null))]
+    .sort((a, b) => a - b);
+  if (totals.length < 2) return null;
+
+  const cheapest = totals[0];
+  const dearest = totals[totals.length - 1];
+  const step = stepFor(dearest - cheapest);
+  return { min: ceilTo(cheapest, step), max: ceilTo(dearest, step), step };
+}
+
+/** A look's swap total, or null when it has no swap at all. */
+const swapTotalOf = (outfit: Outfit) => {
+  const money = pricing(outfit);
+  return money.anySwapped ? money.swapTotal : null;
+};
+
 export function budgetRange(outfits: Outfit[]) {
   const totals = completeLooks(outfits).map(swapTotal);
   if (totals.length === 0) return { min: 1000, max: 15000, step: 250, presets: [] as number[] };
 
   const cheapest = Math.min(...totals);
   const dearest = Math.max(...totals);
-  const low = Math.max(250, Math.floor(cheapest / 250) * 250);
-  const high = Math.max(low + 1000, niceCap(dearest));
+  /**
+   * The floor used to be the cheapest complete look rounded down, which with a
+   * single look put the slider's lowest position ₹249 below the only thing it
+   * could show. It starts low enough to have somewhere to travel now, and the
+   * ceiling is rounded up past the dearest look so every complete look is
+   * inside the top of the range rather than one step beyond it.
+   */
+  const low = Math.min(500, Math.floor(cheapest / 250) * 250);
+  const high = Math.max(low + 1000, ceilTo(Math.max(dearest, niceCap(dearest)), 250));
   const step = high - low > 20000 ? 1000 : high - low > 8000 ? 500 : 250;
 
   const presets = [...new Set([

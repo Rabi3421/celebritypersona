@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, publishableSavingPct, sameName, savingThresholds } from "@/lib/archive";
+import { archiveTotals, celebrityNames, isNewLook, occasionNames, publishableSavingPct, sameName, savingThresholds, swapPriceRange } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
 import { piecePrice } from "@/lib/link-display";
@@ -56,7 +56,9 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   // slider stops where the dearest complete look does.
   const totals = useMemo(() => archiveTotals(outfits), [outfits]);
   const publishableSaving = useMemo(() => publishableSavingPct(outfits), [outfits]);
-  const swapRange = useMemo(() => budgetRange(outfits), [outfits]);
+  // From the looks that actually have a swap, not from complete looks only.
+  // Null when there is nothing to separate, and then the control is not shown.
+  const swapRange = useMemo(() => swapPriceRange(outfits), [outfits]);
   const occasionOptions = useMemo(() => occasionNames(outfits), [outfits]);
   const celebrityOptions = useMemo(() => celebrityNames(outfits), [outfits]);
   // Her own newest photo, so the chip shows the person rather than a seed.
@@ -69,7 +71,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
     return byName;
   }, [outfits]);
   const savingOptions = useMemo(() => savingThresholds(outfits), [outfits]);
-  const anyBudget = swapRange.max;
+  const anyBudget = swapRange?.max ?? Number.POSITIVE_INFINITY;
   const [budget, setBudget] = useState(anyBudget);
   const [minimumSaving, setMinimumSaving] = useState<number | null>(null);
   const [sort, setSort] = useState<SortMode>("new");
@@ -214,6 +216,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
               ))}
             </FilterGroup>
 
+            {swapRange === null ? null : (
             <div className={styles.filterGroup}>
               <h2>Max swap price</h2>
               <div className={styles.range}>
@@ -222,13 +225,14 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                   min={swapRange.min}
                   max={swapRange.max}
                   step={swapRange.step}
-                  value={budget}
+                  value={Math.min(budget, swapRange.max)}
                   aria-label="Maximum swap price"
                   onChange={(event) => { setBudget(Number(event.target.value)); resetShown(); }}
                 />
                 <div><span>{inr.format(swapRange.min)}</span><b>{budget >= anyBudget ? "Any" : inr.format(budget)}</b></div>
               </div>
             </div>
+            )}
 
             <FilterGroup title="Minimum saving">
               {savingOptions.map((threshold) => (
@@ -297,7 +301,11 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
             {results.length > shown && (
               <div className={styles.loadMore}>
                 <div className={styles.progress}><i style={{ width: `${Math.min((shown / results.length) * 100, 100)}%` }} /></div>
-                <small>Showing {Math.min(shown, results.length)} of {results.length}</small>
+                {/* The grid also carries a promotional tile, so ten things on
+                    screen could sit under "Showing 9 of 10". Naming the unit
+                    makes the count answerable: nine looks of ten, plus a tile
+                    that is not a look. */}
+                <small>Showing {Math.min(shown, results.length)} of {plural(results.length, "look")}</small>
                 <button className={`${styles.button} ${styles.ghostButton}`} type="button" onClick={() => setShown(shown + 6)}>Load more looks</button>
               </div>
             )}
