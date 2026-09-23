@@ -1,21 +1,17 @@
 import { revealClass } from "@/lib/reveal";
 import { getHomeContent } from "@/lib/db/content";
-import { getPublishedOutfits } from "@/lib/db/content";
-import { needsPriceReview } from "@/lib/freshness";
 
 export async function Trust() {
-  const [{ trustPoints }, outfits] = await Promise.all([getHomeContent(), getPublishedOutfits()]);
-  const due = outfits.filter((outfit) => needsPriceReview(outfit.pricesCheckedAt)).length;
-  const points = trustPoints.map((point) => {
-    if (!/weekly/i.test(`${point.title} ${point.body}`)) return point;
-    return {
-      ...point,
-      title: "Freshness shown on every look",
-      body: due
-        ? `${due} ${due === 1 ? "look is" : "looks are"} due for review. Every outfit shows its exact check date and warns readers when prices may have moved.`
-        : "Every outfit shows its exact check date and warns readers when prices may have moved.",
-    };
-  });
+  /**
+   * Rendered exactly as stored.
+   *
+   * There used to be a patch here that rewrote any point mentioning "weekly",
+   * because the stored copy claimed weekly link checks that nobody performed.
+   * Papering over the text at render left the false sentence in the database,
+   * one regex away from being published again — so the copy was fixed at
+   * source instead, and this no longer matches anything.
+   */
+  const { trustPoints: points } = await getHomeContent();
 
   return (
     <section className="trust">

@@ -45,7 +45,10 @@ export const homeContent: HomeContent = {
     {
       n: "03",
       title: "Dead links removed",
-      body: "We test every link. Sold out is labelled sold out — we don't send you to an empty page.",
+      // True as of `npm run check:links`, which requests every retailer link
+      // and records what it found. Before that existed this said "We test
+      // every link" and nothing tested anything.
+      body: "Every retailer link is checked and carries the date we checked it. Sold out is labelled sold out, and a dead link loses its Buy button rather than sending you to an empty page.",
     },
     {
       n: "04",
