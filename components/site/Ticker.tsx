@@ -17,7 +17,16 @@ export async function Ticker() {
         {loop.map((entry, i) => (
           <span className="tick-item" key={`${entry.celebrity}-${i}`}>
             <em>Just decoded</em> {entry.celebrity} · {entry.occasion}{" "}
-            <s>{inr(entry.worn)}</s> → <b>{inr(entry.swap)}</b>
+            {/* Striking out a price means we confirmed one. Where we did not,
+                the entry says what the rebuild costs and claims nothing about
+                the original — it used to print "₹0 → ₹3,999". */}
+            {entry.worn === null ? (
+              <>· swap <b>{inr(entry.swap)}</b></>
+            ) : (
+              <>
+                <s>{inr(entry.worn)}</s> → <b>{inr(entry.swap)}</b>
+              </>
+            )}
           </span>
         ))}
       </div>

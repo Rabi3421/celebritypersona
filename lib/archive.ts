@@ -487,13 +487,31 @@ export const outfitsForOccasion = (outfits: Outfit[], name: string) =>
 /* ---------------------------------------------------- homepage surfaces */
 
 /** The rail of recent decodes. Was five rows retyped by hand. */
-export const tickerEntries = (outfits: Outfit[], limit = 6) =>
+export type TickerEntry = {
+  celebrity: string;
+  occasion: string;
+  /** Null when no piece on the look has a confirmed original price. */
+  worn: number | null;
+  swap: number;
+};
+
+/**
+ * The marquee of recent complete decodes.
+ *
+ * `worn` was `wornTotal(outfit)`, which is a sum over the pieces that have a
+ * confirmed original price — and returns 0 when none of them do. A look that
+ * is fully swapped but whose originals were never priced therefore rolled past
+ * the top of the homepage reading "₹0 → ₹3,999", striking out a price the
+ * archive had never established. It is null now, and the strip says what it
+ * knows instead.
+ */
+export const tickerEntries = (outfits: Outfit[], limit = 6): TickerEntry[] =>
   newestFirst(completeLooks(outfits))
     .slice(0, limit)
     .map((outfit) => ({
       celebrity: outfit.celebrity,
       occasion: outfit.occasion,
-      worn: wornTotal(outfit),
+      worn: pricing(outfit).anyPriced ? wornTotal(outfit) : null,
       swap: swapTotal(outfit),
     }));
 
@@ -627,15 +645,31 @@ export function publishableSavingPct(outfits: Outfit[], now = new Date()): numbe
 export function homeStats(outfits: Outfit[], now = new Date()): HomeStat[] {
   const totals = archiveTotals(outfits, now);
   const saving = publishableSavingPct(outfits, now);
+  // The labels were fixed strings beside a counted figure, so a single look
+  // read "1 Looks decoded".
+  const label = (count: number, one: string, many: string) => (count === 1 ? one : many);
+
   const stats: HomeStat[] = [
-    { value: totals.looks, suffix: "", label: "Looks decoded" },
-    { value: totals.pieces, suffix: "", label: "Pieces identified" },
+    { value: totals.looks, suffix: "", label: label(totals.looks, "Look decoded", "Looks decoded") },
+    {
+      value: totals.pieces,
+      suffix: "",
+      label: label(totals.pieces, "Piece identified", "Pieces identified"),
+    },
   ];
   if (saving !== null) {
     stats.push({ value: saving, suffix: "%", label: "Average saving" });
   }
   if (totals.buyable > 0) {
-    stats.push({ value: totals.buyable, suffix: "", label: "Complete looks you can copy" });
+    stats.push({
+      value: totals.buyable,
+      suffix: "",
+      label: label(
+        totals.buyable,
+        "Complete look you can copy",
+        "Complete looks you can copy",
+      ),
+    });
   }
   return stats;
 }

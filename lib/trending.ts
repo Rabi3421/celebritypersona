@@ -1,5 +1,5 @@
 import { outfitSlug } from "@/lib/slugs";
-import { hasSwap, hasWornPrice, savingPercent, savingSortKey, swapPrice } from "@/lib/types";
+import { hasSwap, hasWornPrice, isFullySwapped, savingPercent, savingSortKey, swapPrice } from "@/lib/types";
 import type { Outfit, SwappedItem } from "@/lib/types";
 
 /**
@@ -22,9 +22,20 @@ export { savingPercent };
 export const TRENDING_METHOD_ANSWER =
   "The leaderboard is an editor-maintained ranking of the questions readers ask us most; this site does not claim measured search volume. The sections below it are computed from the decoded outfit archive.";
 
-/** Looks with the widest gap between what she paid and what you would. */
+/**
+ * Looks with the widest gap between what she paid and what you would.
+ *
+ * This sorted the whole archive and took the top six without filtering, so
+ * when nothing had a saving it returned the first six looks in arbitrary order
+ * under the heading "Biggest complete-look savings" — including, at one point,
+ * a record with no pieces on it at all. A look only belongs here if it is
+ * complete and the gap is real.
+ */
 export const biggestSavers = (outfits: Outfit[]) =>
-  [...outfits].sort((a, b) => savingSortKey(b) - savingSortKey(a)).slice(0, 6);
+  outfits
+    .filter((outfit) => isFullySwapped(outfit) && savingSortKey(outfit) > 0)
+    .sort((a, b) => savingSortKey(b) - savingSortKey(a))
+    .slice(0, 6);
 
 /** Most recently decoded, newest first. */
 export const freshestLooks = (outfits: Outfit[]) =>

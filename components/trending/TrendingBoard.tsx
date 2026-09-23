@@ -33,6 +33,17 @@ export async function TrendingBoard() {
    * search box. Both are now left unrendered; the ordering, which is an
    * editor's ranking and honestly described as one, is kept.
    */
+  /**
+   * Each of these headings makes a promise about the archive, so each one is
+   * only printed when the archive can keep it. "Biggest price gaps right now"
+   * was rendering an empty grid under a live heading, and the retailer list
+   * would have done the same.
+   */
+  const dupes = trendingDupes(outfits);
+  const retailers = trendingBrands(outfits);
+  const occasions = trendingOccasions(outfits);
+  const savers = biggestSavers(outfits).slice(0, 4);
+
   const buyable = outfits.filter(isFullySwapped);
   const cheapestLook = buyable.length
     ? Math.min(...buyable.map((outfit) => pricing(outfit).swapTotal))
@@ -116,6 +127,7 @@ export async function TrendingBoard() {
           </div>
         </section>
 
+        {dupes.length === 0 ? null : (
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
             <div>
@@ -130,7 +142,7 @@ export async function TrendingBoard() {
             <Link href="/budget">Shop by budget →</Link>
           </div>
           <div className={styles.dupes}>
-            {trendingDupes(outfits).map((dupe) => (
+            {dupes.map((dupe) => (
               <Link
                 href={`/outfits/${dupe.slug}`}
                 className={styles.dupe}
@@ -153,9 +165,12 @@ export async function TrendingBoard() {
             ))}
           </div>
         </section>
+        )}
 
+        {retailers.length === 0 && occasions.length === 0 ? null : (
         <section className={styles.section}>
           <div className={styles.split}>
+            {retailers.length === 0 ? null : (
             <div>
               <div className={styles.sectionHeading}>
                 <div>
@@ -167,7 +182,7 @@ export async function TrendingBoard() {
                 </div>
               </div>
               <div className={styles.list}>
-                {trendingBrands(outfits).map((brand, index) => (
+                {retailers.map((brand, index) => (
                   <div className={styles.listRow} key={brand.name}>
                     <i>{String(index + 1).padStart(2, "0")}</i>
                     <strong>{brand.name}</strong>
@@ -177,7 +192,9 @@ export async function TrendingBoard() {
                 ))}
               </div>
             </div>
+            )}
 
+            {occasions.length === 0 ? null : (
             <div>
               <div className={styles.sectionHeading}>
                 <div>
@@ -189,7 +206,7 @@ export async function TrendingBoard() {
                 </div>
               </div>
               <div className={styles.list}>
-                {trendingOccasions(outfits).map((occasion, index) => (
+                {occasions.map((occasion, index) => (
                   <Link
                     href={`/occasions/${nameSlug(occasion.name)}`}
                     className={styles.listRow}
@@ -207,9 +224,12 @@ export async function TrendingBoard() {
                 ))}
               </div>
             </div>
+            )}
           </div>
         </section>
+        )}
 
+        {savers.length === 0 ? null : (
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
             <div>
@@ -223,11 +243,12 @@ export async function TrendingBoard() {
             <Link href="/celebrities">Style archives →</Link>
           </div>
           <div className={styles.looks}>
-            {biggestSavers(outfits).slice(0, 4).map((outfit) => (
+            {savers.map((outfit) => (
               <LookCard outfit={outfit} key={outfit.id} />
             ))}
           </div>
         </section>
+        )}
 
         <section className={styles.method}>
           <h2>How we decide what is trending</h2>
