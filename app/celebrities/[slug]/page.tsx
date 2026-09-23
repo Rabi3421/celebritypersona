@@ -105,13 +105,27 @@ export default async function CelebrityProfilePage({ params }: Props) {
    * archive actually shares an occasion with, so the link says something.
    */
   const hers = new Set(celebrityOutfits.map((outfit) => outfit.occasion));
+  const herLabels = new Set(
+    celebrityOutfits.flatMap((outfit) => outfit.items.map((item) => item.wornBrand).filter(Boolean)),
+  );
+
+  /**
+   * Everyone was ranked by how much they share with her and then the top five
+   * were taken regardless — so with ten archives that mostly share nothing,
+   * "Similar style archives" was an arbitrary list of whoever sorted first,
+   * presented as a similarity.
+   *
+   * An archive has to actually share an occasion or a label to appear. When
+   * none does, the rail is absent: "here are five people with nothing in
+   * common with her" is worse than no rail, and the page has other routes out.
+   */
+  const shared = (view: CelebrityView) =>
+    view.stats.occasions.filter((occasion) => hers.has(occasion.name)).length +
+    view.stats.brands.filter((brand) => herLabels.has(brand.name)).length;
+
   const similar = celebrities
-    .filter((item) => item.id !== celebrity.id && item.stats.looks > 0)
-    .sort((a, b) => {
-      const shared = (view: CelebrityView) =>
-        view.stats.occasions.filter((occasion) => hers.has(occasion.name)).length;
-      return shared(b) - shared(a) || b.stats.looks - a.stats.looks;
-    })
+    .filter((item) => item.id !== celebrity.id && item.stats.looks > 0 && shared(item) > 0)
+    .sort((a, b) => shared(b) - shared(a) || b.stats.looks - a.stats.looks)
     .slice(0, 5);
 
   const canonical = `${site.url}/celebrities/${celebritySlug(celebrity)}`;

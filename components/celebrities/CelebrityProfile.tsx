@@ -119,7 +119,7 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
         <div className={styles.shell}>
           <SectionHeading eyebrow={pattern.eyebrow} title={pattern.title} body={pattern.body} />
           <div className={styles.signatureGrid}>
-            <div className={styles.bars}><h3>{pattern.labelsHeading}</h3>{brandCounts.map((item) => <div className={styles.bar} key={item.name}><p><span>{item.name}<em>{item.highStreet ? "High street" : "Designer"}</em></span><b>{item.count}×</b></p><i><b style={{ width:`${Math.round(item.count / topBrandCount * 100)}%` }} /></i></div>)}</div>
+            <div className={styles.bars}>{brandCounts.length===0?null:<h3>{pattern.labelsHeading}</h3>}{brandCounts.map((item) => <div className={styles.bar} key={item.name}><p><span>{item.name}<em>{item.highStreet ? "High street" : "Designer"}</em></span><b>{item.count}×</b></p><i><b style={{ width:`${Math.round(item.count / topBrandCount * 100)}%` }} /></i></div>)}</div>
             <div className={styles.patternPanel}>
               {stats.palette.length === 0 ? null : <div><h3>{pattern.paletteHeading}</h3><div className={styles.palette}>{stats.palette.map((colour) => <span key={colour.name}><i style={{background:colour.value}} /><small>{colour.name}</small></span>)}</div></div>}
               {stats.garments.length === 0 ? null : <div><h3>{pattern.garmentHeading}</h3><p className={styles.tags}>{stats.garments.map((garment) => <span key={garment.name}>{garment.name}</span>)}</p></div>}

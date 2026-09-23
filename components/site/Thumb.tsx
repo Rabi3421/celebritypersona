@@ -22,7 +22,17 @@ const TONES = [
   "linear-gradient(155deg,#26222E,#4E4560)",
 ];
 
-/** A frame that fills its (positioned) parent and depicts nothing. */
+/**
+ * A frame that fills its (positioned) parent and depicts nothing.
+ *
+ * The gradient alone read as a design choice rather than as an absence: a
+ * reader looking at Rukmini Vasanth's card saw a coloured tile where every
+ * other card has a photograph and could not tell whether the image had failed
+ * to load. The brand mark sits on it now, faint enough not to compete with the
+ * real photographs beside it and clear enough to say "there is no picture
+ * here yet". It is still `aria-hidden`, because it depicts nothing and a
+ * screen reader has the name and event in the card's own text.
+ */
 export function BlankFrame({ seed }: { seed: number | string }) {
   const n =
     typeof seed === "number"
@@ -39,8 +49,18 @@ function Blank({ seed }: { seed: number }) {
         position: "absolute",
         inset: 0,
         background: TONES[Math.abs(seed) % TONES.length],
+        display: "grid",
+        placeItems: "center",
       }}
-    />
+    >
+      <Image
+        src="/brand/celebritypersona-mark.png"
+        alt=""
+        width={44}
+        height={44}
+        style={{ width: "28%", maxWidth: 64, height: "auto", opacity: 0.22 }}
+      />
+    </span>
   );
 }
 
