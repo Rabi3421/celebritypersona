@@ -37,6 +37,7 @@
 
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
 import type { LinkStatus, OutfitItem } from "@/lib/types";
 
@@ -204,6 +205,7 @@ async function main() {
     unverified: 0,
   };
   const changes: string[] = [];
+  const planned: { id: number; items: OutfitItem[]; before: StoredOutfit }[] = [];
 
   for (const outfit of all) {
     const items: OutfitItem[] = [];
@@ -249,8 +251,20 @@ async function main() {
       items.push(next);
     }
 
-    if (touched && apply) {
-      await outfits.updateOne({ id: outfit.id }, { $set: { items } });
+    if (touched) planned.push({ id: outfit.id, items, before: outfit });
+  }
+
+  /**
+   * Written after every link has been checked, not as each look finishes.
+   *
+   * A run that is interrupted half way through now leaves the archive
+   * untouched rather than half re-statused, and the backup covers the whole
+   * affected set rather than whatever happened to be written before it.
+   */
+  if (apply && planned.length > 0) {
+    await backupDocuments("check-links", planned.map((entry) => entry.before));
+    for (const entry of planned) {
+      await outfits.updateOne({ id: entry.id }, { $set: { items: entry.items } });
     }
   }
 

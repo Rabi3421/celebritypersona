@@ -22,6 +22,7 @@
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
 import { revalidateSite } from "./revalidate";
+import { backupDocuments } from "./backup";
 
 const apply = process.argv.includes("--apply");
 
@@ -86,12 +87,13 @@ async function main() {
     process.exit(1);
   }
 
-  let ready = 0;
   let blocked = 0;
+  /** Resolved first, written second, so the backup covers the whole set. */
+  const planned: { move: (typeof MOVES)[number]; outfit: StoredOutfit }[] = [];
 
   console.log("MOVES\n");
   for (const move of MOVES) {
-    const outfit = await outfits.findOne({ id: move.id });
+    const outfit = await outfits.findOne({ id: move.id }, { projection: { _id: 0 } });
     if (!outfit) {
       console.error(`  id ${move.id}: no such look. Skipped.`);
       blocked += 1;
@@ -108,9 +110,16 @@ async function main() {
     console.log(`  id ${outfit.id} · ${outfit.celebrity} — ${outfit.event}`);
     console.log(`      ${move.from}  →  ${move.to}`);
     console.log(`      ${move.why}\n`);
-    ready += 1;
+    planned.push({ move, outfit });
+  }
 
-    if (apply) await outfits.updateOne({ id: move.id }, { $set: { occasion: move.to } });
+  const ready = planned.length;
+
+  if (apply && ready > 0) {
+    await backupDocuments("retag-occasions", planned.map((entry) => entry.outfit));
+    for (const { move } of planned) {
+      await outfits.updateOne({ id: move.id }, { $set: { occasion: move.to } });
+    }
   }
 
   console.log("KEPT\n");
@@ -121,11 +130,13 @@ async function main() {
   }
 
   /**
-   * Only the moves that actually leave Casual count against it. Two of the
-   * eight come from Sangeet and Promo tour, and subtracting all of them
-   * reported "-2 looks still filed under Casual".
+   * Counted from the moves that will actually happen, not from the proposal.
+   *
+   * Using the static list subtracted moves that were blocked — so a dry run
+   * against an archive already re-tagged reported "-6 looks filed under
+   * Casual". A projection has to be built from what is going to be done.
    */
-  const leavingCasual = MOVES.filter((move) => move.from === "Casual").length;
+  const leavingCasual = planned.filter((entry) => entry.move.from === "Casual").length;
   const remaining = await outfits.countDocuments({ occasion: "Casual" });
   console.log(
     `${ready} to move, ${blocked} blocked, ${KEPT.length} kept.\n` +

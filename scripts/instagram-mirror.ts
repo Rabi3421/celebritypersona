@@ -24,6 +24,7 @@ import { MongoClient } from "mongodb";
 import { fetchInstagramReels, type InstagramReel } from "@/lib/instagram";
 import { firebaseStorage } from "@/lib/firebase";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 
 /** How many the homepage strip shows. */
 const LIMIT = 6;
@@ -104,6 +105,14 @@ async function main() {
   const client = new MongoClient(requireUri(), { serverSelectionTimeoutMS: 15000 });
   await client.connect();
   const db = client.db(process.env.MONGODB_DB);
+
+  // The reel list is replaced wholesale, and the stale-file sweep below
+  // deletes from the bucket on the strength of it.
+  const previous = await db
+    .collection("siteContent")
+    .findOne({ key: "reels" }, { projection: { _id: 0 } });
+  if (previous) await backupDocuments("instagram-mirror", [previous]);
+
   await db
     .collection("siteContent")
     .updateOne({ key: "reels" }, { $set: { key: "reels", value: mirrored } }, { upsert: true });

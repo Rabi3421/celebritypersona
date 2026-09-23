@@ -8,6 +8,7 @@
  */
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
 import { celebrities } from "../lib/seed-data/celebrities";
 import { homeContent } from "../lib/seed-data/home";
@@ -56,6 +57,22 @@ async function main() {
     if (retired.length) await collection.updateMany({}, { $unset: unset });
     console.log(`  ${name.padEnd(18)} ${await collection.countDocuments()} documents`);
   }
+
+  /**
+   * The documents the upserts below are about to overwrite.
+   *
+   * This script is not additive. `occasions` and `siteContent` are upserted
+   * with $set, so every field the seed defines is replaced — a run made to
+   * add two occasions also rewrote the fourteen that already existed, plus the
+   * homepage copy and the FAQ wording. That was recoverable only because the
+   * seed files had not changed; nothing was backed up, and nothing should be
+   * that lucky twice.
+   */
+  const affected = [
+    ...(await db.collection("occasions").find({}, { projection: { _id: 0 } }).toArray()),
+    ...(await db.collection("siteContent").find({}, { projection: { _id: 0 } }).toArray()),
+  ];
+  if (affected.length > 0) await backupDocuments("seed-content", affected);
 
   console.log(`Seeding ${dbName}`);
   /**

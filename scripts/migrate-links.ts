@@ -22,10 +22,10 @@
  * The whole collection is written to .scratch/ before anything changes.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
 import { retailerFromUrl, type OutfitItem, type PieceLink } from "@/lib/types";
 
@@ -115,10 +115,9 @@ async function main() {
     return;
   }
 
-  await mkdir(".scratch", { recursive: true });
-  const backup = ".scratch/outfits-before-link-migration.json";
-  await writeFile(backup, JSON.stringify(all, null, 2));
-  console.log(`\nSaved the collection as it was to ${backup}`);
+  // Every look, not just the ones gaining fields: the write touches `items`
+  // wholesale, so the whole document is what would need restoring.
+  await backupDocuments("migrate-links", all);
 
   for (const outfit of planned) {
     await outfits.updateOne({ id: outfit.id }, { $set: { items: outfit.items } });

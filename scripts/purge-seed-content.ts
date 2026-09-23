@@ -15,6 +15,9 @@
  *
  * Take a backup first. `mongodump --uri "$MONGODB_URI"` is enough.
  *
+ * The deleted documents are backed up to .scratch/ first, so a mistake is a
+ * mongoimport away from being undone.
+ *
  * Stored photographs are NOT deleted from Firebase; their paths are printed so
  * you can reuse or remove them yourself. One of these records (id 1) carries
  * four photographs uploaded for an Amyra Dastur shoot that are currently
@@ -24,6 +27,7 @@
 
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 
 /** The ids lib/seed-data/outfits.ts writes. Nothing outside this list is
  *  touched, and each one is printed in full before it goes. */
@@ -105,6 +109,18 @@ async function main() {
   }
 
   if (apply) {
+    /**
+     * This is the only script that deletes, which makes it the one that most
+     * needs a copy of what it is about to remove. `doomed` and `doomedTerms`
+     * are the documents themselves, already read above, so a restore is a
+     * mongoimport rather than a reconstruction from the seed files.
+     */
+    await backupDocuments("purge-seed-content", [
+      ...doomed,
+      ...doomedTerms,
+      ...(seedBio ? [seedBio] : []),
+    ]);
+
     const a = await outfits.deleteMany({ id: { $in: SEED_OUTFIT_IDS } });
     const b = await trending.deleteMany({ term: { $in: SEED_TRENDING_TERMS } });
     const c = seedBio

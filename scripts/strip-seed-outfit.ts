@@ -22,13 +22,13 @@
  *     npm run strip:seed-outfit           # dry run, writes nothing
  *     npm run strip:seed-outfit -- --apply
  *
- * The document is written to .scratch/ before anything changes, so the old
+ * The document is backed up to .scratch/ before anything changes, so the old
  * state can be put back with mongoimport if this turns out to be wrong.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
+import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
 
 /** The one record this touches. Nothing else is read or written. */
@@ -116,10 +116,7 @@ async function main() {
     return;
   }
 
-  await mkdir(".scratch", { recursive: true });
-  const backup = `.scratch/outfit-${OUTFIT_ID}-before-strip.json`;
-  await writeFile(backup, JSON.stringify(outfit, null, 2));
-  console.log(`\nSaved the document as it was to ${backup}`);
+  await backupDocuments("strip-seed-outfit", [outfit]);
 
   await outfits.updateOne(
     { id: OUTFIT_ID },
