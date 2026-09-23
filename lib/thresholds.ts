@@ -65,3 +65,16 @@ export const UNDER_5K = 5000;
  * Below this, the board and the homepage band are absent instead.
  */
 export const MIN_ANSWERABLE_TRENDING = 3;
+
+/**
+ * How long a recorded check stands before the page says it is overdue.
+ *
+ * It was 15 days, in lib/freshness.ts. Every look in the archive had been
+ * checked 16 days earlier, so every outfit page carried "Verification
+ * overdue" — a warning on all of them, which is a warning on none of them.
+ *
+ * Thirty days is a fortnight of slack on a monthly rhythm, and it is the
+ * number to move when that rhythm changes. `CURRENT_PRICE_DAYS` still marks
+ * the shorter window inside which a check counts as recent.
+ */
+export const REVIEW_WINDOW_DAYS = 30;

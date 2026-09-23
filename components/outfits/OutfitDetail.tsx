@@ -10,7 +10,7 @@ import { useSavedList } from "@/lib/saved";
 import { isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
 import { piecePrice, sideOf, tagFor } from "@/lib/link-display";
 import type { Outfit } from "@/lib/types";
-import { priceFreshness } from "@/lib/freshness";
+import { lastCheckedAt, priceFreshness } from "@/lib/freshness";
 import { isSpecificCredit } from "@/lib/photo-credit";
 import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
@@ -62,10 +62,11 @@ export function OutfitDetail({
   const viewTracked = useRef(false);
   const published = new Date(`${outfit.date}T00:00:00`);
   // Was a hardcoded "2 days ago" on every look, whatever the truth.
-  const checked = outfit.pricesCheckedAt
-    ? new Date(`${outfit.pricesCheckedAt}T00:00:00`)
-    : null;
-  const freshness = priceFreshness(outfit.pricesCheckedAt);
+  // The later of the editor's own check and the newest link check, so a look
+  // whose links were confirmed this morning does not read as weeks stale.
+  const checkedAt = lastCheckedAt(outfit);
+  const checked = checkedAt ? new Date(`${checkedAt}T00:00:00`) : null;
+  const freshness = priceFreshness(checkedAt);
   const money = pricing(outfit);
   /** At least one swap a reader could actually click through and buy. */
   const shoppable = outfit.items.some((item) => isBuyable(pieceLink(item, "swap")));
@@ -570,8 +571,8 @@ export function OutfitDetail({
               unstyled, so the byline looks exactly as it did. */}
           <div><p>Decoded by Rabi</p><span>
             Published <time dateTime={outfit.date}>{shortDate.format(published)}</time>
-            {checked && outfit.pricesCheckedAt ? (
-              <> · Prices last checked <time dateTime={outfit.pricesCheckedAt}>{shortDate.format(checked)}</time></>
+            {checked && checkedAt ? (
+              <> · Prices last checked <time dateTime={checkedAt}>{shortDate.format(checked)}</time></>
             ) : null}
           </span></div>
           <Link href={`/report-a-price?outfit=${encodeURIComponent(slug)}&issue=${encodeURIComponent("Price is wrong")}`}>

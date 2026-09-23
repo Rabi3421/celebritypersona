@@ -1,9 +1,36 @@
 /** Shared price-freshness policy for public copy and the admin review queue. */
 
+import { REVIEW_WINDOW_DAYS } from "@/lib/thresholds";
+import type { Outfit } from "@/lib/types";
+
 const DAY = 86_400_000;
 
 export const CURRENT_PRICE_DAYS = 7;
-export const PRICE_REVIEW_DAYS = 15;
+
+/** Re-exported under its old name so nothing that imports it has to move. The
+ *  number itself now lives with the other tunable thresholds. */
+export const PRICE_REVIEW_DAYS = REVIEW_WINDOW_DAYS;
+
+/** The later of two YYYY-MM-DD days, either of which may be absent. */
+const later = (a: string | undefined, b: string | undefined) =>
+  !a ? b : !b ? a : a > b ? a : b;
+
+/**
+ * When this look was last actually verified.
+ *
+ * `pricesCheckedAt` is set when an editor saves, and it was the only input —
+ * so a look whose links `check:links` had confirmed an hour ago still read as
+ * unverified from weeks back. Every link now carries its own `checkedAt`, and
+ * the freshest of those counts too: a machine confirming the product page is
+ * still there is a real check, even though it is not a person re-reading the
+ * price.
+ */
+export function lastCheckedAt(outfit: Outfit): string | undefined {
+  const fromLinks = outfit.items.flatMap((item) =>
+    [item.wornLink?.checkedAt, item.swapLink?.checkedAt].filter(Boolean),
+  ) as string[];
+  return fromLinks.reduce<string | undefined>(later, outfit.pricesCheckedAt);
+}
 
 export type FreshnessTone = "current" | "aging" | "overdue" | "unknown";
 
@@ -65,7 +92,7 @@ export function priceFreshness(value: string | null | undefined, now = new Date(
     };
   }
 
-  if (ageDays < PRICE_REVIEW_DAYS) {
+  if (ageDays < REVIEW_WINDOW_DAYS) {
     return {
       tone: "aging",
       ageDays,
