@@ -4,7 +4,7 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { outfitSlug } from "@/lib/slugs";
@@ -24,7 +24,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function OutfitsPage() {
-  const outfits = await getOutfits();
+  const outfits = await getPublishedOutfits();
 
   /**
    * The index of the site's main entity type. The list names the looks Google

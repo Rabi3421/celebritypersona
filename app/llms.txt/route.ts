@@ -1,4 +1,4 @@
-import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { site } from "@/lib/site-config";
 import { hasSubstance, pricing } from "@/lib/types";
@@ -23,7 +23,7 @@ const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 export async function GET() {
   const [outfits, celebrities, occasions] = await Promise.all([
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
   ]);

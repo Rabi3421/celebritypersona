@@ -3,13 +3,13 @@ import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
 import { revealClass } from "@/lib/reveal";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { thisWeekFrom } from "@/lib/this-week";
 
 /** Reads the outfits collection rather than the homepage document: whatever an
  *  editor publishes in the panel is what this rail shows. */
 export async function DecodedThisWeek() {
-  const { cards, count, fellBack } = thisWeekFrom(await getOutfits());
+  const { cards, count, fellBack } = thisWeekFrom(await getPublishedOutfits());
   if (cards.length === 0) return null;
 
   const blurb = fellBack

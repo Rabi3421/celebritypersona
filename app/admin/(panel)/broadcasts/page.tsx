@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AnnounceForm } from "@/components/admin/AnnounceForm";
 import { stopBroadcast } from "./actions";
-import { getMailJobs, getOutfits, getSubscribers } from "@/lib/db/content";
+import { getMailJobs, getAllOutfits, getSubscribers } from "@/lib/db/content";
 import { mailConfigured } from "@/lib/mail/transport";
 import { outfitSlug } from "@/lib/slugs";
 import { isMailable } from "@/lib/types";
@@ -18,7 +18,7 @@ const asWhen = (value: string) => {
 export default async function AdminBroadcasts() {
   const [jobs, outfits, subscribers] = await Promise.all([
     getMailJobs(),
-    getOutfits(),
+    getAllOutfits(),
     getSubscribers(),
   ]);
 

@@ -1,10 +1,10 @@
 import { brandRoll } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** The labels worn in the archive and the shops we swap them for, interleaved.
  *  Was a list typed into the homepage form. */
 export async function BrandMarquee() {
-  const brands = brandRoll(await getOutfits());
+  const brands = brandRoll(await getPublishedOutfits());
   if (brands.length === 0) return null;
 
   const loop = [...brands, ...brands];

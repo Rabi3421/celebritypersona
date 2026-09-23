@@ -4,7 +4,7 @@ import { getDb } from "@/lib/mongodb";
 import { celebrityViews, completeLooks, occasionViews } from "@/lib/archive";
 import { inr, plural } from "@/lib/format";
 import { MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
-import { pricing } from "@/lib/types";
+import { isPublished, pricing } from "@/lib/types";
 import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
 import { trendingAnswerer } from "@/lib/trending-answers";
 import type { InstagramReel } from "@/lib/instagram";
@@ -36,13 +36,34 @@ export type TrendingRow = TrendingSearch & { decoded: boolean };
 
 const NO_ID = { projection: { _id: 0 } } as const;
 
-export const getOutfits = cache(async (): Promise<Outfit[]> => {
+/**
+ * Every record in the collection, drafts and undecoded looks included.
+ *
+ * The admin panel only. A public surface that reads this publishes looks the
+ * archive has not decoded — which is how a record with no pieces at all ended
+ * up leading "Biggest complete-look savings" on the trending page.
+ */
+export const getAllOutfits = cache(async (): Promise<Outfit[]> => {
   const db = await getDb();
   return db.collection<Outfit>("outfits").find({}, NO_ID).sort({ id: 1 }).toArray();
 });
 
+/**
+ * The looks a reader may see: not a draft, and carrying a swap or a confirmed
+ * original price. See `isPublished`.
+ *
+ * Every public page, every count, the sitemap and the search index read this.
+ * The old `getOutfits()` was removed rather than redefined, so that each of its
+ * forty call sites had to be looked at and answered deliberately — and so that
+ * a new public surface cannot reach the unfiltered list by reaching for the
+ * obvious name.
+ */
+export const getPublishedOutfits = cache(async (): Promise<Outfit[]> => {
+  return (await getAllOutfits()).filter(isPublished);
+});
+
 export const getOutfitBySlug = cache(async (slug: string) => {
-  const outfits = await getOutfits();
+  const outfits = await getPublishedOutfits();
   return outfits.find((outfit) => outfitSlug(outfit) === slug);
 });
 
@@ -61,7 +82,7 @@ export const getCelebrities = cache(async (): Promise<Celebrity[]> => {
  * looks behind it come from the same query, so they cannot drift apart.
  */
 export const getCelebrityViews = cache(async () => {
-  const [celebrities, outfits] = await Promise.all([getCelebrities(), getOutfits()]);
+  const [celebrities, outfits] = await Promise.all([getCelebrities(), getPublishedOutfits()]);
   return celebrityViews(celebrities, outfits);
 });
 
@@ -80,7 +101,7 @@ export const getOccasions = cache(async (): Promise<Occasion[]> => {
 });
 
 export const getOccasionViews = cache(async () => {
-  const [occasions, outfits] = await Promise.all([getOccasions(), getOutfits()]);
+  const [occasions, outfits] = await Promise.all([getOccasions(), getPublishedOutfits()]);
   return occasionViews(occasions, outfits);
 });
 
@@ -105,7 +126,7 @@ export const getTrendingSearches = cache(async (): Promise<TrendingSearch[]> => 
     .toArray();
 
   const [outfits, celebrities, occasions] = await Promise.all([
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
   ]);
@@ -148,7 +169,7 @@ export const getTrendingSearches = cache(async (): Promise<TrendingSearch[]> => 
 export const getTrendingRows = cache(async (): Promise<TrendingRow[]> => {
   const [searches, outfits, celebrities, occasions] = await Promise.all([
     getTrendingSearches(),
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
   ]);
@@ -199,7 +220,7 @@ export const getMirroredReels = cache(async (): Promise<InstagramReel[]> => {
 export const getTrendingFaqs = cache(async () => {
   const [faqs, outfits] = await Promise.all([
     siteContent<{ q: string; a: string }[]>("trendingFaqs").then((value) => value ?? []),
-    getOutfits(),
+    getPublishedOutfits(),
   ]);
 
   return faqs.map((faq) => {

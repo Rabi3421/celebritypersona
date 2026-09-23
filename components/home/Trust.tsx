@@ -1,10 +1,10 @@
 import { revealClass } from "@/lib/reveal";
 import { getHomeContent } from "@/lib/db/content";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { needsPriceReview } from "@/lib/freshness";
 
 export async function Trust() {
-  const [{ trustPoints }, outfits] = await Promise.all([getHomeContent(), getOutfits()]);
+  const [{ trustPoints }, outfits] = await Promise.all([getHomeContent(), getPublishedOutfits()]);
   const due = outfits.filter((outfit) => needsPriceReview(outfit.pricesCheckedAt)).length;
   const points = trustPoints.map((point) => {
     if (!/weekly/i.test(`${point.title} ${point.body}`)) return point;

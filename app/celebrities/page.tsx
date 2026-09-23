@@ -5,7 +5,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { archiveTotals } from "@/lib/archive";
-import { getCelebrityViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getPublishedOutfits } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { celebritySlug } from "@/lib/slugs";
@@ -22,7 +22,7 @@ export const metadata: Metadata = pageMetadata({
 export const revalidate = 3600;
 
 export default async function CelebritiesPage() {
-  const [celebrities, outfits] = await Promise.all([getCelebrityViews(), getOutfits()]);
+  const [celebrities, outfits] = await Promise.all([getCelebrityViews(), getPublishedOutfits()]);
 
   // Only archives that actually hold a look are offered to a crawler; the
   // rest are pages with nothing on them yet.

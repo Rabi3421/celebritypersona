@@ -11,7 +11,7 @@ import { celebrityTiles, occasionTiles } from "@/lib/archive";
 import {
   getCelebrityViews,
   getOccasionViews,
-  getOutfits,
+  getPublishedOutfits,
   getTrendingRows,
 } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
@@ -50,7 +50,7 @@ export default async function SearchPage({
 }) {
   const [{ q }, outfits, celebrities, occasions, trending] = await Promise.all([
     searchParams,
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
     getTrendingRows(),

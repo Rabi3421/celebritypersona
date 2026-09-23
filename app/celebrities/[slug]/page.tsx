@@ -10,7 +10,7 @@ import { celebrityBio } from "@/lib/celebrity-bio";
 import { celebritySlug, outfitSlug } from "@/lib/slugs";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
-import { getCelebrityBySlug, getCelebrityViews, getOutfits, movedCelebritySlug } from "@/lib/db/content";
+import { getCelebrityBySlug, getCelebrityViews, getPublishedOutfits, movedCelebritySlug } from "@/lib/db/content";
 import type { CelebrityView } from "@/lib/archive";
 import { sameName } from "@/lib/archive";
 
@@ -88,7 +88,7 @@ export default async function CelebrityProfilePage({ params }: Props) {
   const { slug } = await params;
   const [celebrity, outfits, celebrities] = await Promise.all([
     getCelebrityBySlug(slug),
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
   ]);
   if (!celebrity) {

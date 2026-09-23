@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DetailRow } from "./Pending";
 import { contacts, legalEntity, site } from "@/lib/site-config";
 import styles from "./editorial.module.css";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
 import { hasSwap, hasWornBrand, hasWornPrice, type Outfit } from "@/lib/types";
 
@@ -30,7 +30,7 @@ function widestGap(outfits: Outfit[]) {
 }
 
 export async function AboutPage() {
-  const outfits = await getOutfits();
+  const outfits = await getPublishedOutfits();
   // The two cards below used to quote a Bottega Veneta tote at ₹2,85,000
   // against a ₹1,499 Lino Perros one — figures typed into this file to
   // illustrate the idea, on a page whose whole subject is not making numbers

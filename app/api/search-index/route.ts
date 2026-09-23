@@ -1,5 +1,5 @@
 import { buildSearchIndex } from "@/lib/search";
-import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 
 /**
  * The search index, fetched once by the header search box the first time
@@ -16,7 +16,7 @@ export async function GET() {
   // mention has a working page and sits in the sitemap, so search has to be
   // able to reach it too.
   const [outfits, celebrities, occasions] = await Promise.all([
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
   ]);

@@ -5,12 +5,12 @@ import { SectionHeading } from "./SectionHeading";
 import { revealClass } from "@/lib/reveal";
 import { nameSlug } from "@/lib/slugs";
 import { celebrityTiles } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** The most-decoded archives, counted off the outfits rather than a list an
  *  editor kept in step by hand. */
 export async function Celebrities() {
-  const tiles = celebrityTiles(await getOutfits());
+  const tiles = celebrityTiles(await getPublishedOutfits());
   if (tiles.length === 0) return null;
 
   return (

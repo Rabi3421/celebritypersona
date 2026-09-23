@@ -1,12 +1,12 @@
 import { inr } from "@/lib/format";
 import { tickerEntries } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** Infinite marquee of the most recent complete decodes, read off the outfits
  *  themselves. The list is rendered twice so the 50%-translate keyframe loops
  *  seamlessly. */
 export async function Ticker() {
-  const entries = tickerEntries(await getOutfits());
+  const entries = tickerEntries(await getPublishedOutfits());
   if (entries.length === 0) return null;
 
   const loop = [...entries, ...entries];

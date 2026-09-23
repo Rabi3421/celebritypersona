@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { checkRateLimit, clientKey, recordFailure } from "@/lib/auth/rate-limit";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { createPriceReport } from "@/lib/db/mutations";
 import { text } from "@/lib/form-data";
 import { outfitSlug } from "@/lib/slugs";
@@ -68,7 +68,7 @@ export async function submitPriceReport(
   // A reader can paste a full URL. Store the slug the panel can look up, and
   // only when it actually names a look we hold.
   const slug = normaliseSlug(report.outfitSlug);
-  const known = slug ? (await getOutfits()).some((outfit) => outfitSlug(outfit) === slug) : false;
+  const known = slug ? (await getPublishedOutfits()).some((outfit) => outfitSlug(outfit) === slug) : false;
 
   await createPriceReport({
     issue: report.issue,

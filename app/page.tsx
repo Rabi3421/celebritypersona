@@ -19,7 +19,7 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
 import { heroLook, homeStats, looksInGroup } from "@/lib/archive";
-import { getHomeContent, getOccasions, getOutfits } from "@/lib/db/content";
+import { getHomeContent, getOccasions, getPublishedOutfits } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 import { needsPriceReview } from "@/lib/freshness";
 
@@ -56,7 +56,7 @@ export const metadata: Metadata = pageMetadata({
 export default async function Home() {
   const [{ swapSteps, campaign }, outfits, occasions] = await Promise.all([
     getHomeContent(),
-    getOutfits(),
+    getPublishedOutfits(),
     getOccasions(),
   ]);
 

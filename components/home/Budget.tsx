@@ -3,13 +3,13 @@ import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
 import { revealClass } from "@/lib/reveal";
 import { budgetTiers } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** Price ceilings taken from the spread of what the archive's complete looks
  *  actually cost, each carrying the number of looks it really buys. The tile
  *  hands its cap to the explorer so the slider opens where you clicked. */
 export async function Budget() {
-  const tiers = budgetTiers(await getOutfits());
+  const tiers = budgetTiers(await getPublishedOutfits());
   if (tiers.length === 0) return null;
 
   return (

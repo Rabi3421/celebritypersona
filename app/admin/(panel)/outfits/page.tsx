@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
-import { getOutfits } from "@/lib/db/content";
+import { getAllOutfits } from "@/lib/db/content";
 import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
@@ -85,7 +85,7 @@ export default async function AdminOutfits({
 }: {
   searchParams: Promise<Query>;
 }) {
-  const [outfits, query] = await Promise.all([getOutfits(), searchParams]);
+  const [outfits, query] = await Promise.all([getAllOutfits(), searchParams]);
 
   // Search reaches into the pieces too, so "Bottega" finds the look that
   // carries the bag rather than nothing at all.

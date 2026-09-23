@@ -5,7 +5,7 @@ import { plural } from "@/lib/format";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import {
-  getOutfits,
+  getPublishedOutfits,
   getTrendingFaqs,
   getTrendingRows,
 } from "@/lib/db/content";
@@ -20,7 +20,7 @@ const inr = new Intl.NumberFormat("en-IN", {
 
 export async function TrendingBoard() {
   const [outfits, trendingSearches, trendingFaqs] = await Promise.all([
-    getOutfits(),
+    getPublishedOutfits(),
     getTrendingRows(),
     getTrendingFaqs(),
   ]);

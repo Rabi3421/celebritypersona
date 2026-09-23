@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
 import { lines, rows, text } from "@/lib/form-data";
 import { canonicalName } from "@/lib/archive";
@@ -56,7 +56,7 @@ export async function saveOutfit(
   const [occasions, celebrities, outfitsNow] = await Promise.all([
     getOccasionViews(),
     getCelebrityViews(),
-    getOutfits(),
+    getAllOutfits(),
   ]);
 
   const draft: OutfitDraft = {

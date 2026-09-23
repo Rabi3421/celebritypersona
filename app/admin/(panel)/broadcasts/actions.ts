@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getOutfits, getSubscribers } from "@/lib/db/content";
+import { getAllOutfits, getSubscribers } from "@/lib/db/content";
 import { cancelMailJob, queueLookAnnouncement } from "@/lib/db/mutations";
 import { drainQueue } from "@/lib/mail/drain";
 import { lookSubject } from "@/lib/mail/templates";
@@ -35,7 +35,7 @@ export async function announceOutfit(
     return { error: 'Type SEND in the box to confirm. Nothing was sent.' };
   }
 
-  const [outfits, subscribers] = await Promise.all([getOutfits(), getSubscribers()]);
+  const [outfits, subscribers] = await Promise.all([getAllOutfits(), getSubscribers()]);
   const outfit = outfits.find((item) => item.id === outfitId);
   if (!outfit) return { error: "That look no longer exists." };
 

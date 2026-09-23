@@ -2,7 +2,7 @@ import Link from "next/link";
 import { trendingBrands } from "@/lib/trending";
 import { outfitSlug } from "@/lib/slugs";
 import styles from "@/app/admin/panel.module.css";
-import { getOutfits, getTrendingSearches } from "@/lib/db/content";
+import { getAllOutfits, getTrendingSearches } from "@/lib/db/content";
 import { ListFilters } from "@/components/admin/ListFilters";
 import { allOption, anyFilter, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { getCelebrityViews, getOccasionViews } from "@/lib/db/content";
@@ -25,7 +25,7 @@ export default async function AdminTrending({
 }) {
   const [allSearches, outfits, celebrities, occasions, query] = await Promise.all([
     getTrendingSearches(),
-    getOutfits(),
+    getAllOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
     searchParams,

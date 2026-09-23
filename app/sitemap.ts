@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getCelebrityViews, getOccasionViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { policyUpdated, site } from "@/lib/site-config";
 import { hasSubstance } from "@/lib/types";
@@ -91,7 +91,7 @@ function archiveTouched(outfits: Outfit[]): Date | undefined {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [outfits, celebrities, occasions] = await Promise.all([
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
   ]);

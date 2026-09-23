@@ -9,7 +9,7 @@ import { garmentOf, sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
-import { getCelebrities, getOutfitBySlug, getOutfits, movedOutfitSlug } from "@/lib/db/content";
+import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
@@ -33,7 +33,7 @@ export const dynamicParams = true;
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const outfits = await getOutfits();
+  const outfits = await getPublishedOutfits();
   return outfits.map((outfit) => ({ slug: outfitSlug(outfit) }));
 }
 
@@ -50,6 +50,19 @@ function describe(outfit: Outfit) {
   if (notes) return notes.length > 158 ? `${notes.slice(0, 155).trimEnd()}…` : notes;
 
   const money = pricing(outfit);
+
+  /**
+   * A look with no pieces has nothing to describe. `isPublished` keeps those
+   * off the site, so this should be unreachable — but it was not: the line
+   * came out as "identified piece by piece — 0 pieces", and it went into the
+   * description, the og:description and the twitter:description of a record
+   * that had had its fabricated pieces removed. A generator that counts
+   * should say nothing rather than count to zero.
+   */
+  if (money.pieces === 0) {
+    return `${outfit.celebrity} at ${outfit.event}, from the CelebrityPersona archive.`;
+  }
+
   const pieces = `${money.pieces} ${money.pieces === 1 ? "piece" : "pieces"}`;
   // Only the labels we have actually identified. "by " with nothing after it
   // is worse than not naming a label at all.
@@ -167,7 +180,7 @@ export default async function OutfitPage({ params }: Props) {
   const { slug } = await params;
   const [outfit, outfits, celebrities] = await Promise.all([
     getOutfitBySlug(slug),
-    getOutfits(),
+    getPublishedOutfits(),
     getCelebrities(),
   ]);
   if (!outfit) {

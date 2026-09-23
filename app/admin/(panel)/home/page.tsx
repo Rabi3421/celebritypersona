@@ -1,6 +1,6 @@
 import { HomeForm, type HomeComputed } from "@/components/admin/HomeForm";
 import { archiveTotals, brandRoll, budgetTiers, dupeOfTheWeek, heroLook } from "@/lib/archive";
-import { getHomeContent, getOutfits } from "@/lib/db/content";
+import { getHomeContent, getAllOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
 
 export default async function AdminHomePage({
@@ -10,7 +10,7 @@ export default async function AdminHomePage({
 }) {
   const [home, outfits, { saved }] = await Promise.all([
     getHomeContent(),
-    getOutfits(),
+    getAllOutfits(),
     searchParams,
   ]);
 

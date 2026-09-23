@@ -5,7 +5,7 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { budgetTiers, completeLooks } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
 import { MIN_LOOKS_FOR_BUDGET_TIERS } from "@/lib/thresholds";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
@@ -22,7 +22,7 @@ import { site } from "@/lib/site-config";
  * off rather than a spread worth naming, so the wording stays general instead.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const outfits = await getOutfits();
+  const outfits = await getPublishedOutfits();
   const tiers = budgetTiers(outfits);
   const caps = tiers.map((tier) => inr(tier.cap));
   // Every tier is derived from the same set of complete looks, so the gate is
@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** `?budget=` lets the homepage tiles open the slider where you clicked
  *  instead of dropping everyone at the same default. */
 export default async function BudgetPage({ searchParams }: { searchParams: Promise<{ budget?: string }> }) {
-  const [outfits, query] = await Promise.all([getOutfits(), searchParams]);
+  const [outfits, query] = await Promise.all([getPublishedOutfits(), searchParams]);
   const requested = Number(query.budget);
   const initialBudget = Number.isFinite(requested) && requested > 0 ? requested : undefined;
 

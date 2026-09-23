@@ -171,6 +171,15 @@ export type Outfit = {
    *  nobody has to remember to tick or untick anything. Absent on looks saved
    *  before the field existed, which fall back to the look's own date. */
   publishedAt?: string;
+  /**
+   * Whether an editor considers this look finished.
+   *
+   * No document carries one today, and absent means published — every record
+   * that exists was written straight to the live archive. The field is honoured
+   * anyway so that the day a draft state is added, `isPublished` already refuses
+   * to promote a draft just because somebody typed a price into it.
+   */
+  status?: OutfitStatus;
   /** Editor-chosen URL segment. Also names the storage folder its photos are
    *  uploaded into. Absent on older looks, which fall back to a derived slug. */
   slug?: string;
@@ -188,6 +197,29 @@ export type Outfit = {
   pricesCheckedAt?: string;
   items: OutfitItem[];
 };
+
+export type OutfitStatus = "draft" | "published";
+
+/**
+ * Whether a look may be shown to a reader.
+ *
+ * Two conditions, both required. The editor has not marked it a draft, and it
+ * carries something worth publishing: a swap, or an original price somebody
+ * confirmed. A look with neither is a name, a date and a photograph — there is
+ * nothing decoded about it, so it has no page, no listing, no sitemap entry and
+ * no place in any count the site quotes about itself.
+ *
+ * The status half matters even though nothing sets it yet: the price half must
+ * never be able to publish a look on its own. An editor half way through
+ * entering a piece has typed a price, and that cannot be what puts it live.
+ *
+ * This is deliberately stricter than `hasSubstance`, which asks a different
+ * question — whether a published look is worth indexing — and which a note
+ * alone can satisfy.
+ */
+export const isPublished = (outfit: Outfit) =>
+  outfit.status !== "draft" &&
+  (outfit.items.some(hasSwap) || outfit.items.some(hasWornPrice));
 
 /**
  * Whether a look offers anything a shopper could not get from the brand's own

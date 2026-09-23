@@ -6,7 +6,7 @@ import {
   getCelebrityRequests,
   getCelebrityViews,
   getOccasionViews,
-  getOutfits,
+  getAllOutfits,
   getPriceReports,
   getSubscribers,
 } from "@/lib/db/content";
@@ -26,7 +26,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
   // never disagree: both include names the outfits mention with no record yet.
   const [outfits, celebrities, occasions, priceReports, requests, subscribers] =
     await Promise.all([
-      getOutfits(),
+      getAllOutfits(),
       getCelebrityViews(),
       getOccasionViews(),
       getPriceReports(),

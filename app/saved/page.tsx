@@ -6,7 +6,7 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { celebritySlug, outfitSlug } from "@/lib/slugs";
 import { isFullySwapped, outfitPhoto, pricing } from "@/lib/types";
-import { getCelebrityViews, getOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getPublishedOutfits } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 
 /**
@@ -28,7 +28,7 @@ export const metadata: Metadata = pageMetadata({
  * reaches the server. It is a few dozen rows, so this costs nothing.
  */
 export default async function SavedPage() {
-  const [outfits, celebrities] = await Promise.all([getOutfits(), getCelebrityViews()]);
+  const [outfits, celebrities] = await Promise.all([getPublishedOutfits(), getCelebrityViews()]);
 
   const looks: SavedLook[] = outfits.map((outfit) => {
     const money = pricing(outfit);

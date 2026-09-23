@@ -11,7 +11,7 @@ import { outfitsForOccasion } from "@/lib/archive";
 import type { OccasionView } from "@/lib/archive";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
-import { getOccasionBySlug, getOccasionViews, getOutfits, movedOccasionSlug } from "@/lib/db/content";
+import { getOccasionBySlug, getOccasionViews, getPublishedOutfits, movedOccasionSlug } from "@/lib/db/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -86,7 +86,7 @@ export default async function OccasionPage({ params }: Props) {
   const { slug } = await params;
   const [occasion, outfits, occasions] = await Promise.all([
     getOccasionBySlug(slug),
-    getOutfits(),
+    getPublishedOutfits(),
     getOccasionViews(),
   ]);
   if (!occasion) {

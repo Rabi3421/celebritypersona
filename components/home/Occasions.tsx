@@ -5,12 +5,12 @@ import { SectionHeading } from "./SectionHeading";
 import { revealClass } from "@/lib/reveal";
 import { nameSlug } from "@/lib/slugs";
 import { occasionTiles } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** Ranked by how many looks the archive actually holds for each event, and
  *  illustrated with the newest photo from that group. */
 export async function Occasions() {
-  const tiles = occasionTiles(await getOutfits());
+  const tiles = occasionTiles(await getPublishedOutfits());
   if (tiles.length === 0) return null;
 
   return (

@@ -3,12 +3,12 @@ import Image from "next/image";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
 import { dupeOfTheWeek } from "@/lib/archive";
-import { getOutfits } from "@/lib/db/content";
+import { getPublishedOutfits } from "@/lib/db/content";
 
 /** The widest single-piece gap in the archive. The pick used to be two product
  *  names typed into the homepage form, with no look behind them. */
 export async function DupeOfTheWeek() {
-  const dupe = dupeOfTheWeek(await getOutfits());
+  const dupe = dupeOfTheWeek(await getPublishedOutfits());
   if (!dupe) return null;
 
   return (

@@ -3,7 +3,7 @@ import {
   getCelebrityRequests,
   getCelebrityViews,
   getOccasionViews,
-  getOutfits,
+  getAllOutfits,
   getPriceReports,
   getTrendingSearches,
 } from "@/lib/db/content";
@@ -44,7 +44,7 @@ export default async function Overview() {
   const [status, outfits, celebrities, occasions, reports, requests, searches] =
     await Promise.all([
       databaseStatus(),
-      getOutfits(),
+      getAllOutfits(),
       getCelebrityViews(),
       getOccasionViews(),
       getPriceReports(),
