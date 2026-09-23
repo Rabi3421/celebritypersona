@@ -22,5 +22,13 @@ export const occasions: Occasion[] = [
   {id:52,name:"Red carpet",group:"Everyday",peak:"Awards season",description:"One silhouette, one focal idea, and tailoring that survives every camera angle. These are the archive's highest-impact swaps.",colours:weddingColours},
   {id:53,name:"Promo tour",group:"Everyday",peak:"All year",description:"Designed for repeated appearances in one day: strong colour, clean shape and pieces that can be restyled between stops.",colours:everydayColours},
   {id:54,name:"Casual",group:"Everyday",peak:"All year",description:"The useful archive: denim, tees, relaxed shirts and everyday shoes that translate directly without costume-level styling.",colours:everydayColours},
+  /**
+   * Two occasions added because Casual had become the place everything
+   * unclassifiable went. An editorial shoot is not an off-duty outfit and a
+   * festive anarkali is not a pair of jeans; filing them together made the
+   * Casual archive describe nothing and left both real categories empty.
+   */
+  {id:55,name:"Photoshoot / Editorial",group:"Everyday",peak:"All year",description:"Styled for a camera rather than for a day out: a brand campaign, a magazine shoot or an Instagram set. The clothes are chosen to photograph well from one angle, so read the silhouette rather than the practicality.",colours:everydayColours},
+  {id:56,name:"Festive",group:"Festival",peak:"Peaks Oct–Nov",description:"Dressed for a festival without the occasion being named. Worked fabric, evening colour and jewellery that reads across a room, on a garment you could wear to more than one date in the calendar.",colours:festivalColours},
 ];
 
