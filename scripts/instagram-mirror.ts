@@ -23,6 +23,7 @@ import { deleteObject, getDownloadURL, listAll, ref, uploadBytes } from "firebas
 import { MongoClient } from "mongodb";
 import { fetchInstagramReels, type InstagramReel } from "@/lib/instagram";
 import { firebaseStorage } from "@/lib/firebase";
+import { assertWritable } from "@/lib/prod-guard";
 
 /** How many the homepage strip shows. */
 const LIMIT = 6;
@@ -46,6 +47,8 @@ function requireUri(): string {
 const pathFor = (id: string) => `${FOLDER}/${id.replace(/[^a-zA-Z0-9]/g, "")}.jpg`;
 
 async function main() {
+  assertWritable("replace the mirrored reels and upload to the live bucket");
+
   if (!process.env.INSTAGRAM_ACCESS_TOKEN) {
     console.error("INSTAGRAM_ACCESS_TOKEN is not set. Nothing to mirror.");
     process.exit(1);

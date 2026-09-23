@@ -14,7 +14,7 @@
     "instagram:mirror": "tsx --env-file=.env scripts/instagram-mirror.ts",
     "mail:init": "node --env-file=.env scripts/mail-init.mjs",
     "mail:test": "node --env-file=.env scripts/mail-test.mjs",
-    "purge:seed": "node --env-file=.env scripts/purge-seed-content.mjs",
+    "purge:seed": "tsx --env-file=.env scripts/purge-seed-content.ts",
     "audit:credits": "tsx --env-file=.env scripts/audit-photo-credits.ts",
     "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts"
   },

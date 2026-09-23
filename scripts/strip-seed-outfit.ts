@@ -28,6 +28,7 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { MongoClient } from "mongodb";
+import { assertWritable } from "@/lib/prod-guard";
 
 /** The one record this touches. Nothing else is read or written. */
 const OUTFIT_ID = 1;
@@ -66,6 +67,8 @@ function isUntouchedSeed(items: Piece[]): boolean {
 }
 
 async function main() {
+  assertWritable("empty the pieces on outfit id 1");
+
   const client = new MongoClient(requireUri(), { serverSelectionTimeoutMS: 15000 });
   await client.connect();
   const db = client.db(process.env.MONGODB_DB);

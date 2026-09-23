@@ -7,12 +7,15 @@
  * so rows added through the admin panel later are left alone.
  */
 import { MongoClient } from "mongodb";
+import { assertWritable } from "@/lib/prod-guard";
 import { celebrities } from "../lib/seed-data/celebrities";
 import { homeContent } from "../lib/seed-data/home";
 import { occasions } from "../lib/seed-data/occasions";
 import { trendingFaqs, trendingSearches } from "../lib/seed-data/trending";
 
 async function main() {
+  assertWritable("overwrite the occasion vocabulary and the homepage copy");
+
   const uri = process.env.MONGODB_URI;
   const dbName = process.env.MONGODB_DB ?? "celebritypersona";
   if (!uri) throw new Error("MONGODB_URI is not set.");
