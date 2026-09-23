@@ -11,9 +11,11 @@
     "seed:content": "tsx --env-file=.env scripts/seed-content.ts",
     "mongo:local": "node scripts/local-mongo.mjs",
     "instagram:refresh": "node --env-file=.env scripts/instagram-refresh.mjs",
+    "instagram:mirror": "tsx --env-file=.env scripts/instagram-mirror.ts",
     "mail:init": "node --env-file=.env scripts/mail-init.mjs",
     "mail:test": "node --env-file=.env scripts/mail-test.mjs",
-    "purge:seed": "node --env-file=.env scripts/purge-seed-content.mjs"
+    "purge:seed": "node --env-file=.env scripts/purge-seed-content.mjs",
+    "audit:credits": "tsx --env-file=.env scripts/audit-photo-credits.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

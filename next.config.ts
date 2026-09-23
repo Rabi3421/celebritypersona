@@ -32,10 +32,11 @@ const nextConfig: NextConfig = {
         hostname: "firebasestorage.googleapis.com",
         pathname: `/v0/b/${firebaseBucket}/o/**`,
       },
-      // Reel thumbnails. Instagram serves them from a rotating set of
-      // scontent hosts, so the subdomain has to be a wildcard.
-      { protocol: "https", hostname: "**.cdninstagram.com" },
-      { protocol: "https", hostname: "**.fbcdn.net" },
+      // Reel thumbnails used to be served straight off Instagram's rotating
+      // scontent hosts, against signed URLs that expire in days. They are
+      // mirrored into the bucket above by `npm run instagram:mirror` now, so
+      // nothing the site renders points at Meta and neither host is allowed
+      // here any more. See lib/instagram.ts.
     ],
   },
 
@@ -68,8 +69,11 @@ const nextConfig: NextConfig = {
           `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com`,
           "style-src 'self' 'unsafe-inline'",
           "font-src 'self' data:",
-          "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.cdninstagram.com https://*.fbcdn.net",
-          "media-src 'self' blob: https://*.cdninstagram.com https://*.fbcdn.net",
+          "img-src 'self' data: blob: https://firebasestorage.googleapis.com",
+          // Nothing is played on the page any more: reels link out to their
+          // Instagram permalink rather than hotlinking the MP4, so no remote
+          // media origin needs to be allowed at all.
+          "media-src 'self' blob:",
           "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://firebasestorage.googleapis.com",
         ].join("; "),
       },

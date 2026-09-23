@@ -10,6 +10,7 @@ import { useSavedList } from "@/lib/saved";
 import { outfitPhotos, pricing, wornLabel } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import { priceFreshness } from "@/lib/freshness";
+import { isSpecificCredit } from "@/lib/photo-credit";
 import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
@@ -210,8 +211,18 @@ export function OutfitDetail({
               ) : (
                 <BlankFrame seed={outfit.id} />
               )}
+              {/* An uncredited photo used to caption itself "Photo · Editorial
+                  archive", which names no archive and no photographer. It is
+                  an invented attribution printed over somebody else's work.
+                  New photos cannot be saved without a real credit; ones
+                  already stored without one say so until they have been
+                  given one. */}
               {shown ? (
-                <figcaption>{shown.credit ?? "Photo · Editorial archive"}</figcaption>
+                <figcaption>
+                  {isSpecificCredit(shown.credit)
+                    ? shown.credit
+                    : "Photo · source not yet credited"}
+                </figcaption>
               ) : null}
               <button
                 type="button"

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CREDIT_REQUIRED_MESSAGE, isSpecificCredit } from "@/lib/photo-credit";
 import {
   PRICE_REPORT_ISSUES,
   PRICE_REPORT_STATUSES,
@@ -132,10 +133,34 @@ export const outfitSchema = z.object({
         url: z.string().trim().regex(/^https?:\/\/\S+$/i, "Image URL must start with http:// or https://"),
         path: z.string().trim().min(1),
         alt: seoText("Alt text", 160),
-        credit: seoText("Photo credit", 120),
+        credit: z
+          .string()
+          .trim()
+          .max(120, "Photo credit must be 120 characters or fewer")
+          .default(""),
       }),
     )
-    .default([]),
+    .default([])
+    /**
+     * Every photograph here was taken by somebody else, so an uncredited one
+     * is not publishable — and a field satisfied by "Editorial archive" is
+     * not a credit, it is the appearance of one. See lib/photo-credit.ts.
+     *
+     * Checked across the array rather than on the field so the message can
+     * name the photo. A look carries up to eleven of them and "photo credit
+     * is required" against an unnumbered one is not an instruction anybody
+     * can act on.
+     */
+    .superRefine((images, ctx) => {
+      images.forEach((image, index) => {
+        if (isSpecificCredit(image.credit)) return;
+        ctx.addIssue({
+          code: "custom",
+          path: [index, "credit"],
+          message: `Photo ${index + 1}: ${CREDIT_REQUIRED_MESSAGE}`,
+        });
+      });
+    }),
   notes: z.array(z.string().trim().min(1)).default([]),
   items: z.array(outfitItemSchema).min(1, "Add at least one piece"),
 })
@@ -147,7 +172,7 @@ export const outfitSchema = z.object({
       url,
       path,
       ...(alt ? { alt } : {}),
-      ...(credit ? { credit } : {}),
+      credit,
     })),
     ...(seoTitle ? { seoTitle } : {}),
     ...(seoDescription ? { seoDescription } : {}),

@@ -7,6 +7,7 @@ import { MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
 import { pricing } from "@/lib/types";
 import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
 import { trendingAnswerer } from "@/lib/trending-answers";
+import type { InstagramReel } from "@/lib/instagram";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
@@ -183,6 +184,16 @@ export const getHomeContent = cache(async () => {
   const home = await siteContent<HomeContent>("home");
   if (!home) throw new Error("siteContent/home is missing. Run npm run seed:content.");
   return home;
+});
+
+/**
+ * The reels the mirror last stored, with our own thumbnails.
+ *
+ * Empty until `npm run instagram:mirror` has run, which is the same state the
+ * section already handled when no token was configured: it is simply absent.
+ */
+export const getMirroredReels = cache(async (): Promise<InstagramReel[]> => {
+  return (await siteContent<InstagramReel[]>("reels")) ?? [];
 });
 
 export const getTrendingFaqs = cache(async () => {

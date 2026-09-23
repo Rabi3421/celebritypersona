@@ -7,6 +7,7 @@ import { getDb } from "@/lib/mongodb";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, MAILABLE, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
+import type { InstagramReel } from "@/lib/instagram";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
@@ -746,6 +747,21 @@ export async function finishMailJob(id: string, status: MailJobStatus, error?: s
 }
 
 /* ------------------------------------------------------------ home content */
+
+/**
+ * Replaces the mirrored reel list wholesale.
+ *
+ * Written by `npm run instagram:mirror`, never by the panel: it is a snapshot
+ * of the account, not editorial copy, and an editor typing into it would be
+ * describing reels rather than reporting them.
+ */
+export async function saveMirroredReels(value: InstagramReel[]) {
+  const db = await getDb();
+  await db
+    .collection("siteContent")
+    .updateOne({ key: "reels" }, { $set: { key: "reels", value } }, { upsert: true });
+  revalidateSite();
+}
 
 export async function saveHomeContent(value: HomeContent) {
   const db = await getDb();

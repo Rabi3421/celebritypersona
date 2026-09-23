@@ -1,5 +1,6 @@
 import type { CelebrityView, OccasionView } from "@/lib/archive";
 import { needsPriceReview, PRICE_REVIEW_DAYS } from "@/lib/freshness";
+import { uncreditedPhotos } from "@/lib/photo-credit";
 import {
   hasSubstance,
   outfitPhotos,
@@ -50,6 +51,7 @@ export function archiveHealth({
 }): HealthCheck[] {
   const needsSwap = outfits.filter((outfit) => !pricing(outfit).allSwapped);
   const needsPhoto = outfits.filter((outfit) => outfitPhotos(outfit).length === 0);
+  const needsCredit = outfits.filter((outfit) => uncreditedPhotos(outfit).length > 0);
   const needsPrice = outfits.filter((outfit) => !pricing(outfit).allPriced);
   const thin = outfits.filter((outfit) => !hasSubstance(outfit));
   const stale = outfits.filter((outfit) => needsPriceReview(outfit.pricesCheckedAt, now));
@@ -126,6 +128,17 @@ export function archiveHealth({
       count: linksPending.length,
       href: "/admin/outfits?state=needs-link",
       ok: linksPending.length === 0,
+    },
+    {
+      key: "credits",
+      label: "Looks with an uncredited photo",
+      detail:
+        "Every photograph here was taken by somebody else. An uncredited one captions itself " +
+        "“source not yet credited” on the public page, and the look cannot be saved again until " +
+        "every photo on it names a source.",
+      count: needsCredit.length,
+      href: "/admin/outfits?state=needs-credit",
+      ok: needsCredit.length === 0,
     },
     {
       key: "photos",

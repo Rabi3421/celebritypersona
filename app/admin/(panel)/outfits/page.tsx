@@ -7,6 +7,7 @@ import { ListFilters } from "@/components/admin/ListFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
+import { uncreditedPhotos } from "@/lib/photo-credit";
 import { removeOutfit } from "./actions";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { outfitPhotos, pricing, type Outfit } from "@/lib/types";
@@ -37,6 +38,7 @@ const STATES = [
   { value: "needs-swap", label: "Needs a swap" },
   { value: "needs-price", label: "Missing a worn price" },
   { value: "needs-photo", label: "No photo" },
+  { value: "needs-credit", label: "Photo missing a credit" },
   { value: "needs-notes", label: "No editor's note" },
   { value: "needs-review", label: "Price verification overdue" },
   { value: "needs-link", label: "Retailer link pending" },
@@ -61,6 +63,8 @@ function inState(outfit: Outfit, state: string | undefined) {
       return !money.allPriced;
     case "needs-photo":
       return outfitPhotos(outfit).length === 0;
+    case "needs-credit":
+      return uncreditedPhotos(outfit).length > 0;
     case "needs-notes":
       return !outfit.notes?.length;
     case "needs-review":
