@@ -5,6 +5,8 @@ import { occasionSlug } from "@/lib/slugs";
 import type { OccasionGroup } from "@/lib/types";
 import type { OccasionView } from "@/lib/archive";
 import { upcomingOccasions } from "@/lib/archive";
+import { plural } from "@/lib/format";
+import { MIN_WEDDING_LOOKS } from "@/lib/thresholds";
 import styles from "@/app/occasions/occasions.module.css";
 import { getOccasionViews } from "@/lib/db/content";
 
@@ -31,13 +33,31 @@ const tilePhoto = (occasion: OccasionView, index = 0) =>
 export async function OccasionsDirectory() {
   const occasions = await getOccasionViews();
   const upcoming = upcomingOccasions(occasions);
-  const nextWedding = upcoming.find((occasion) => occasion.group === "Wedding");
+
+  /**
+   * The wedding feature promised "Sangeet, mehendi, haldi, reception — the
+   * five events everyone panics about. All decoded, all with swaps you can
+   * order in time." It said that whatever the archive held, and the archive
+   * held one sangeet look with no swap on it.
+   *
+   * Now it only runs once there are enough wedding looks to stand behind a
+   * claim about the season, and it names the count and the events that
+   * actually have something in them.
+   */
+  const wedding = occasions.filter((occasion) => occasion.group === "Wedding");
+  const weddingLooks = wedding.reduce((sum, occasion) => sum + occasion.stats.looks, 0);
+  const weddingStocked = wedding.filter((occasion) => occasion.stats.looks > 0);
+  const weddingSwaps = wedding.filter((occasion) => occasion.stats.swapFrom !== null).length;
+  const nextWedding =
+    weddingLooks >= MIN_WEDDING_LOOKS
+      ? upcoming.find((occasion) => occasion.group === "Wedding")
+      : undefined;
 
   return <main className={styles.page}>
     <header className={styles.band}><div className={styles.shell}><nav className={styles.crumb} aria-label="Breadcrumb"><Link href="/">Home</Link><i>›</i><span>Occasions</span></nav><h1>Outfit ideas<br/>by occasion</h1><p>Most people don&apos;t browse by celebrity — they browse by the thing in their calendar. Sangeet, mehendi, reception, Diwali, the airport run: start with the event and we&apos;ll show you what to wear and what it costs.</p></div></header>
     {upcoming.length ? <section className={styles.calendar}><div className={styles.shell}><div className={styles.calendarHeading}><span>◆ Coming up</span><i/><small>Dates approximate</small></div><div className={styles.calendarRail}>{upcoming.map((event)=><Link href={`/occasions/${occasionSlug(event)}`} className={(event.daysAway ?? 0)<=SOON_DAYS?styles.soon:""} key={event.id}><div><span><h2>{event.name}</h2><small>{formatDate(event.nextDate)}</small></span><i style={{"--progress":`${Math.max(8,100-(event.daysAway ?? 0)/1.2)}%`} as React.CSSProperties}><b>{event.daysAway}</b><small>days</small></i></div><p><span>Looks ready</span><b>{event.stats.looks}</b></p></Link>)}</div></div></section> : null}
     <div className={styles.shell}>
-      <section className={styles.section} id="wedding">{nextWedding ? <div className={styles.weddingFeature}><div><p>{nextWedding.peak}</p><h2>Wedding season is coming</h2><span>Sangeet, mehendi, haldi, reception — the five events everyone panics about. All decoded, all with swaps you can order in time.</span></div><strong>{nextWedding.daysAway}<small>Days until season starts</small></strong></div> : null}<GroupSection occasions={occasions} group="Wedding" eyebrow="The five" title="Wedding occasions" body="Ranked by how many looks we've decoded for each." /></section>
+      <section className={styles.section} id="wedding">{nextWedding ? <div className={styles.weddingFeature}><div><p>{nextWedding.peak}</p><h2>Wedding season is coming</h2><span>{plural(weddingLooks, "look")} decoded so far across {weddingStocked.map((occasion) => occasion.name.toLowerCase()).join(", ")}{weddingSwaps > 0 ? `, with alternatives found for ${weddingSwaps} of them` : ", with alternatives still to find"}.</span></div><strong>{nextWedding.daysAway}<small>Days until season starts</small></strong></div> : null}<GroupSection occasions={occasions} group="Wedding" eyebrow="The five" title="Wedding occasions" body="Ranked by how many looks we've decoded for each." /></section>
       <GroupSection occasions={occasions} group="Festival" eyebrow="Around the year" title="Festival looks" body="Dressing for the dates that actually move the needle in India." section />
       <GroupSection occasions={occasions} group="Everyday" eyebrow="The rest of the time" title="Everyday and events" body="Airport runs, red carpets, promo tours and off-duty days — the looks that are not tied to a date in the calendar." section />
       <section className={styles.planner}><div><h2>Got an event in the diary?</h2><p>Tap the heart on any look and it is kept in this browser, ready to compare side by side with what the whole outfit would cost to rebuild.</p></div><Link href="/saved">Open your saved looks →</Link></section>

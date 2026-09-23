@@ -39,10 +39,10 @@ export function TrendingForm({ search }: { search?: TrendingSearch }) {
         <div className={styles.formGrid}>
           <TextField name="term" label="Search term" defaultValue={draft?.term ?? search?.term} errors={errors} required />
           <SelectField name="intent" label="Intent" options={INTENTS} defaultValue={draft?.intent ?? search?.intent} errors={errors} />
-          <NumberField name="volume" label="Volume" defaultValue={draft?.volume ?? search?.volume ?? 0} errors={errors} />
-          <NumberField name="changePct" label="Change %" defaultValue={draft?.changePct ?? search?.changePct ?? 0} errors={errors} />
+          <NumberField name="volume" label="Volume" hint="Not published. Nothing here counts searches; the row order is what this sets." defaultValue={draft?.volume ?? search?.volume ?? 0} errors={errors} />
+          <NumberField name="changePct" label="Change %" hint="Not published, for the same reason as Volume." defaultValue={draft?.changePct ?? search?.changePct ?? 0} errors={errors} />
           <TextField name="href" label="Answers to" hint="Where the row links" defaultValue={draft?.href ?? search?.href} errors={errors} wide required />
-          <TextAreaField name="answer" label="Answer" defaultValue={draft?.answer ?? search?.answer} errors={errors} rows={3} />
+          <TextAreaField name="answer" label="Answer" hint="Not published. The public row states what the archive holds for this term, counted at render. Kept so your wording is not lost." defaultValue={draft?.answer ?? search?.answer} errors={errors} rows={3} />
         </div>
         <div className={styles.formBar}>
           <SaveButton>{search ? "Save changes" : "Create term"}</SaveButton>

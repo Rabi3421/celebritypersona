@@ -4,14 +4,14 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { TrendingBoard } from "@/components/trending/TrendingBoard";
-import { getTrendingFaqs, getTrendingSearches } from "@/lib/db/content";
+import { getTrendingFaqs, getTrendingRows } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
 export const metadata: Metadata = pageMetadata({
   title: "Trending Celebrity Outfit Questions & Latest Looks",
   description:
-    "The Indian celebrity looks people are searching for right now, each decoded — every piece identified, priced, and matched to an alternative.",
+    "The Indian celebrity outfit questions readers ask us most, each answered from the decoded archive — the pieces we identified, the prices we confirmed, and what a rebuild costs.",
   path: "/trending",
 });
 
@@ -21,7 +21,7 @@ export const revalidate = 3600;
 
 export default async function TrendingPage() {
   const [trendingSearches, trendingFaqs] = await Promise.all([
-    getTrendingSearches(),
+    getTrendingRows(),
     getTrendingFaqs(),
   ]);
 
@@ -29,7 +29,15 @@ export default async function TrendingPage() {
    * The leaderboard as an ItemList, the visible questions as an FAQPage, and
    * the trail the page draws. Only questions that are actually rendered are
    * marked up.
+   *
+   * A row we have not decoded stays on the page — it is a real question people
+   * ask us — but it is left out of the ItemList. Marking up ten entries whose
+   * description reads "Not decoded yet" would offer Google a list of answers
+   * the site does not have, which is the same overclaim the old hand-written
+   * blurbs made, just in JSON-LD. With nothing decoded the list is dropped
+   * rather than published empty.
    */
+  const decodedRows = trendingSearches.filter((search) => search.decoded);
   const structuredData = jsonLd([
     {
       "@type": "CollectionPage",
@@ -38,19 +46,23 @@ export default async function TrendingPage() {
       name: "Trending celebrity outfit searches in India",
       isPartOf: { "@id": `${site.url}#website` },
       inLanguage: "en-IN",
-      mainEntity: {
-        "@type": "ItemList",
-        name: "Trending celebrity outfit searches in India",
-        itemListOrder: "https://schema.org/ItemListOrderDescending",
-        numberOfItems: trendingSearches.length,
-        itemListElement: trendingSearches.map((search, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: search.term,
-          description: search.answer,
-          url: `${site.url}${search.href}`,
-        })),
-      },
+      ...(decodedRows.length
+        ? {
+            mainEntity: {
+              "@type": "ItemList",
+              name: "Trending celebrity outfit searches in India",
+              itemListOrder: "https://schema.org/ItemListOrderDescending",
+              numberOfItems: decodedRows.length,
+              itemListElement: decodedRows.map((search, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: search.term,
+                description: search.answer,
+                url: `${site.url}${search.href}`,
+              })),
+            },
+          }
+        : {}),
     },
     ...(trendingFaqs.length
       ? [

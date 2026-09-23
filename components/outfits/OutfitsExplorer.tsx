@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, sameName, savingThresholds } from "@/lib/archive";
+import { archiveTotals, budgetRange, celebrityNames, isNewLook, occasionNames, publishableSavingPct, sameName, savingThresholds } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
 import { plural } from "@/lib/format";
@@ -54,6 +54,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
   // offered for an occasion or a person the archive holds nothing for, and the
   // slider stops where the dearest complete look does.
   const totals = useMemo(() => archiveTotals(outfits), [outfits]);
+  const publishableSaving = useMemo(() => publishableSavingPct(outfits), [outfits]);
   const swapRange = useMemo(() => budgetRange(outfits), [outfits]);
   const occasionOptions = useMemo(() => occasionNames(outfits), [outfits]);
   const celebrityOptions = useMemo(() => celebrityNames(outfits), [outfits]);
@@ -150,8 +151,12 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
           <div className={styles.bannerStats} aria-label="Outfit statistics">
             <div><span>{totals.looks.toLocaleString("en-IN")}</span><small>Looks</small></div>
             <div><span>{totals.pieces.toLocaleString("en-IN")}</span><small>Pieces</small></div>
-            {totals.averageSavingPct === null ? null : (
-              <div><span>{totals.averageSavingPct}%</span><small>Avg saving</small></div>
+            {/* Gated on MIN_LOOKS_FOR_STATS, not just on being non-null: an
+                average across one complete look is arithmetic, not a fact
+                about the archive, and this reads as a claim about the
+                archive. */}
+            {publishableSaving === null ? null : (
+              <div><span>{publishableSaving}%</span><small>Avg saving</small></div>
             )}
           </div>
         </div>

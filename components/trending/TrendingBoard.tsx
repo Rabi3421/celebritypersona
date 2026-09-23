@@ -7,7 +7,7 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import {
   getOutfits,
   getTrendingFaqs,
-  getTrendingSearches,
+  getTrendingRows,
 } from "@/lib/db/content";
 import { biggestSavers, freshestLooks, savingPercent, trendingBrands, trendingDupes, trendingOccasions } from "@/lib/trending";
 import styles from "@/app/trending/trending.module.css";
@@ -21,7 +21,7 @@ const inr = new Intl.NumberFormat("en-IN", {
 export async function TrendingBoard() {
   const [outfits, trendingSearches, trendingFaqs] = await Promise.all([
     getOutfits(),
-    getTrendingSearches(),
+    getTrendingRows(),
     getTrendingFaqs(),
   ]);
 
@@ -53,10 +53,10 @@ export async function TrendingBoard() {
             outfits right now
           </h1>
           <p className={styles.lede}>
-            The looks people come here for, ranked by our editor, each one
-            answered with the piece, the brand and the price you would actually
-            pay. Every other site publishes the number she spent and stops
-            there.
+            The looks people come here for, ranked by our editor. Where we have
+            decoded one, the row says what the archive actually holds for it —
+            the pieces, the prices and what a rebuild costs. Where we have not,
+            it says that instead.
           </p>
           <div className={styles.pulse}>
             <div>
@@ -82,7 +82,7 @@ export async function TrendingBoard() {
           <div className={styles.boardHeading}>
             <span>◆ What we are asked for most</span>
             <i />
-            <small>Ranked by our editor</small>
+            <small>Ranked by our editor · answers counted from the archive</small>
           </div>
           {trendingSearches.map((search, index) => (
             <Link href={search.href} className={styles.row} key={search.term}>
@@ -252,8 +252,9 @@ export async function TrendingBoard() {
               <strong>Computed from the archive</strong>
               <p>
                 Every look, dupe, retailer and occasion below the leaderboard is
-                calculated from the decoded outfits themselves. A piece cannot
-                trend here until a person has identified it and checked it.
+                calculated from the decoded outfits themselves, and so is the
+                one-line answer on each row above it. A question we have not
+                decoded yet says so rather than being given an answer.
               </p>
             </div>
             <div>

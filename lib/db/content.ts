@@ -1,8 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import { getDb } from "@/lib/mongodb";
-import { celebrityViews, occasionViews } from "@/lib/archive";
+import { celebrityViews, completeLooks, occasionViews } from "@/lib/archive";
+import { inr, plural } from "@/lib/format";
+import { MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
+import { pricing } from "@/lib/types";
 import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
+import { trendingAnswerer } from "@/lib/trending-answers";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
   Celebrity,
@@ -16,6 +20,9 @@ import type {
   Subscriber,
   TrendingSearch,
 } from "@/lib/types";
+
+/** A leaderboard row as the public site publishes it. */
+export type TrendingRow = TrendingSearch & { decoded: boolean };
 
 /**
  * Every read the site makes. `cache()` dedupes within a single render, so a
@@ -81,6 +88,13 @@ export const getOccasionBySlug = cache(async (slug: string) => {
   return occasions.find((occasion) => occasionSlug(occasion) === slug);
 });
 
+/**
+ * The rows exactly as an editor stored them. The admin list and the admin edit
+ * form read these, so editing a row cannot write a computed blurb back over
+ * the editor's own wording.
+ *
+ * Nothing public should use this. Public surfaces read `getTrendingRows()`.
+ */
 export const getTrendingSearches = cache(async (): Promise<TrendingSearch[]> => {
   const db = await getDb();
   const searches = await db
@@ -120,6 +134,41 @@ export const getTrendingSearches = cache(async (): Promise<TrendingSearch[]> => 
   });
 });
 
+/**
+ * The leaderboard as the public site publishes it: every blurb computed from
+ * the looks the term actually finds, and every row that finds nothing pointed
+ * at the search results for it rather than at a page that cannot answer the
+ * question.
+ *
+ * The stored `answer` is dropped here rather than in the components, so there
+ * is one place where a fabricated blurb could get back onto the site and it is
+ * this function.
+ */
+export const getTrendingRows = cache(async (): Promise<TrendingRow[]> => {
+  const [searches, outfits, celebrities, occasions] = await Promise.all([
+    getTrendingSearches(),
+    getOutfits(),
+    getCelebrityViews(),
+    getOccasionViews(),
+  ]);
+
+  const answerFor = trendingAnswerer({ outfits, celebrities, occasions });
+
+  return searches.map((search) => {
+    const answer = answerFor(search.term);
+    return {
+      ...search,
+      answer: answer.text,
+      decoded: answer.decoded,
+      // A question we have not answered goes to the search results for it,
+      // which say honestly what the archive holds and lead somewhere real.
+      href: answer.decoded
+        ? search.href
+        : `/search?q=${encodeURIComponent(search.term)}`,
+    };
+  });
+});
+
 type SiteDoc<T> = { key: string; value: T };
 
 async function siteContent<T>(key: string): Promise<T | undefined> {
@@ -137,7 +186,11 @@ export const getHomeContent = cache(async () => {
 });
 
 export const getTrendingFaqs = cache(async () => {
-  const faqs = (await siteContent<{ q: string; a: string }[]>("trendingFaqs")) ?? [];
+  const [faqs, outfits] = await Promise.all([
+    siteContent<{ q: string; a: string }[]>("trendingFaqs").then((value) => value ?? []),
+    getOutfits(),
+  ]);
+
   return faqs.map((faq) => {
     const question = faq.q.toLowerCase();
     if (question.includes("decide what is trending")) {
@@ -149,9 +202,41 @@ export const getTrendingFaqs = cache(async () => {
         a: "Every outfit page shows its exact verification date and warns when a recheck is due. Retailers change prices without warning, so always confirm the current figure on the retailer page.",
       };
     }
+    // "Often, yes … mostly in the airport, casual and sangeet categories" was
+    // a claim about an archive that did not exist: it named categories by
+    // guess and promised a result the reader could not reproduce. Answered
+    // from the looks that actually rebuild under the ceiling, or not promised.
+    if (question.includes("under") && question.includes("5,000")) {
+      return { ...faq, a: underBudgetAnswer(outfits) };
+    }
     return faq;
   });
 });
+
+/** The honest answer to "can I find a full celebrity look under ₹5,000?" */
+function underBudgetAnswer(outfits: Outfit[]): string {
+  const within = completeLooks(outfits).filter(
+    (outfit) => pricing(outfit).swapTotal <= UNDER_5K,
+  );
+
+  if (within.length < MIN_LOOKS_FOR_UNDER_5K) {
+    return (
+      `Sometimes. A complete look only counts here once every piece in it has an ` +
+      `alternative we have found and priced, and the archive holds ${plural(within.length, "look")} ` +
+      `that rebuilds for ${inr(UNDER_5K)} or less today. Sort the archive by budget to ` +
+      `see exactly what that is, rather than taking our word for how common it is.`
+    );
+  }
+
+  const occasions = [...new Set(within.map((outfit) => outfit.occasion.toLowerCase()))];
+  const cheapest = Math.min(...within.map((outfit) => pricing(outfit).swapTotal));
+  return (
+    `Often, yes. ${plural(within.length, "look")} in the archive currently rebuilds for ` +
+    `${inr(UNDER_5K)} or less, the cheapest at ${inr(cheapest)}, mostly in the ` +
+    `${occasions.slice(0, 3).join(", ")} categories where the original leans on one ` +
+    `expensive piece rather than four. Sort the archive by budget to see them.`
+  );
+}
 
 export const getCelebrityRequests = cache(async (): Promise<CelebrityRequest[]> => {
   const db = await getDb();

@@ -12,6 +12,7 @@ import {
   type SwappedItem,
 } from "@/lib/types";
 import { outfitSlug } from "@/lib/slugs";
+import { MIN_LOOKS_FOR_STATS } from "@/lib/thresholds";
 
 /**
  * Every number the site quotes about itself, computed from the outfits an
@@ -609,14 +610,29 @@ export function dupeOfTheWeek(outfits: Outfit[]): DupePick | null {
 export type HomeStat = { value: number; suffix: string; label: string };
 
 /** The four figures under the hero. Every one of them a count, not a claim. */
+/**
+ * The average saving, but only once enough complete looks stand behind it to
+ * make it a statement about the archive rather than arithmetic on one record.
+ *
+ * `archiveTotals().averageSavingPct` stays ungated on purpose: the admin panel
+ * should always see the real figure, including when it is one look and
+ * therefore not publishable. This is the public-facing gate, and the only
+ * thing a reader-facing surface should use.
+ */
+export function publishableSavingPct(outfits: Outfit[], now = new Date()): number | null {
+  const totals = archiveTotals(outfits, now);
+  return totals.buyable >= MIN_LOOKS_FOR_STATS ? totals.averageSavingPct : null;
+}
+
 export function homeStats(outfits: Outfit[], now = new Date()): HomeStat[] {
   const totals = archiveTotals(outfits, now);
+  const saving = publishableSavingPct(outfits, now);
   const stats: HomeStat[] = [
     { value: totals.looks, suffix: "", label: "Looks decoded" },
     { value: totals.pieces, suffix: "", label: "Pieces identified" },
   ];
-  if (totals.averageSavingPct !== null) {
-    stats.push({ value: totals.averageSavingPct, suffix: "%", label: "Average saving" });
+  if (saving !== null) {
+    stats.push({ value: saving, suffix: "%", label: "Average saving" });
   }
   if (totals.buyable > 0) {
     stats.push({ value: totals.buyable, suffix: "", label: "Complete looks you can copy" });
