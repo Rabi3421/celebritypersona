@@ -9,6 +9,13 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import { isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
 import { piecePrice, sideOf, tagFor } from "@/lib/link-display";
+
+/** Both halves of a look, rendered together so neither depends on hydration. */
+const PRICE_MODES: PriceMode[] = ["worn", "swap"];
+
+/** Inline, because `.lines` and `.total` set their own display, which would
+ *  beat the `hidden` attribute's stylesheet rule. */
+const HIDDEN = { display: "none" } as const;
 import type { Outfit } from "@/lib/types";
 import { lastCheckedAt, priceFreshness } from "@/lib/freshness";
 import { isSpecificCredit } from "@/lib/photo-credit";
@@ -375,19 +382,38 @@ export function OutfitDetail({
             </p>
             ) : null}
 
-            <div className={styles.lines}>
+            {/*
+              Both sides are in the markup; only one is displayed.
+
+              This list used to render `mode`, which starts at "worn" — so the
+              swap half of every look existed only after React hydrated. The
+              server HTML carried the original and never the alternative: the
+              swap brand appeared nowhere but the <title>, the swap price
+              nowhere but the CTA, and the Buy links not at all. The one thing
+              this site is for was invisible to anything that does not run
+              JavaScript, which includes most of what reads a page.
+
+              Rendering both panes as siblings and hiding the inactive one
+              keeps the visible page identical — the same element, in the same
+              place, with the same classes — while putting the swap into the
+              HTML. Display is set inline rather than with the `hidden`
+              attribute because `.lines` sets its own `display`, which would
+              win over `[hidden]`.
+            */}
+            {PRICE_MODES.map((pane) => (
+            <div className={styles.lines} key={pane} style={pane === mode ? undefined : HIDDEN}>
               {outfit.items.map((item, index) => (
-                <article id={`outfit-item-${index}`} className={`${styles.line} ${highlighted === index ? styles.highlighted : ""}`} key={item.name}>
+                <article id={pane === mode ? `outfit-item-${index}` : undefined} className={`${styles.line} ${highlighted === index && pane === mode ? styles.highlighted : ""}`} key={item.name}>
                   <div>
                     <h2>{item.name}</h2>
-                    <p>{mode === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</p>
-                    <span className={`${styles.stockTag} ${tagFor(item, mode).archived ? styles.archived : ""}`}>
-                      {tagFor(item, mode).text}
+                    <p>{pane === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</p>
+                    <span className={`${styles.stockTag} ${tagFor(item, pane).archived ? styles.archived : ""}`}>
+                      {tagFor(item, pane).text}
                     </span>
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
                   </div>
                   <div className={styles.linePrice}>
-                    <b>{piecePrice(item, mode)}</b>
+                    <b>{piecePrice(item, pane)}</b>
                     {/*
                       A button is drawn only where there is somewhere to send
                       somebody. This used to render a disabled "Buy" beside the
@@ -397,9 +423,9 @@ export function OutfitDetail({
                       what they are in the tag to the left and put no control
                       here at all.
                     */}
-                    {isBuyable(pieceLink(item, sideOf(mode))) ? (
+                    {isBuyable(pieceLink(item, sideOf(pane))) ? (
                       <a
-                        href={`/go/${item.id}?side=${sideOf(mode)}&from=${encodeURIComponent(`/outfits/${slug}`)}`}
+                        href={`/go/${item.id}?side=${sideOf(pane)}&from=${encodeURIComponent(`/outfits/${slug}`)}`}
                         target="_blank"
                         rel="sponsored nofollow noopener"
                         onClick={() => trackProductClick(index)}
@@ -411,10 +437,17 @@ export function OutfitDetail({
                 </article>
               ))}
             </div>
+            ))}
 
-            <div className={styles.total}>
+            {/* The totals follow their list into the markup, for the same
+                reason. The worn total printed an em dash when no original had
+                been priced — a mark standing in for data, under a label that
+                had already said the prices were unconfirmed. It says one thing
+                or the other now, not both. */}
+            {PRICE_MODES.map((pane) => (
+            <div className={styles.total} key={pane} style={pane === mode ? undefined : HIDDEN}>
               <span>
-                {mode === "worn"
+                {pane === "worn"
                   ? money.allPriced
                     ? "Total as worn"
                     : money.anyPriced
@@ -424,12 +457,13 @@ export function OutfitDetail({
                     ? "Total for the swap"
                     : `Total for ${money.swapped} of ${money.pieces} swapped`}
               </span>
-              <b aria-live="polite">
-                {mode === "worn"
-                  ? money.anyPriced ? inr.format(money.wornTotal) : "—"
-                  : inr.format(money.swapTotal)}
-              </b>
+              {pane === "worn" && !money.anyPriced ? null : (
+                <b aria-live="polite">
+                  {pane === "worn" ? inr.format(money.wornTotal) : inr.format(money.swapTotal)}
+                </b>
+              )}
             </div>
+            ))}
             <div className={styles.purchaseBox}>
               <p className={`${styles.freshness} ${styles[freshness.tone]}`}>
                 ◷ <strong>{freshness.label}</strong>
