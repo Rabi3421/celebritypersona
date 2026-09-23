@@ -13,6 +13,7 @@ import {
 } from "@/lib/types";
 import { outfitSlug } from "@/lib/slugs";
 import { MIN_LOOKS_FOR_STATS } from "@/lib/thresholds";
+import { daysSinceDay } from "@/lib/dates";
 
 /**
  * Every number the site quotes about itself, computed from the outfits an
@@ -29,8 +30,6 @@ import { MIN_LOOKS_FOR_STATS } from "@/lib/thresholds";
 
 /* --------------------------------------------------------------- helpers */
 
-const DAY = 86_400_000;
-
 /** A look you could buy end to end. Anything still missing a swap cannot be
  *  counted towards a budget, a cheapest price or a saving. */
 export const completeLooks = (outfits: Outfit[]) => outfits.filter(isFullySwapped);
@@ -44,14 +43,14 @@ const mean = (values: number[]) =>
 const min = (values: number[]) => (values.length ? Math.min(...values) : null);
 const max = (values: number[]) => (values.length ? Math.max(...values) : null);
 
-/** Whole days between a YYYY-MM-DD day and now, counted in UTC so a timezone
- *  can never turn today's look into tomorrow's. */
-export function daysSince(date: string, now = new Date()) {
-  const then = Date.parse(`${date}T00:00:00Z`);
-  if (Number.isNaN(then)) return Number.POSITIVE_INFINITY;
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return Math.round((today - then) / DAY);
-}
+/**
+ * Whole days between a YYYY-MM-DD day and today.
+ *
+ * "Today" is the calendar day in India, not in UTC — the readers and the
+ * festivals are there, and the two disagree for five and a half hours every
+ * evening. See lib/dates.ts.
+ */
+export const daysSince = daysSinceDay;
 
 /** Days from now until a YYYY-MM-DD day. Negative once it has passed. */
 export const daysUntil = (date: string, now = new Date()) => -daysSince(date, now);

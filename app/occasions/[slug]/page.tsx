@@ -98,20 +98,21 @@ export default async function OccasionPage({ params }: Props) {
 
   const archive = outfitsForOccasion(outfits, occasion.name);
   /**
-   * The rail used to show only occasions in the same group, which left the
-   * single-member groups pointing nowhere. It now fills up with other stocked
-   * occasions so no page is a dead end.
+   * The rail is headed "Other <group> occasions", so it has to contain them.
+   *
+   * It used to pad itself with occasions from any group once the page's own
+   * group ran out, on the reasoning that no page should be a dead end. That
+   * put Casual, Promo tour and Airport under the heading "Other festival
+   * occasions" on /occasions/diwali — three things that are not festivals,
+   * presented as festivals. An empty rail is a smaller problem than a
+   * mislabelled one, and the page already links to /occasions in its
+   * breadcrumb, so it is never actually a dead end.
    */
-  const sameGroup = occasions.filter(
-    (item) => item.id !== occasion.id && item.group === occasion.group && item.stats.looks > 0,
-  );
-  const others = occasions.filter(
-    (item) =>
-      item.id !== occasion.id &&
-      item.group !== occasion.group &&
-      item.stats.looks > 0,
-  );
-  const related = [...sameGroup, ...others].slice(0, 4);
+  const related = occasions
+    .filter(
+      (item) => item.id !== occasion.id && item.group === occasion.group && item.stats.looks > 0,
+    )
+    .slice(0, 4);
 
   const canonical = `${site.url}/occasions/${occasionSlug(occasion)}`;
 
