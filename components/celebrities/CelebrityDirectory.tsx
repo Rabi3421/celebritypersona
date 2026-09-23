@@ -18,10 +18,30 @@ function compactPrice(value: number) {
   return `₹${value}`;
 }
 
-/** A range only reads honestly once both ends are priced. */
+/** A range only reads honestly once both ends are priced. Null when they are
+ *  not, so the caller can leave the stat off rather than print a dash. */
 function priceRange(low: number | null, high: number | null) {
-  if (low === null || high === null) return "—";
+  if (low === null || high === null) return null;
   return low === high ? compactPrice(low) : `${compactPrice(low)}–${compactPrice(high)}`;
+}
+
+/**
+ * One stat on a card, or nothing at all.
+ *
+ * Both of these used to print an em dash with their label still beside it, so
+ * a card for somebody with one unpriced look read "— Avg saving · — Typical
+ * range". A dash is a mark standing in for data; the label under it turns that
+ * into a promise of data we do not have. When there is no figure, the label
+ * goes with it.
+ */
+function CardStat({ value, label }: { value: string | null; label: string }) {
+  if (value === null) return null;
+  return (
+    <span>
+      <b>{value}</b>
+      <small>{label}</small>
+    </span>
+  );
 }
 
 /** Her own photo where the archive has one, so a card is never a stock seed
@@ -258,7 +278,7 @@ function SpotlightCard({ celebrity, rank }: { celebrity: CelebrityView; rank: nu
       <div className={styles.spotlightBody}>
         <Portrait celebrity={celebrity} width={58} height={58} />
         <h2>{celebrity.name}</h2><p>{plural(celebrity.stats.looks, "look")}{celebrity.stats.brands[0] ? ` · ${celebrity.stats.brands[0].name}` : ""}</p>
-        <div><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
+        <div><CardStat value={celebrity.stats.averageSaving === null ? null : `${celebrity.stats.averageSaving}%`} label="Avg saving" /><CardStat value={priceRange(celebrity.stats.low, celebrity.stats.high)} label="Typical range" /></div>
       </div>
     </Link>
   );
@@ -273,7 +293,7 @@ function CelebrityCard({ celebrity, following, onFollow }: { celebrity: Celebrit
           <div><h2>{celebrity.name}</h2><p>{plural(celebrity.stats.looks, "look")} decoded</p><span>{celebrity.trending && <b>Trending</b>}{celebrity.stats.isNew && <em>New archive</em>}</span></div>
         </div>
         <div className={styles.thumbnails}>{[0, 1, 2].map((index) => <Portrait key={index} celebrity={celebrity} index={index} describe width={180} height={240} />)}</div>
-        <div className={styles.cardMeta}><span><b>{celebrity.stats.averageSaving === null ? "—" : `${celebrity.stats.averageSaving}%`}</b><small>Avg saving</small></span><span><b>{priceRange(celebrity.stats.low, celebrity.stats.high)}</b><small>Typical range</small></span></div>
+        <div className={styles.cardMeta}><CardStat value={celebrity.stats.averageSaving === null ? null : `${celebrity.stats.averageSaving}%`} label="Avg saving" /><CardStat value={priceRange(celebrity.stats.low, celebrity.stats.high)} label="Typical range" /></div>
         <p className={styles.brands}>{celebrity.stats.brands.slice(0, 5).map((brand) => brand.name).join(" · ")}</p>
       </Link>
       <div className={styles.cardActions}>
