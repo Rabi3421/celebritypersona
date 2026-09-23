@@ -183,7 +183,7 @@ export function OutfitForm({
             label="Slug"
             hint={
               outfit
-                ? "The look's URL segment, and the folder its photos are uploaded into. Changing it on a live look breaks every link to it."
+                ? "The look's URL segment, and the folder its photos are uploaded into. Changing it moves the page and records a 301 from the old address — so it is safe, but it is not free. Leave it alone unless you mean it."
                 : "celebrity-key-piece-label, no date. Fill the celebrity and the pieces, then press Suggest."
             }
             defaultValue={draft?.slug ?? (outfit ? outfitSlug(outfit) : undefined)}

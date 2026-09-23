@@ -171,10 +171,25 @@ async function renameAcrossOutfits(
   );
 
   for (const outfit of affected) {
-    // A look's slug falls back to celebrity-event-date, so this rename may
-    // move its URL as well as the name printed on it.
-    await rememberSlugMove("outfit", outfitSlug(outfit), outfitSlug({ ...outfit, [field]: to }));
-    await collection.updateOne({ id: outfit.id }, { $set: { [field]: to } });
+    /**
+     * Freeze the URL before touching the name.
+     *
+     * A look with no stored slug falls back to celebrity-event-date, so this
+     * rename used to move its URL as well as the name printed on it — and it
+     * recorded a redirect, which made the move survivable but did not make it
+     * intended. A published look's address is a promise to everyone who linked
+     * to it, and correcting a spelling in somebody's name is not a decision to
+     * move ten pages.
+     *
+     * Writing the slug it already has, in the same update, pins it: the name
+     * changes, the address does not, and there is no redirect to record
+     * because nothing moved. Changing a slug stays an explicit act in the
+     * outfit form, which does record one.
+     */
+    await collection.updateOne(
+      { id: outfit.id },
+      { $set: { [field]: to, slug: outfitSlug(outfit) } },
+    );
   }
   return affected.length;
 }
@@ -187,8 +202,15 @@ export async function updateOutfit(
   const collection = db.collection<Outfit>("outfits");
   const previous = await collection.findOne({ id });
 
-  // Read before the write, from the document as it stands, so the URL that is
-  // about to be replaced is the one that gets remembered.
+  /**
+   * A slug only moves when an editor types a different one.
+   *
+   * The form always posts a slug, prefilled with the address the look already
+   * has, so an ordinary edit re-writes the same value and the URL stays put —
+   * which also freezes a look that had no stored slug of its own at the
+   * address it is already being served on. A genuinely different value is an
+   * explicit act, and that is the one case that records a 301.
+   */
   if (previous) {
     await rememberSlugMove("outfit", outfitSlug(previous), outfitSlug({ ...previous, ...input }));
   }
