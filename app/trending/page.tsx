@@ -4,7 +4,8 @@ import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { TrendingBoard } from "@/components/trending/TrendingBoard";
-import { getTrendingFaqs, getPublicTrendingRows } from "@/lib/db/content";
+// TrendingBoard reads the questions itself; this page no longer marks them up.
+import { getPublicTrendingRows } from "@/lib/db/content";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 
@@ -20,10 +21,7 @@ export const metadata: Metadata = pageMetadata({
 export const revalidate = 3600;
 
 export default async function TrendingPage() {
-  const [trendingSearches, trendingFaqs] = await Promise.all([
-    getPublicTrendingRows(),
-    getTrendingFaqs(),
-  ]);
+  const trendingSearches = await getPublicTrendingRows();
 
   /**
    * The leaderboard as an ItemList, the visible questions as an FAQPage, and
@@ -65,19 +63,16 @@ export default async function TrendingPage() {
           }
         : {}),
     },
-    ...(trendingFaqs.length
-      ? [
-          {
-            "@type": "FAQPage",
-            "@id": `${site.url}/trending#faq`,
-            mainEntity: trendingFaqs.map((faq) => ({
-              "@type": "Question",
-              name: faq.q,
-              acceptedAnswer: { "@type": "Answer", text: faq.a },
-            })),
-          },
-        ]
-      : []),
+    /*
+     * No FAQPage markup.
+     *
+     * Since Google narrowed FAQ rich results in August 2023 they are shown
+     * only for well-known government and health sites, so a fashion archive
+     * earns nothing from the markup — while still having to keep it in step
+     * with the visible copy, which is a way to end up publishing an answer
+     * the page no longer gives. The questions below are for readers, and for
+     * anything reading the page itself.
+     */
     breadcrumbs(`${site.url}/trending`, [
       { name: "Home", path: "/" },
       { name: "Trending", path: "/trending" },

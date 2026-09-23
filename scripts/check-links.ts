@@ -205,11 +205,12 @@ async function main() {
     unverified: 0,
   };
   const changes: string[] = [];
-  const planned: { id: number; items: OutfitItem[]; before: StoredOutfit }[] = [];
+  const planned: { id: number; items: OutfitItem[]; before: StoredOutfit; moved: boolean }[] = [];
 
   for (const outfit of all) {
     const items: OutfitItem[] = [];
     let touched = false;
+    let moved = false;
 
     for (const item of outfit.items) {
       const next: OutfitItem = { ...item };
@@ -235,14 +236,15 @@ async function main() {
         const result = await check(link.url);
         tally[result.status] += 1;
 
-        const moved = link.status !== result.status;
-        if (moved) {
+        const changed = link.status !== result.status;
+        if (changed) {
+          moved = true;
           changes.push(
             `  id ${outfit.id} · ${item.name} (${side}): ${link.status} → ${result.status}  ${result.reason}`,
           );
         }
         console.log(
-          `${result.status.padEnd(10)} ${moved ? "→" : " "} ${item.name} (${side}) · ${result.reason}`,
+          `${result.status.padEnd(10)} ${changed ? "→" : " "} ${item.name} (${side}) · ${result.reason}`,
         );
 
         next[field] = { ...link, status: result.status, checkedAt: today() };
@@ -251,7 +253,12 @@ async function main() {
       items.push(next);
     }
 
-    if (touched) planned.push({ id: outfit.id, items, before: outfit });
+    /**
+     * `touched` means every link was re-read; `moved` means one of them says
+     * something different than it did. Only the second is a change to the
+     * page, and only the second is allowed to move the sitemap's lastmod.
+     */
+    if (touched) planned.push({ id: outfit.id, items, before: outfit, moved });
   }
 
   /**
@@ -264,7 +271,16 @@ async function main() {
   if (apply && planned.length > 0) {
     await backupDocuments("check-links", planned.map((entry) => entry.before));
     for (const entry of planned) {
-      await outfits.updateOne({ id: entry.id }, { $set: { items: entry.items } });
+      await outfits.updateOne(
+        { id: entry.id },
+        {
+          $set: {
+            items: entry.items,
+            // Only a look whose status actually moved is a look that changed.
+            ...(entry.moved ? { contentChangedAt: today() } : {}),
+          },
+        },
+      );
     }
   }
 

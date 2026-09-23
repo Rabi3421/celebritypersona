@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { policyUpdated, site } from "@/lib/site-config";
-import { hasSubstance } from "@/lib/types";
+import { hasSubstance, outfitPhotos } from "@/lib/types";
+import { isSpecificCredit } from "@/lib/photo-credit";
 import type { Outfit } from "@/lib/types";
 
 /**
@@ -101,6 +102,20 @@ function archiveTouched(outfits: Outfit[]): Date | undefined {
  */
 export const revalidate = 3600;
 
+/** The newest of several optional days. */
+function latest(...days: (Date | undefined)[]): Date | undefined {
+  const real = days.filter((value): value is Date => Boolean(value));
+  return real.length ? new Date(Math.max(...real.map((value) => value.getTime()))) : undefined;
+}
+
+/** Image entries for the photographs that carry a credit, and no others. */
+function images(outfit: Outfit) {
+  const credited = outfitPhotos(outfit)
+    .filter((photo) => isSpecificCredit(photo.credit))
+    .map((photo) => photo.url);
+  return credited.length ? { images: credited } : {};
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [outfits, celebrities, occasions] = await Promise.all([
     getPublishedOutfits(),
@@ -134,9 +149,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...outfits.filter(hasSubstance).map((outfit) => ({
       url: `${site.url}/outfits/${outfitSlug(outfit)}`,
-      ...dated(day(outfit.pricesCheckedAt) ?? day(outfit.date)),
+      /**
+       * The last day the page actually changed.
+       *
+       * Deliberately not a link's `checkedAt`: `npm run check:links` runs
+       * against every link and confirms most of them are exactly as they
+       * were, and announcing that as eleven modified pages is how a crawler
+       * learns to stop believing lastmod. `contentChangedAt` is written only
+       * when a status actually moves, so an unchanged look keeps its date.
+       */
+      ...dated(
+        latest(day(outfit.contentChangedAt), day(outfit.pricesCheckedAt), day(outfit.date)),
+      ),
       changeFrequency: "monthly" as const,
       priority: 0.8,
+      /**
+       * Only photographs that name a source.
+       *
+       * Submitting an image to Google Images is asking for it to be indexed
+       * and shown beside this site's name. We do not do that with a
+       * photograph we cannot say who took — the photo-credits page promises
+       * as much, and four of the archive's forty-eight qualify today.
+       */
+      ...images(outfit),
     })),
     ...celebrities
       .filter((celebrity) => celebrity.stats.looks > 0)

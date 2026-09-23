@@ -255,73 +255,28 @@ export default async function OutfitPage({ params }: Props) {
          * figcaption. See `imageObject` in lib/seo.ts.
          */
         ...(photos.length ? { image: photos.map(imageObject) } : {}),
-        // Only pieces with a confirmed price carry an offer: the old shape
-        // emitted price "undefined" for anything still being checked.
+        /**
+         * The pieces are named, and nothing is priced here.
+         *
+         * This used to emit a Product with an Offer for every piece — price,
+         * currency, availability — and an `isSimilarTo` Product with an Offer
+         * for every swap. Google's product markup is for a page where the
+         * reader buys from the publisher. We are not the seller: we do not set
+         * these prices, hold this stock, or control these listings, and
+         * `check:links` has already found retailers whose pages we cannot even
+         * read. Publishing price and availability we do not own claims a
+         * merchant relationship that does not exist and invites a mismatch
+         * against the retailer's own page, which is the thing that actually
+         * costs a site its rich results.
+         *
+         * `mentions` still names each piece and its label, which is true and
+         * is what the page is about. The prices stay where they are checkable:
+         * on the page, next to the date they were checked.
+         */
         mentions: outfit.items.map((item) => ({
-          "@type": "Product",
-          name: item.name,
-          ...(item.wornBrand ? { brand: { "@type": "Brand", name: item.wornBrand } } : {}),
+          "@type": "Thing",
+          name: item.wornBrand ? `${item.name} by ${item.wornBrand}` : item.name,
           ...(item.note ? { description: item.note } : {}),
-          ...(hasWornPrice(item)
-            ? {
-                offers: {
-                  "@type": "Offer",
-                  price: String(item.worn),
-                  priceCurrency: "INR",
-                  // A link is not stock. Saying InStock because a URL exists is
-                  // a guess dressed as a fact, and a reader who clicks through
-                  // to a sold-out page has been told something untrue by us.
-                  //
-                  // Nor is "no link" a discontinued product, which is what this
-                  // used to claim for every piece whose price we had confirmed
-                  // but whose stockist we had not found. Unknown availability
-                  // is said by not saying it.
-                  ...(item.soldOut
-                    ? { availability: "https://schema.org/OutOfStock" }
-                    : item.wornUrl
-                      ? { availability: "https://schema.org/InStock" }
-                      : {}),
-                  ...(item.wornUrl ? { url: item.wornUrl } : {}),
-                },
-              }
-            : {}),
-          /**
-           * The alternative, marked as an alternative.
-           *
-           * This is the one thing the site is for and the only part of a look
-           * that was invisible to a machine: the swap sits behind the "The
-           * swap" tab, so it is not in the served HTML, and it was in no
-           * structured data either. `isSimilarTo` is schema.org's own word for
-           * it, which means the graph can carry the swap's brand, price and
-           * link without any reading of it mistaking the alternative for the
-           * piece she actually wore — those stay on the Product itself.
-           *
-           * Named by garment and by the alternative's brand, which is exactly
-           * what the tab shows. Nothing is asserted that a reader cannot read.
-           */
-          ...(item.swapBrand
-            ? {
-                isSimilarTo: {
-                  "@type": "Product",
-                  name: item.name,
-                  brand: { "@type": "Brand", name: item.swapBrand },
-                  ...(typeof item.swap === "number"
-                    ? {
-                        offers: {
-                          "@type": "Offer",
-                          price: String(item.swap),
-                          priceCurrency: "INR",
-                          ...(item.swapUrl
-                            ? {
-                                url: item.swapUrl,
-                              }
-                            : {}),
-                        },
-                      }
-                    : {}),
-                },
-              }
-            : {}),
         })),
       },
       breadcrumbs(canonical, [

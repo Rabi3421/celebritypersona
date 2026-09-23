@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { HowWeWorkPage, howWeWorkFaqs } from "@/components/editorial/HowWeWorkPage";
+// The visible questions live in, and are rendered by, HowWeWorkPage itself.
+import { HowWeWorkPage } from "@/components/editorial/HowWeWorkPage";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
@@ -21,15 +22,12 @@ const structuredData = jsonLd([
     isPartOf: { "@id": `${site.url}#website` },
     inLanguage: "en-IN",
   },
-  {
-    "@type": "FAQPage",
-    "@id": `${site.url}/how-we-work#faq`,
-    mainEntity: howWeWorkFaqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  },
+  /*
+   * No FAQPage markup — see the note on /trending. Google narrowed FAQ rich
+   * results to well-known government and health sites in August 2023, so this
+   * earned nothing while still having to be kept in step with the visible
+   * questions. The questions themselves are unchanged.
+   */
   breadcrumbs(`${site.url}/how-we-work`, [
     { name: "Home", path: "/" },
     { name: "How we work", path: "/how-we-work" },

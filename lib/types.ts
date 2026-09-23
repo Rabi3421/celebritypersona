@@ -338,6 +338,17 @@ export type Outfit = {
   /** When the prices on this look were last put in front of a person, set on
    *  every save. The page used to claim "2 days ago" no matter what. */
   pricesCheckedAt?: string;
+  /**
+   * The last day something a reader would notice actually changed: a price, a
+   * link's status, a swap appearing or going away.
+   *
+   * Separate from `pricesCheckedAt`, which moves on every save, and from a
+   * link's own `checkedAt`, which moves every time the checker runs. The
+   * sitemap's `lastmod` is a claim that the page changed; telling a crawler
+   * that eleven pages changed because a script confirmed eleven links are
+   * still fine teaches it to stop believing the file.
+   */
+  contentChangedAt?: string;
   items: OutfitItem[];
 };
 
