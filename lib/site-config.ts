@@ -119,6 +119,25 @@ export const photoPolicy = {
   neutral: "Photographs belong to their original owners",
 };
 
+/**
+ * The person whose name is on the work.
+ *
+ * Google asks who wrote a page and whether they are worth believing, and an
+ * author box is the site's answer. So it is not a place to be generous: the
+ * bio is PENDING until a real one is supplied, and the page renders the byline
+ * and the link without it rather than inventing a background. Same rule as the
+ * legal identity — a claim about a person is not ours to write.
+ */
+export const author = {
+  name: "Rabi",
+  /** What the byline says under a decoded look. */
+  role: "Editor",
+  path: "/authors/rabi",
+  bio: todo("a short, true biography — who Rabi is and why they can decode a look"),
+  /** Real profiles only. Becomes `sameAs` on the Person. */
+  sameAs: [] as string[],
+};
+
 export const social = {
   instagram: "https://www.instagram.com/celebritypersona",
   youtube: "https://www.youtube.com/@celebritypersona",

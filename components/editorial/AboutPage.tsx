@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DetailRow } from "./Pending";
-import { contacts, legalEntity, site } from "@/lib/site-config";
+import { author, contacts, legalEntity, site } from "@/lib/site-config";
 import styles from "./editorial.module.css";
 import { getPublishedOutfits } from "@/lib/db/content";
 import { inr } from "@/lib/format";
@@ -219,6 +219,9 @@ export async function AboutPage() {
               particular decode, ask and we will tell you.
             </p>
             <dl className={styles.calloutRows}>
+              <DetailRow label="Edited by">
+                <Link href={author.path}>{author.name}</Link>
+              </DetailRow>
               <DetailRow label="Published by" value={legalEntity.name} />
               <DetailRow label="Based in" value={legalEntity.address} />
               <div>

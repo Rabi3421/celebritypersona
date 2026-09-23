@@ -44,6 +44,7 @@ const EDITORIAL_PAGES = [
   ["/trending", 0.8, "daily"],
   ["/how-we-work", 0.6, "yearly"],
   ["/about", 0.5, "yearly"],
+  ["/authors/rabi", 0.5, "yearly"],
   ["/corrections", 0.5, "yearly"],
   ["/report-a-price", 0.5, "yearly"],
   ["/contact", 0.4, "yearly"],

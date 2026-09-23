@@ -11,7 +11,7 @@ import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from 
 import type { Outfit } from "@/lib/types";
 import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
-import { site } from "@/lib/site-config";
+import { author, site } from "@/lib/site-config";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -227,10 +227,13 @@ export default async function OutfitPage({ params }: Props) {
         inLanguage: "en-IN",
         datePublished: outfit.date,
         dateModified: outfit.pricesCheckedAt ?? outfit.date,
+        // Points at the author page rather than /about, which is about the
+        // site rather than the person Google is asking about.
         author: {
           "@type": "Person",
-          name: "Rabi",
-          url: `${site.url}/about`,
+          "@id": `${site.url}#author`,
+          name: author.name,
+          url: `${site.url}${author.path}`,
         },
         publisher: {
           "@type": "Organization",

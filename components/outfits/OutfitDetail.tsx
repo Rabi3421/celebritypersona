@@ -18,6 +18,7 @@ const PRICE_MODES: PriceMode[] = ["worn", "swap"];
 const HIDDEN = { display: "none" } as const;
 import type { Outfit } from "@/lib/types";
 import { lastCheckedAt, priceFreshness } from "@/lib/freshness";
+import { author as AUTHOR } from "@/lib/site-config";
 import { isSpecificCredit } from "@/lib/photo-credit";
 import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
@@ -605,6 +606,11 @@ export function OutfitDetail({
               unstyled, so the byline looks exactly as it did. */}
           <div><p>Decoded by Rabi</p><span>
             Published <time dateTime={outfit.date}>{shortDate.format(published)}</time>
+            {" · "}
+            {/* Who decoded this. The celebrity and occasion pages already
+                carried a byline; the outfit pages, which are the ones Google
+                reads as articles, did not. */}
+            Decoded by <Link href={AUTHOR.path}><b>{AUTHOR.name}</b></Link>
             {checked && checkedAt ? (
               <> · Prices last checked <time dateTime={checkedAt}>{shortDate.format(checked)}</time></>
             ) : null}
