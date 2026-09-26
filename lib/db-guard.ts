@@ -51,24 +51,12 @@ export function devDatabaseProblem(env: Env = process.env): string | null {
   if (env.ALLOW_PRODUCTION_DB_IN_DEV === "1") return null;
   if (!isProductionDatabase(env.MONGODB_URI, env)) return null;
 
-  const known = Boolean(env.MONGODB_PRODUCTION_HOST?.trim());
   return [
     "",
-    "Refusing to start: development is pointed at the PRODUCTION database.",
+    "Stopped: this would run the site on the LIVE database.",
     "",
-    known
-      ? `  MONGODB_URI's host is ${databaseHost(env.MONGODB_URI)}, which is MONGODB_PRODUCTION_HOST.`
-      : "  MONGODB_URI is a remote database and MONGODB_PRODUCTION_HOST is not set, so it cannot be told apart from production.",
-    "",
-    "  Put the development database's connection string in .env.development.local:",
-    "    MONGODB_URI=mongodb+srv://…your dev cluster…",
-    "  and name the production cluster's host in .env:",
-    "    MONGODB_PRODUCTION_HOST=cluster0.xxxxx.mongodb.net",
-    "",
-    "  Or, for a local throwaway database: npm run mongo:local, then",
-    "    MONGODB_URI=mongodb://127.0.0.1:27018",
-    "",
-    "  To override deliberately: ALLOW_PRODUCTION_DB_IN_DEV=1 npm run dev",
+    "Start it with   npm run dev   instead. That gives you a safe",
+    "private copy of your site's data, and nothing you do touches the live site.",
     "",
   ].join("\n");
 }

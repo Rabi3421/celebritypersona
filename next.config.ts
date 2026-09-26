@@ -5,7 +5,12 @@ import { storedRedirects } from "./lib/stored-redirects";
 // `next dev` must never run against the production database. Next has loaded
 // the .env files by the time this runs, so the check sees what the app would.
 const databaseProblem = devDatabaseProblem();
-if (databaseProblem) throw new Error(databaseProblem);
+if (databaseProblem) {
+  // Printed and stopped rather than thrown, so the message is not buried
+  // under a stack trace.
+  console.error(databaseProblem);
+  process.exit(1);
+}
 
 const firebaseBucket =
   process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "celebritypersona-918fc.firebasestorage.app";

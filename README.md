@@ -66,22 +66,11 @@ No database to hand? `npm run mongo:local` starts a throwaway MongoDB on port
 
 ## Development database
 
-`next dev` refuses to start against the production cluster (`lib/db-guard.ts`).
-Development reads its own connection string from `.env.development.local`, which
-Next loads ahead of `.env`; the scripts keep reading `.env`.
+`npm run dev` starts a private MongoDB on this machine, loads the newest backup
+from `.scratch/` into it (without subscribers or the mail queue), and runs the
+site against it. Nothing done in development reaches the live database. Stop
+it with Ctrl+C; the next `npm run dev` starts fresh from the backup.
 
-```bash
-# .env — production, as before, plus the production cluster's host:
-MONGODB_PRODUCTION_HOST=cluster0.xxxxx.mongodb.net
-
-# .env.development.local — development only:
-MONGODB_URI=mongodb+srv://…the dev cluster…
-```
-
-Fill it from the newest dump in `.scratch/` with `npm run db:seed-dev`. It drops
-and replaces what it restores, refuses a production target, and leaves out
-`subscribers`, `mailJobs` and `mailDeliveries`.
-
-Development shares the production Firebase bucket, so photo deletes are skipped
-under `next dev` (set `ALLOW_STORAGE_DELETES_IN_DEV=1` to allow them). Uploads
-made in development still land in the bucket.
+Running `next dev` directly against the live database is refused
+(`lib/db-guard.ts`). Photo deletes are also skipped in development, because
+development shares the live Firebase bucket.
