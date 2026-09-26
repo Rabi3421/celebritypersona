@@ -406,3 +406,119 @@
   .healthRow{grid-template-columns:auto minmax(0,1fr);row-gap:var(--s3)}
   .healthRow a{grid-column:2}
 }
+
+/* ---------- outfit editor: form + live SEO panel ---------- */
+/* Two columns on a wide screen, with the panel sticking to the top of the
+   scrolling main column; one column below that, panel after the form. */
+.editorLayout{display:grid;grid-template-columns:minmax(0,900px) minmax(300px,360px);
+  gap:var(--s6);align-items:start}
+@media(max-width:1280px){.editorLayout{grid-template-columns:minmax(0,1fr)}}
+.seoPanel{position:sticky;top:var(--s5);display:grid;gap:var(--s5);max-height:calc(100dvh - 2 * var(--s5));
+  overflow-y:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:var(--s5)}
+@media(max-width:1280px){.seoPanel{position:static;max-height:none}}
+.seoPanel h2{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:var(--s3);display:flex;gap:8px;align-items:baseline}
+.seoPanel h2 span{letter-spacing:.04em;text-transform:none;font-size:11px}
+.seoPanel h3{font-size:12.5px;color:var(--muted);margin:var(--s4) 0 var(--s2)}
+
+/* A search result, in Google's own light scheme so it reads as one. */
+.serp{background:#fff;color:#202124;border-radius:var(--r-sm);padding:14px 16px;
+  font-family:arial,sans-serif;line-height:1.4}
+.serp cite{display:block;font-style:normal;font-size:12px;color:#4d5156;margin-bottom:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.serp strong{display:block;font-weight:400;font-size:18px;color:#1a0dab;line-height:1.3;margin-bottom:4px}
+.serp p{font-size:13.5px;color:#4d5156;margin:0}
+.serpMeta{font-size:12px;color:var(--faint);margin-top:var(--s2)}
+
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.checks li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:13.5px;line-height:1.45}
+.checks i{font-style:normal;font-weight:700;text-align:center}
+.checks small{display:block;color:var(--faint);font-size:12px}
+.check_pass i{color:var(--jade)}
+.check_pass{color:var(--muted)}
+.check_fail i,.check_fail{color:var(--rani-soft)}
+.check_warn i{color:var(--amber)}
+.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---------- target keyword ---------- */
+.keywordBox{display:grid;gap:var(--s4);padding-bottom:var(--s2)}
+.keywordBox .notice{margin:0}
+.keywordBox .notice span{display:block;font-size:13.5px;color:var(--text)}
+.keywordLinks{display:flex;flex-wrap:wrap;gap:var(--s4);font-size:13.5px}
+.keywordLinks a{color:var(--rani-soft);text-decoration:underline;text-underline-offset:3px}
+.suggestions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.suggestions>span:first-child{font-family:var(--mono),ui-monospace,monospace;font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-right:4px}
+.suggestion{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden}
+.suggestion button{font:inherit;font-size:13px;color:var(--text);background:none;border:0;
+  padding:4px 10px;cursor:pointer}
+.suggestion button+button{border-left:1px solid var(--line);color:var(--rani-soft);padding:4px 9px}
+.suggestion button:hover{background:rgba(255,255,255,.06)}
+.chipsInput{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:rgba(255,255,255,.03)}
+.chipsInput .chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text)}
+.chipsInput .chip button{background:none;border:0;color:var(--faint);cursor:pointer;font-size:14px;
+  line-height:1;padding:0}
+.field .chipsInput input{flex:1;min-width:180px;border:0;background:none;padding:6px}
+
+/* A text box with a button beside it: Suggest, Unlock, Generate. */
+.inlineField{display:flex;gap:8px;align-items:flex-start}
+.inlineField>input,.inlineField>textarea{flex:1}
+.inlineField>button{flex:none;white-space:nowrap}
+.field input[readonly]{opacity:.7;cursor:not-allowed}
+.linkButton{font:inherit;color:var(--rani-soft);background:none;border:0;padding:0;
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkButton:disabled{color:var(--faint);cursor:default;text-decoration:none}
+
+/* ---------- occasions ---------- */
+.occasionPicker{border:0;padding:0;margin:0;min-width:0}
+.occasionPicker legend{font-family:var(--mono),ui-monospace,monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.occasionGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:var(--s3) 0}
+.occasionGrid>div{display:flex;justify-content:space-between;align-items:center;gap:6px;
+  border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 9px;font-size:13.5px}
+.occasionGrid label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.occasionGrid input{width:auto}
+.occasionOn{border-color:rgba(224,0,108,.45)!important;background:rgba(224,0,108,.07)}
+.primaryPick{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.06em;color:var(--muted)}
+.field .occasionAdd{max-width:360px}
+
+/* ---------- colours, inside a piece row ---------- */
+.colours{position:relative}
+.colours summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px;min-height:42px;
+  align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:13.5px}
+.colours summary::-webkit-details-marker{display:none}
+.colours summary em{color:var(--faint);font-style:normal}
+.colours summary span,.colours label{display:inline-flex;align-items:center;gap:5px}
+.colours i{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.25);flex:none}
+.colours>div{position:absolute;z-index:5;top:calc(100% + 4px);left:0;width:min(420px,80vw);
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;padding:10px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);
+  box-shadow:0 12px 32px rgba(0,0,0,.45)}
+.colours label{font-size:13px;cursor:pointer}
+.colours label input{width:auto}
+
+/* ---------- photos ---------- */
+.shot[draggable="true"]{cursor:grab}
+.shotDragging{opacity:.45}
+.noAlt{position:absolute;right:6px;top:6px;font-family:var(--mono),ui-monospace,monospace;font-style:normal;
+  font-size:10px;letter-spacing:.06em;line-height:1;color:#fff;background:var(--rani);border-radius:var(--r-sm);
+  padding:4px 6px}
+.shotBar button:disabled{opacity:.35;cursor:default}
+.shotMeta input[aria-invalid="true"]{border-color:var(--rani)}
+
+/* ---------- preview banner (outside the shell, so its own colours) ---------- */
+.previewBanner{position:sticky;top:0;z-index:50;margin:0;padding:10px 16px;text-align:center;
+  font:600 13px/1.4 system-ui,sans-serif;background:#1c1f26;color:#f4f2ee;border-bottom:2px solid #e0006c}
+.previewBanner a{color:#ff89bb;text-decoration:underline}
+
+/* The panel is a grid, and a grid item will not shrink below its content: the
+   preview's unwrapped URL line pushed the whole panel wider than its column. */
+.seoPanel>section{min-width:0}
+/* Labels inside a picker are choices, not field captions: undo `.field label`. */
+.occasionGrid label,.colours label,.colours summary{font-family:inherit;font-size:13.5px;
+  letter-spacing:0;text-transform:none;color:var(--text);margin:0}
+.occasionGrid .primaryPick{font-family:var(--mono),ui-monospace,monospace;font-size:10px;
+  letter-spacing:.06em;color:var(--muted)}

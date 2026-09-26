@@ -5,10 +5,10 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { garmentOf, sameName } from "@/lib/archive";
+import { sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
-import { hasSubstance, hasWornBrand, leadPiece, outfitPhotos, pricing } from "@/lib/types";
-import type { Outfit } from "@/lib/types";
+import { hasSubstance, outfitPhotos } from "@/lib/types";
+import { describe, headline } from "@/lib/outfit-seo";
 import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
 import { author, site } from "@/lib/site-config";
@@ -35,111 +35,6 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   const outfits = await getPublishedOutfits();
   return outfits.map((outfit) => ({ slug: outfitSlug(outfit) }));
-}
-
-const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
-
-/**
- * What the search result actually says. The editor's own first paragraph beats
- * anything generated, so it wins when there is one. Otherwise the line is built
- * from what the look really holds: it used to promise "swaps for ₹0" on every
- * look nobody had found a swap for yet.
- */
-function describe(outfit: Outfit) {
-  const notes = outfit.notes?.[0]?.trim();
-  if (notes) return notes.length > 158 ? `${notes.slice(0, 155).trimEnd()}…` : notes;
-
-  const money = pricing(outfit);
-
-  /**
-   * A look with no pieces has nothing to describe. `isPublished` keeps those
-   * off the site, so this should be unreachable — but it was not: the line
-   * came out as "identified piece by piece — 0 pieces", and it went into the
-   * description, the og:description and the twitter:description of a record
-   * that had had its fabricated pieces removed. A generator that counts
-   * should say nothing rather than count to zero.
-   */
-  if (money.pieces === 0) {
-    return `${outfit.celebrity} at ${outfit.event}, from the CelebrityPersona archive.`;
-  }
-
-  const pieces = `${money.pieces} ${money.pieces === 1 ? "piece" : "pieces"}`;
-  // Only the labels we have actually identified. "by " with nothing after it
-  // is worse than not naming a label at all.
-  const named = [...new Set(outfit.items.filter(hasWornBrand).map((item) => item.wornBrand))];
-  const by = named.length ? ` by ${named.join(", ")}` : "";
-
-  if (money.anySwapped) {
-    return `Every piece ${outfit.celebrity} wore at ${outfit.event} — ${pieces}${by}, with price-checked swaps from ${inr(money.swapTotal)}.`;
-  }
-  if (money.anyPriced) {
-    return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified and priced — ${pieces}${by}, ${inr(money.wornTotal)} as worn.`;
-  }
-  return `Every piece ${outfit.celebrity} wore at ${outfit.event}, identified piece by piece — ${pieces}${by}.`;
-}
-
-/** Google shows about 60 characters, and 65 is where a fitted title starts
- *  being cut. */
-const TITLE_LIMIT = 62;
-
-/**
- * Occasion words worth carrying into the title, because "<name> airport look"
- * and "<name> wedding look" are searched far more than the event's own name.
- * Anything not listed here is left out rather than bent into a phrase.
- */
-const OCCASION_PHRASE: Record<string, string> = {
-  Airport: "Airport Look",
-  "Red carpet": "Red Carpet Look",
-  Sangeet: "Sangeet Look",
-  Mehendi: "Mehendi Look",
-  Reception: "Reception Look",
-  Haldi: "Haldi Look",
-  Engagement: "Engagement Look",
-  Diwali: "Diwali Look",
-  Navratri: "Navratri Look",
-  Holi: "Holi Look",
-  Eid: "Eid Look",
-  "Karwa Chauth": "Karwa Chauth Look",
-  "Promo tour": "Promo Look",
-};
-
-/**
- * What the search result's blue link says. The editor's own title wins;
- * otherwise the widest form that fits, preferring the shapes people actually
- * type: her name, the occasion, the garment, the label.
- */
-function headline(outfit: Outfit) {
-  const own = outfit.seoTitle?.trim();
-  if (own) return own;
-
-  const piece = leadPiece(outfit);
-  const fallback = `${outfit.celebrity} at ${outfit.event}`;
-  if (!piece) return fallback;
-
-  const garment = garmentOf(piece.name);
-  const occasion = OCCASION_PHRASE[outfit.occasion];
-  const label = piece.wornBrand;
-  /**
-   * The house formula is "<Celebrity> at <Event>: <Piece> by <Label>", and it
-   * leads the list below. The rest are the same sentence shortened, in the
-   * order that keeps the most useful words, because Google truncates at around
-   * sixty characters and a cut title is worse than a narrower one.
-   *
-   * An editor's own seoTitle still wins over all of it, so nothing here
-   * rewrites a title somebody has already chosen.
-   */
-  const candidates = [
-    label && `${outfit.celebrity} at ${outfit.event}: ${piece.name} by ${label}`,
-    label && `${outfit.celebrity} at ${outfit.event}: ${garment} by ${label}`,
-    label && occasion && `${outfit.celebrity} ${occasion}: ${piece.name} by ${label}`,
-    label && occasion && `${outfit.celebrity} ${occasion}: ${garment} by ${label}`,
-    label && `${outfit.celebrity}'s ${piece.name} — ${label}`,
-    label && `${outfit.celebrity}'s ${garment} — ${label}`,
-    occasion && `${outfit.celebrity} ${occasion}: ${garment}`,
-    `${outfit.celebrity}'s ${piece.name}`,
-    `${outfit.celebrity}'s ${garment}`,
-  ].filter((value): value is string => Boolean(value));
-  return candidates.find((candidate) => candidate.length <= TITLE_LIMIT) ?? fallback;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -11,6 +11,11 @@ export type RowField = {
   /** Renders a <select> instead of an input. For the fields that are an enum
    *  — a link's network and status — where a typo is a silent wrong value. */
   options?: { value: string; label: string }[];
+  /**
+   * Draws the control itself, for a value no plain input fits — a multi-pick
+   * posted as one string. It must post its value under `name`.
+   */
+  render?: (props: { id: string; name: string; value: string }) => ReactNode;
 };
 
 /**
@@ -85,7 +90,27 @@ export function RepeatableRows({
             ) : (
             <div className={styles.field} key={field.key}>
               <label htmlFor={`${name}.${index}.${field.key}`}>{field.label}</label>
-              {field.type === "checkbox" ? (
+              {field.render ? (
+                field.render({
+                  id: `${name}.${index}.${field.key}`,
+                  name: `${name}.${index}.${field.key}`,
+                  value: typeof row.values[field.key] === "string" ? (row.values[field.key] as string) : "",
+                })
+              ) : field.type === "radio" ? (
+                // One choice across all the rows, such as the lead piece: the
+                // group is named by the field alone, and the value is the row's
+                // index, which is the index its other fields post under.
+                <label className={styles.rowCheck} htmlFor={`${name}.${index}.${field.key}`}>
+                  <input
+                    id={`${name}.${index}.${field.key}`}
+                    name={field.key}
+                    type="radio"
+                    value={String(index)}
+                    defaultChecked={Boolean(row.values[field.key])}
+                  />
+                  <span>{field.placeholder ?? "This one"}</span>
+                </label>
+              ) : field.type === "checkbox" ? (
                 // A tick posts "on" and an untick posts nothing at all, which
                 // is why the parsing side reads presence rather than value.
                 <label className={styles.rowCheck} htmlFor={`${name}.${index}.${field.key}`}>

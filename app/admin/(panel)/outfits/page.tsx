@@ -10,7 +10,7 @@ import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } fro
 import { uncreditedPhotos } from "@/lib/photo-credit";
 import { removeOutfit } from "./actions";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
-import { outfitPhotos, pricing, type Outfit } from "@/lib/types";
+import { isPublished, outfitPhotos, pricing, type Outfit } from "@/lib/types";
 import { needsPriceReview, priceFreshness } from "@/lib/freshness";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -217,6 +217,11 @@ export default async function AdminOutfits({
                         ) : null}
                         {photos === 0 ? (
                           <> <span className={styles.chip}>no photo</span></>
+                        ) : null}
+                        {outfit.status === "draft" ? (
+                          <> <span className={styles.chip}>draft</span></>
+                        ) : !isPublished(outfit) ? (
+                          <> <span className={styles.chip}>not live</span></>
                         ) : null}
                       </td>
                       <td className={styles.muted}>{outfit.event}</td>

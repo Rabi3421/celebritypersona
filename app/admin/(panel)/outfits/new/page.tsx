@@ -1,5 +1,6 @@
 import { OutfitForm } from "@/components/admin/OutfitForm";
 import { getAllOutfits, getOccasionViews } from "@/lib/db/content";
+import { keywordOwners } from "@/lib/keyword-owners";
 import { outfitSlug } from "@/lib/slugs";
 
 export default async function NewOutfitPage() {
@@ -12,6 +13,7 @@ export default async function NewOutfitPage() {
       // Every slug already in use, so a suggestion can never propose one that
       // would collide with a live URL.
       takenSlugs={outfits.map(outfitSlug)}
+      owners={keywordOwners(outfits)}
     />
   );
 }

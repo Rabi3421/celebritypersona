@@ -6,18 +6,25 @@ import {
   ErrorSummary,
   FormError,
   SaveButton,
-  ComboField,
   TextAreaField,
   TextField,
 } from "@/components/admin/form/Fields";
 import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
 import { OutfitImageEditor } from "@/components/admin/OutfitImageEditor";
 import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(panel)/outfits/actions";
-import { LINK_STATUSES, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
+import { LINK_STATUSES, leadPiece, outfitOccasions, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
 import { networkOptions } from "@/lib/affiliate/networks";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
-import { outfitSlug, suggestOutfitSlug } from "@/lib/slugs";
-import { PIECE_CATEGORIES, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
+import { outfitSlug } from "@/lib/slugs";
+import { PIECE_CATEGORIES } from "@/lib/taxonomy";
+import type { KeywordOwner } from "@/lib/seo-checks";
+import { OutfitSeoProvider } from "@/components/admin/seo/OutfitSeoContext";
+import { KeywordSection } from "@/components/admin/seo/KeywordSection";
+import { SlugField } from "@/components/admin/seo/SlugField";
+import { SeoTextField } from "@/components/admin/seo/SeoTextField";
+import { SeoPanel } from "@/components/admin/seo/SeoPanel";
+import { OccasionPicker } from "@/components/admin/seo/OccasionPicker";
+import { ColoursInput } from "@/components/admin/seo/ColoursInput";
 import styles from "@/app/admin/panel.module.css";
 import { ConfirmButton } from "./ConfirmButton";
 
@@ -40,7 +47,7 @@ const statusOptions = LINK_STATUSES.map((value) => ({
  * post. `pieceLink` is used rather than the raw field, so a look that predates
  * the migration shows its legacy URL in the new boxes instead of an empty form.
  */
-function flattenItem(item: OutfitItem) {
+function flattenItem(item: OutfitItem, leadId: string | undefined) {
   const worn = pieceLink(item, "original");
   const swap = pieceLink(item, "swap");
   return {
@@ -55,7 +62,8 @@ function flattenItem(item: OutfitItem) {
     swapAffiliateUrl: swap?.affiliateUrl,
     swapNetwork: swap?.network,
     swapStatus: swap?.status,
-    colours: item.colours?.join(", "),
+    colours: item.colours?.join(","),
+    leadPiece: leadId && item.id === leadId ? "on" : "",
   };
 }
 
@@ -64,80 +72,44 @@ const categoryOptions = [
   ...PIECE_CATEGORIES.map((value) => ({ value, label: value })),
 ];
 
-/**
- * Fills the slug from what is already typed into the form.
- *
- * Reads the live inputs rather than taking props, because the celebrity and
- * the pieces are edited independently and the suggestion is only useful once
- * they are filled in. Same approach the photo editor already uses to mirror
- * the piece names.
- */
-function SuggestSlug({ taken }: { taken: string[] }) {
-  const fill = () => {
-    const form = document.getElementById("outfit-form");
-    if (!(form instanceof HTMLFormElement)) return;
-    const value = (name: string) =>
-      (form.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ?? "").trim();
-
-    const items = Array.from(
-      form.querySelectorAll<HTMLInputElement>('input[name^="items."][name$=".name"]'),
-    ).map((input, index) => ({
-      name: input.value.trim(),
-      wornBrand: value(`items.${index}.wornBrand`),
-      swapBrand: value(`items.${index}.swapBrand`),
-      worn: Number(value(`items.${index}.worn`)) || undefined,
-    }));
-
-    const slug = suggestOutfitSlug(
-      { celebrity: value("celebrity"), event: value("event"), date: value("date"), items },
-      taken,
-    );
-    const field = form.querySelector<HTMLInputElement>('[name="slug"]');
-    if (field && slug) {
-      field.value = slug;
-      field.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  };
-
-  return (
-    <div className={styles.field}>
-      <button type="button" className={styles.ghost} onClick={fill}>
-        Suggest slug from the form
-      </button>
-    </div>
-  );
-}
+const FORM_ID = "outfit-form";
 
 export function OutfitForm({
   outfit,
   occasions,
   takenSlugs = [],
+  owners,
 }: {
   outfit?: Outfit;
   occasions: string[];
-  /** Slugs already in use, so a suggestion never collides with a live URL. */
+  /** Slugs used by other looks, so a suggestion never collides with a live URL. */
   takenSlugs?: string[];
+  /** Every look's primary keyword, for the cannibalisation check. */
+  owners: KeywordOwner[];
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
   const errors = state.errors;
   const draft = state.values;
+  const status = draft?.status || (outfit ? (outfit.status ?? "published") : "draft");
+  // The lead the page already uses is the one pre-selected, so an older look
+  // opens with the radio on the piece its title is built from.
+  const leadId = outfit ? (outfit.leadPieceId ?? leadPiece(outfit)?.id) : undefined;
+  const pieces = draft?.items ?? outfit?.items.map((item) => flattenItem(item, leadId)) ?? [{ leadPiece: "on" }];
 
   return (
     <>
       <FormError message={errors?.form} />
       <ErrorSummary errors={errors} />
 
-      {/* Saved, with something still outstanding. An update is never blocked
-          on a missing photo credit — that would make one unrelated gap freeze
-          the whole record — so the save stands and the gap is stated here,
-          beside the photographs it is about. */}
+      {/* Saved, with something still outstanding. A look that is already live
+          is never blocked on the checklist — that would freeze every unrelated
+          edit — so the save stands and what is missing is listed here. */}
       {state.saved && state.warnings?.length ? (
         <div className={styles.notice} role="status">
-          <strong>Saved — but this look cannot be published as it stands</strong>
+          <strong>Saved — this live look still fails {state.warnings.length} critical {state.warnings.length === 1 ? "check" : "checks"}</strong>
           <p>
-            Every photograph here was taken by somebody else, and these name no
-            source. A new look cannot be created with them; this one is already
-            live, so the change was kept.
+            It stays published; nothing here blocks an edit to a look that is
+            already live. A new look could not go live like this.
           </p>
           <ul className={styles.todo}>
             {state.warnings.map((warning) => (
@@ -147,214 +119,250 @@ export function OutfitForm({
         </div>
       ) : null}
 
-      <form action={action} id="outfit-form">
-        {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
+      <OutfitSeoProvider
+        formId={FORM_ID}
+        owners={owners}
+        outfitId={outfit?.id}
+        takenSlugs={takenSlugs}
+      >
+        <div className={styles.editorLayout}>
+          <form action={action} id={FORM_ID}>
+            {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
 
-        <div className={styles.formGrid}>
-          <TextField
-            name="celebrity"
-            label="Celebrity"
-            defaultValue={draft?.celebrity ?? outfit?.celebrity}
-            placeholder="Full name, as she is credited"
-            errors={errors}
-            required
-          />
-          <TextField
-            name="event"
-            label="Event"
-            defaultValue={draft?.event ?? outfit?.event}
-            placeholder="Mumbai Airport"
-            errors={errors}
-            required
-          />
-          <ComboField
-            name="occasion"
-            label="Occasion"
-            options={occasions}
-            defaultValue={draft?.occasion ?? outfit?.occasion}
-            placeholder="Airport"
-            hint="Pick one, or type a new one — it appears under Occasions straight away, ready for its guide copy."
-            errors={errors}
-            required
-          />
-          <TextField
-            name="occasions"
-            label="Also suits (optional)"
-            hint="Other occasions this look works for, comma-separated — e.g. Cocktail party, Date night. The one above stays the primary."
-            defaultValue={
-              draft?.occasions ??
-              outfit?.occasions?.filter((name) => name !== outfit.occasion).join(", ")
-            }
-            placeholder="Cocktail party, Date night"
-            errors={errors}
-          />
-          <TextField
-            name="date"
-            label="Date"
-            type="date"
-            defaultValue={draft?.date ?? outfit?.date}
-            errors={errors}
-            required
-          />
-          <TextField
-            name="slug"
-            label="Slug"
-            hint={
-              outfit
-                ? "The look's URL segment, and the folder its photos are uploaded into. Changing it moves the page and records a 301 from the old address — so it is safe, but it is not free. Leave it alone unless you mean it."
-                : "celebrity-key-piece-label, no date. Fill the celebrity and the pieces, then press Suggest."
-            }
-            defaultValue={draft?.slug ?? (outfit ? outfitSlug(outfit) : undefined)}
-            placeholder="sonal-chauhan-diva-pink-cape-set-aum-ashima-asit"
-            errors={errors}
-            required
-          />
-          {/* Only when creating. An existing slug is a promise to everyone who
-              linked to it, so nothing offers to rewrite one. */}
-          {outfit ? null : <SuggestSlug taken={takenSlugs} />}
-          {/* The badge is no longer a checkbox. It is counted from the day a
-              look is added, so nobody has to remember to come back and untick
-              it three days later. */}
-          <div className={styles.field}>
-            <label>New badge</label>
-            <small>
-              {outfit
-                ? `Added ${publishedDay(outfit)} — ${
-                    isNewLook(outfit)
-                      ? "showing as New now"
-                      : "no longer showing as New"
-                  }.`
-                : `Shows as New for its first ${NEW_LOOK_DAYS} days, then drops off on its own.`}
-            </small>
-          </div>
+            <div className={styles.formGrid}>
+              <KeywordSection
+                primary={draft?.primaryKeyword ?? outfit?.primaryKeyword}
+                secondary={
+                  draft
+                    ? draft.secondaryKeywords.split(",").map((value) => value.trim()).filter(Boolean)
+                    : (outfit?.secondaryKeywords ?? [])
+                }
+                error={errors?.primaryKeyword}
+              />
 
-          {/* One credit for the whole set. The per-photo box inside the editor
-              is an override, for the rare look whose photographs come from
-              two places. */}
-          <TextField
-            name="photoCredit"
-            label="Photo credit"
-            hint="Where these photographs came from — an account, a photographer, an agency or a label. Covers every photo on the look; a photo from elsewhere can override it below."
-            defaultValue={draft?.photoCredit ?? outfit?.photoCredit}
-            placeholder="Instagram / @kayadulohar"
-            errors={errors}
-            wide
-            required
-          />
+              <h3 className={styles.subhead}>The look</h3>
 
-          <OutfitImageEditor
-            key={`photo-${state.attempt ?? 0}`}
-            initialImages={draft?.images ?? (outfit ? outfitPhotos(outfit) : [])}
-            initialItems={outfit?.items ?? []}
-          />
+              <div className={styles.field}>
+                <label htmlFor="status">Status</label>
+                <select id="status" name="status" defaultValue={status}>
+                  <option value="draft">Draft — not on the site</option>
+                  <option value="published">Published</option>
+                </select>
+                <small>
+                  Save as a draft whenever you like. Publishing needs every
+                  critical check in the panel to pass; a look that is already
+                  live keeps saving either way.
+                </small>
+                {errors?.status ? <p className={styles.bad}>{errors.status}</p> : null}
+              </div>
+              {/* The badge is counted from the day a look is first published,
+                  so nobody has to remember to untick it three days later. */}
+              <div className={styles.field}>
+                <label>New badge</label>
+                <small>
+                  {outfit?.publishedAt || (outfit && outfit.status !== "draft")
+                    ? `Added ${publishedDay(outfit)} — ${
+                        isNewLook(outfit) ? "showing as New now" : "no longer showing as New"
+                      }.`
+                    : `Shows as New for its first ${NEW_LOOK_DAYS} days after it is published, then drops off on its own.`}
+                </small>
+              </div>
 
-          <TextAreaField
-            name="notes"
-            label="About this look"
-            rows={6}
-            hint="One paragraph per line. Your own words on the styling, the fabric, the occasion — this is what a search engine cannot get from the brand's product page, and without it the look stays out of Google."
-            defaultValue={draft?.notes ?? outfit?.notes?.join("\n")}
-            placeholder={"Amyra wore the Savanna Gypsy co-ord for Label Monik's campaign — a hand-blocked cotton set cut as a bralette and a draped sarong skirt.\nThe print is Kalamkari-inspired, which is why it reads as festive even though the fabric is everyday cotton."}
-            errors={errors}
-          />
+              <TextField
+                name="celebrity"
+                label="Celebrity"
+                defaultValue={draft?.celebrity ?? outfit?.celebrity}
+                placeholder="Full name, as she is credited"
+                errors={errors}
+                required
+              />
+              <TextField
+                name="event"
+                label="Event"
+                defaultValue={draft?.event ?? outfit?.event}
+                placeholder="Back to Black photoshoot"
+                hint="Be specific: “Back to Black photoshoot”, “Mumbai airport”, “Thug Life trailer launch”. It appears in the breadcrumb, and “Instagram Photoshoot” describes half the archive."
+                errors={errors}
+                required
+              />
+              <TextField
+                name="date"
+                label="Date"
+                type="date"
+                defaultValue={draft?.date ?? outfit?.date}
+                errors={errors}
+                required
+              />
 
-          <h3 className={styles.subhead}>Search appearance</h3>
+              <OccasionPicker
+                key={`occasions-${state.attempt ?? 0}`}
+                options={occasions}
+                primary={draft?.occasion ?? outfit?.occasion}
+                selected={
+                  draft
+                    ? draft.occasions.split(",").map((value) => value.trim()).filter(Boolean)
+                    : outfit
+                      ? outfitOccasions(outfit)
+                      : []
+                }
+                error={errors?.occasion}
+              />
 
-          <TextField
-            name="seoTitle"
-            label="Search title (optional)"
-            hint="Up to 60 characters — what Google shows as the blue link. Leave it empty and the page builds one from the lead piece and its label, e.g. “Ritika Nayak's Pink Floral Draped Jumpsuit — Ewoke Studio”."
-            defaultValue={draft?.seoTitle ?? outfit?.seoTitle}
-            placeholder="Ritika Nayak's Pink Floral Draped Jumpsuit — Ewoke Studio"
-            errors={errors}
-          />
-          <TextAreaField
-            name="seoDescription"
-            label="Search description (optional)"
-            rows={3}
-            hint="Up to 160 characters — the grey text under the link. Empty falls back to your first paragraph, or to a line built from the pieces and prices."
-            defaultValue={draft?.seoDescription ?? outfit?.seoDescription}
-            placeholder="Every piece Ritika Nayak wore, identified and priced — the Ewoke Studio jumpsuit at ₹9,891, with where to buy it."
-            errors={errors}
-          />
+              <SlugField
+                key={`slug-${state.attempt ?? 0}`}
+                defaultValue={draft?.slug ?? (outfit ? outfitSlug(outfit) : undefined)}
+                lockedSince={outfit?.slugLockedAt}
+                error={errors?.slug}
+              />
 
-          <RepeatableRows
-            key={`items-${state.attempt ?? 0}`}
-            name="items"
-            title="Pieces"
-            hint={`Only the piece name is required — totals are calculated from what you fill in. Colours are comma-separated, from: ${PIECE_COLOUR_NAMES.join(", ")}.`}
-            columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
-            error={errors?.items}
-            initial={draft?.items ?? outfit?.items.map(flattenItem) ?? []}
-            addLabel="Add a piece"
-            fields={[
-              // Posted back unchanged, so a save keeps the id every outbound
-              // click on this piece is recorded against. Empty on a new row;
-              // the schema assigns one.
-              { key: "id", label: "Piece id", type: "hidden" },
-              { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
-              { key: "category", label: "Category", options: categoryOptions },
-              {
-                key: "colours",
-                label: "Colours",
-                placeholder: "black, gold",
-              },
-              {
-                key: "note",
-                label: "Note (optional)",
-                placeholder: "Chikankari on cotton mul, elbow sleeves",
-              },
-              { key: "wornBrand", label: "Worn brand (optional)", placeholder: "The label she wore" },
-              { key: "worn", label: "Worn ₹ (optional)", type: "number" },
-              {
-                key: "wornUrl",
-                label: "Worn link (optional)",
-                type: "url",
-                placeholder: "https://…",
-              },
-              {
-                key: "soldOut",
-                label: "Stock",
-                type: "checkbox",
-                placeholder: "Sold out",
-              },
-              { key: "wornRetailer", label: "Worn retailer", placeholder: "Named from the link" },
-              {
-                key: "wornAffiliateUrl",
-                label: "Worn affiliate link",
-                type: "url",
-                placeholder: "Paste once approved",
-              },
-              { key: "wornNetwork", label: "Worn network", options: networkOptions },
-              { key: "wornStatus", label: "Worn link status", options: statusOptions },
-              { key: "swapBrand", label: "Swap brand (optional)", placeholder: "The retailer you found" },
-              { key: "swap", label: "Swap ₹ (optional)", type: "number" },
-              {
-                key: "swapUrl",
-                label: "Swap link (optional)",
-                type: "url",
-                placeholder: "https://…",
-              },
-              { key: "swapRetailer", label: "Swap retailer", placeholder: "Named from the link" },
-              {
-                key: "swapAffiliateUrl",
-                label: "Swap affiliate link",
-                type: "url",
-                placeholder: "Paste once approved",
-              },
-              { key: "swapNetwork", label: "Swap network", options: networkOptions },
-              { key: "swapStatus", label: "Swap link status", options: statusOptions },
-            ]}
-          />
+              {/* One credit for the whole set. The per-photo box inside the editor
+                  is an override, for the rare look whose photographs come from
+                  two places. */}
+              <TextField
+                name="photoCredit"
+                label="Photo credit"
+                hint="Where these photographs came from — an account, a photographer, an agency or a label. Covers every photo on the look; a photo from elsewhere can override it below."
+                defaultValue={draft?.photoCredit ?? outfit?.photoCredit}
+                placeholder="Instagram / @kayadulohar"
+                errors={errors}
+                wide
+                required
+              />
+
+              <OutfitImageEditor
+                key={`photo-${state.attempt ?? 0}`}
+                initialImages={draft?.images ?? (outfit ? outfitPhotos(outfit) : [])}
+                initialItems={outfit?.items ?? []}
+              />
+
+              <TextAreaField
+                name="notes"
+                label="About this look"
+                rows={8}
+                hint="One paragraph per line, 150 words or more, with the primary keyword in the first paragraph. Your own words on the styling, the fabric, the occasions it suits — this is what a search engine cannot get from the brand's product page. Prices in ₹."
+                defaultValue={draft?.notes ?? outfit?.notes?.join("\n")}
+                placeholder={"Rukmini Vasanth's black dress for the Back to Black shoot is Club L London's bardot buckle midi — an off-shoulder corset cut with sheer mesh sleeves.\nIt works well past a photoshoot: a cocktail party, a date night, New Year's Eve."}
+                errors={errors}
+              />
+
+              <h3 className={styles.subhead}>Search appearance</h3>
+
+              <SeoTextField
+                key={`seoTitle-${state.attempt ?? 0}`}
+                name="seoTitle"
+                defaultValue={draft?.seoTitle ?? outfit?.seoTitle}
+                hint="The blue link, and the page's H1. Generate builds “{Celebrity}'s {Colour} {Garment} by {Brand}” from the lead piece, keeping every word of the primary keyword. Empty falls back to a title built from the lead piece — the panel shows which."
+                error={errors?.seoTitle}
+              />
+              <SeoTextField
+                key={`seoDescription-${state.attempt ?? 0}`}
+                name="seoDescription"
+                defaultValue={draft?.seoDescription ?? outfit?.seoDescription}
+                hint="The grey text under the link. Generate opens with the primary keyword and closes on the swap price in ₹. Empty falls back to your first paragraph, or a line built from the pieces."
+                error={errors?.seoDescription}
+              />
+
+              <RepeatableRows
+                key={`items-${state.attempt ?? 0}`}
+                name="items"
+                title="Pieces"
+                hint="Only the piece name is required to save. Pick the lead piece — the one the look is about — and give every piece a category before publishing."
+                columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
+                error={errors?.items}
+                initial={pieces}
+                addLabel="Add a piece"
+                fields={[
+                  // Posted back unchanged, so a save keeps the id every outbound
+                  // click on this piece is recorded against. Empty on a new row;
+                  // the schema assigns one.
+                  { key: "id", label: "Piece id", type: "hidden" },
+                  { key: "leadPiece", label: "Lead piece", type: "radio", placeholder: "The look is about this" },
+                  { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
+                  { key: "category", label: "Category", options: categoryOptions },
+                  {
+                    key: "colours",
+                    label: "Colours",
+                    render: ({ id, name, value }) => <ColoursInput id={id} name={name} defaultValue={value} />,
+                  },
+                  {
+                    key: "note",
+                    label: "Note (optional)",
+                    placeholder: "Chikankari on cotton mul, elbow sleeves",
+                  },
+                  { key: "wornBrand", label: "Worn brand (optional)", placeholder: "The label she wore" },
+                  { key: "worn", label: "Worn ₹ (optional)", type: "number" },
+                  {
+                    key: "wornUrl",
+                    label: "Worn link (optional)",
+                    type: "url",
+                    placeholder: "https://…",
+                  },
+                  {
+                    key: "soldOut",
+                    label: "Stock",
+                    type: "checkbox",
+                    placeholder: "Sold out",
+                  },
+                  { key: "wornRetailer", label: "Worn retailer", placeholder: "Named from the link" },
+                  {
+                    key: "wornAffiliateUrl",
+                    label: "Worn affiliate link",
+                    type: "url",
+                    placeholder: "Paste once approved",
+                  },
+                  { key: "wornNetwork", label: "Worn network", options: networkOptions },
+                  { key: "wornStatus", label: "Worn link status", options: statusOptions },
+                  { key: "swapBrand", label: "Swap brand (optional)", placeholder: "The retailer you found" },
+                  { key: "swap", label: "Swap ₹ (optional)", type: "number" },
+                  {
+                    key: "swapUrl",
+                    label: "Swap link (optional)",
+                    type: "url",
+                    placeholder: "https://…",
+                  },
+                  { key: "swapRetailer", label: "Swap retailer", placeholder: "Named from the link" },
+                  {
+                    key: "swapAffiliateUrl",
+                    label: "Swap affiliate link",
+                    type: "url",
+                    placeholder: "Paste once approved",
+                  },
+                  { key: "swapNetwork", label: "Swap network", options: networkOptions },
+                  { key: "swapStatus", label: "Swap link status", options: statusOptions },
+                ]}
+              />
+
+              <RepeatableRows
+                key={`faqs-${state.attempt ?? 0}`}
+                name="faqs"
+                title="Questions (optional)"
+                hint="Questions a reader actually asks about this look, answered on the page. Leave the row empty for none."
+                columns="minmax(0,1fr) minmax(0,2fr)"
+                initial={draft?.faqs ?? outfit?.faqs ?? []}
+                addLabel="Add a question"
+                fields={[
+                  { key: "question", label: "Question", placeholder: "Where can I buy Rukmini Vasanth's black dress?" },
+                  { key: "answer", label: "Answer", placeholder: "It is Club L London's …" },
+                ]}
+              />
+            </div>
+
+            <div className={styles.formBar}>
+              <SaveButton>{outfit ? "Save changes" : "Create outfit"}</SaveButton>
+              {outfit ? (
+                <Link className={styles.ghost} href={`/admin/preview/${outfit.id}`} target="_blank">
+                  Preview ↗
+                </Link>
+              ) : null}
+              <Link className={styles.ghost} href="/admin/outfits">
+                Cancel
+              </Link>
+            </div>
+          </form>
+
+          <SeoPanel />
         </div>
-
-        <div className={styles.formBar}>
-          <SaveButton>{outfit ? "Save changes" : "Create outfit"}</SaveButton>
-          <Link className={styles.ghost} href="/admin/outfits">
-            Cancel
-          </Link>
-        </div>
-      </form>
+      </OutfitSeoProvider>
 
       {outfit ? (
         <form action={removeOutfit} className={styles.formBar}>

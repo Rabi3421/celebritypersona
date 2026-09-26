@@ -42,14 +42,17 @@ export type SeoInput = {
 /**
  * A description Google will print in full.
  *
- * Roughly 155 characters survive in a result; past that the snippet is cut
- * mid-thought, and the sentence that would have earned the click is the half
+ * Roughly 155–160 characters survive in a result; past that the snippet is
+ * cut mid-thought, and the sentence that would have earned the click is the half
  * that goes. Descriptions here are built from counted facts and vary in length
  * with the archive, so rather than asking every caller to keep an eye on it,
  * the trim happens once — at the last sentence that fits, falling back to a
  * word boundary so nothing is ever cut mid-word.
+ *
+ * 160, the same cap the admin form puts on a hand-written description: at 155
+ * a description the form had accepted was cut on the page with an ellipsis.
  */
-export const MAX_DESCRIPTION = 155;
+export const MAX_DESCRIPTION = 160;
 
 export function clampDescription(text: string, max = MAX_DESCRIPTION): string {
   const clean = text.replace(/\s+/g, " ").trim();

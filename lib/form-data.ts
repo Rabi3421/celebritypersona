@@ -20,12 +20,12 @@ export const csv = (form: FormData, key: string) =>
     .filter(Boolean);
 
 /**
- * Collects repeated rows posted as `items.0.name`, `items.1.name` and so on,
- * skipping any row the user left completely blank.
+ * Repeated rows posted as `items.0.name`, `items.1.name` and so on, each with
+ * the index it was posted under — which a radio naming one row by that index
+ * (the lead piece) needs, because blank rows are dropped and the positions
+ * shift. Nothing is filtered here.
  */
-/** Fields whose leading or trailing spaces are meaningful, such as a stat
- *  suffix rendered directly after a number. */
-export function rows(
+export function indexedRows(
   form: FormData,
   prefix: string,
   fields: string[],
@@ -38,15 +38,33 @@ export function rows(
   }
   return [...indexes]
     .sort((a, b) => a - b)
-    .map((i) =>
-      Object.fromEntries(
+    .map((index) => ({
+      index,
+      values: Object.fromEntries(
         fields.map((f) => [
           f,
           keepSpaces.includes(f)
-            ? String(form.get(`${prefix}.${i}.${f}`) ?? "")
-            : text(form, `${prefix}.${i}.${f}`),
+            ? String(form.get(`${prefix}.${index}.${f}`) ?? "")
+            : text(form, `${prefix}.${index}.${f}`),
         ]),
-      ),
-    )
+      ) as Record<string, string>,
+    }));
+}
+
+/**
+ * Collects repeated rows posted as `items.0.name`, `items.1.name` and so on,
+ * skipping any row the user left completely blank.
+ *
+ * `keepSpaces` names fields whose leading or trailing spaces are meaningful,
+ * such as a stat suffix rendered directly after a number.
+ */
+export function rows(
+  form: FormData,
+  prefix: string,
+  fields: string[],
+  keepSpaces: string[] = [],
+) {
+  return indexedRows(form, prefix, fields, keepSpaces)
+    .map((row) => row.values)
     .filter((row) => Object.values(row).some((value) => value !== ""));
 }

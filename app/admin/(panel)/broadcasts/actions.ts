@@ -10,7 +10,7 @@ import { drainQueue } from "@/lib/mail/drain";
 import { lookSubject } from "@/lib/mail/templates";
 import { outfitSlug } from "@/lib/slugs";
 import { site } from "@/lib/site-config";
-import { isMailable, outfitPhoto, pricing } from "@/lib/types";
+import { isMailable, isPublished, outfitPhoto, pricing } from "@/lib/types";
 
 export type AnnounceState = { error?: string; queued?: string };
 
@@ -38,6 +38,7 @@ export async function announceOutfit(
   const [outfits, subscribers] = await Promise.all([getAllOutfits(), getSubscribers()]);
   const outfit = outfits.find((item) => item.id === outfitId);
   if (!outfit) return { error: "That look no longer exists." };
+  if (!isPublished(outfit)) return { error: "That look is not live, so there is no page to announce." };
 
   const audience = subscribers.filter(isMailable).length;
   if (audience === 0) {

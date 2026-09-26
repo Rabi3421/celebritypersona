@@ -6,7 +6,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
-import { hasSwap, hasWornPrice, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
+import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
 import { blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import type { InstagramReel } from "@/lib/instagram";
@@ -129,18 +129,18 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
     ...input,
     ...outfitTotals(input.items),
     pricesCheckedAt: today(),
-    // The day this look joined the archive. `isNewLook` counts the New badge
-    // from here, and an edit never moves it, so fixing a price on a month-old
-    // look does not put it back at the front of the queue as new.
-    publishedAt: today(),
-    // Creating a look publishes it, so its address is a promise from today.
-    slugLockedAt: today(),
+    // The day this look joined the archive, and the day its address became a
+    // promise. `isNewLook` counts the New badge from `publishedAt`, and an
+    // edit never moves it. A draft has neither until it is first published.
+    ...(input.status === "published" ? { publishedAt: today(), slugLockedAt: today() } : {}),
     id,
   });
   await ensureArchiveRecords(input);
   // A new look is the whole reason IndexNow is worth having: name the page
-  // itself, and the two archives it has just joined.
-  revalidateSite(outfitTouched({ ...input, id } as Outfit));
+  // itself, and the two archives it has just joined. A draft has no page to
+  // name, so nothing is announced for one.
+  const created = { ...input, id } as Outfit;
+  revalidateSite(isPublished(created) ? outfitTouched(created) : []);
   return id;
 }
 
@@ -262,9 +262,21 @@ export async function updateOutfit(
    * address it is already being served on. A genuinely different value is an
    * explicit act, and that is the one case that records a 301.
    */
-  if (previous) {
+  // Only an address that was ever served needs a 301. A draft's slug is
+  // free to change: nobody can have linked to a page that never existed.
+  const wasLive = previous ? isPublished(previous) || Boolean(previous.slugLockedAt) : false;
+  if (previous && wasLive) {
     await rememberSlugMove("outfit", outfitSlug(previous), outfitSlug({ ...previous, ...input }));
   }
+
+  // A draft going live for the first time: it joins the archive today.
+  const firstPublish =
+    previous?.status === "draft" && input.status === "published"
+      ? {
+          publishedAt: previous.publishedAt ?? today(),
+          slugLockedAt: previous.slugLockedAt ?? today(),
+        }
+      : {};
 
   // `image` is the single-photo field older documents were saved with. Always
   // clearing it keeps one look from carrying two competing photo fields. The
@@ -277,6 +289,7 @@ export async function updateOutfit(
         ...input,
         images: input.images ?? [],
         ...outfitTotals(input.items),
+        ...firstPublish,
         pricesCheckedAt: today(),
       },
       $unset: {
@@ -287,6 +300,10 @@ export async function updateOutfit(
         isNew: "",
         ...(input.seoTitle ? {} : { seoTitle: "" }),
         ...(input.seoDescription ? {} : { seoDescription: "" }),
+        ...(input.primaryKeyword ? {} : { primaryKeyword: "" }),
+        ...(input.secondaryKeywords?.length ? {} : { secondaryKeywords: "" }),
+        ...(input.faqs?.length ? {} : { faqs: "" }),
+        ...(input.leadPieceId ? {} : { leadPieceId: "" }),
       },
     },
   );
@@ -303,9 +320,11 @@ export async function updateOutfit(
 
   // Both URLs when the edit moved the look: the old one so the engines see the
   // redirect, the new one so they find where it went.
+  // Drafts on both sides of the edit have no public URL to announce.
+  const next = { ...previous, ...input, id } as Outfit;
   revalidateSite([
-    ...(previous ? outfitTouched(previous) : []),
-    ...outfitTouched({ ...previous, ...input, id } as Outfit),
+    ...(previous && isPublished(previous) ? outfitTouched(previous) : []),
+    ...(isPublished(next) ? outfitTouched(next) : []),
   ]);
 }
 

@@ -4,12 +4,13 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
-import { csv, lines, rows, text } from "@/lib/form-data";
+import { csv, flag, indexedRows, lines, rows, text } from "@/lib/form-data";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
-import { pieceLink, type OutfitItem } from "@/lib/types";
+import { isPublished, pieceLink, type OutfitItem } from "@/lib/types";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
-import { CREDIT_REQUIRED_MESSAGE, creditProblems } from "@/lib/photo-credit";
+import { blockingChecks, seoChecks } from "@/lib/seo-checks";
+import { keywordOwners } from "@/lib/keyword-owners";
 
 /** Exactly what the form posted, echoed back so a rejected save keeps the
  *  typing. React resets an uncontrolled form after every action. */
@@ -27,6 +28,13 @@ export type OutfitDraft = {
   images: { url: string; path: string; alt?: string; credit?: string }[];
   notes: string;
   items: Record<string, string>[];
+  status: string;
+  primaryKeyword: string;
+  /** Comma-separated as posted by the chips input. */
+  secondaryKeywords: string;
+  faqs: Record<string, string>[];
+  /** The form index of the row picked as the lead piece. */
+  leadPiece: string;
 };
 
 export type OutfitFormState = {
@@ -34,10 +42,10 @@ export type OutfitFormState = {
   errors?: FieldErrors;
   values?: OutfitDraft;
   /**
-   * Saved, but with something outstanding. An update that only needs a photo
-   * credit is still a save worth keeping: refusing it blocks every unrelated
-   * edit on the look until an editor tracks down a credit for a photograph
-   * somebody uploaded months ago.
+   * Saved, but with something outstanding. A look that is already live saves
+   * even when critical SEO checks fail — refusing it would block every
+   * unrelated edit (a wrong price, a dead link) until the gap is closed — and
+   * the failures come back here.
    */
   warnings?: string[];
   saved?: boolean;
@@ -150,7 +158,24 @@ export async function saveOutfit(
     images: rows(form, "images", IMAGE_FIELDS) as OutfitDraft["images"],
     notes: text(form, "notes"),
     items: rows(form, "items", ITEM_FIELDS).filter(hasTypedValue),
+    status: text(form, "status"),
+    primaryKeyword: text(form, "primaryKeyword"),
+    secondaryKeywords: text(form, "secondaryKeywords"),
+    faqs: rows(form, "faqs", ["question", "answer"]),
+    leadPiece: text(form, "leadPiece"),
   };
+
+  /**
+   * The lead is a radio naming a row by the index it was posted under. Blank
+   * rows are dropped before parsing, so the index is translated into a
+   * position among the rows that survive, and from there into the piece's id
+   * once the schema has made sure every piece has one.
+   */
+  const leadPosition = indexedRows(form, "items", ITEM_FIELDS)
+    .filter((row) => hasTypedValue(row.values))
+    .findIndex((row) => String(row.index) === draft.leadPiece);
+  // Echoed on the row itself, so a rejected save reopens with the same lead.
+  if (leadPosition >= 0) draft.items[leadPosition] = { ...draft.items[leadPosition], leadPiece: "on" };
 
   // The textarea is one paragraph per line; everything else posts as typed.
   const parsed = outfitSchema.safeParse({
@@ -159,6 +184,7 @@ export async function saveOutfit(
     // Settled against known names, like the primary, so "diwali" does not
     // fork an occasion that already exists as "Diwali".
     occasions: csv(form, "occasions").map((name) => canonicalName(name, occasions.map((o) => o.name))),
+    secondaryKeywords: csv(form, "secondaryKeywords"),
   });
   if (!parsed.success) return {
       attempt: (previous.attempt ?? 0) + 1,
@@ -182,51 +208,70 @@ export async function saveOutfit(
   }
 
   const isUpdate = Number.isFinite(id) && id > 0;
+  const stored = isUpdate ? outfitsNow.find((outfit) => outfit.id === id) : undefined;
+  const fail = (errors: FieldErrors): OutfitFormState => ({
+    attempt: (previous.attempt ?? 0) + 1,
+    errors,
+    values: draft,
+  });
 
   /**
-   * Every photograph here was taken by somebody else, so publishing one
-   * uncredited is not ours to do — but the rule has to bite where publishing
-   * happens, not on every save.
-   *
-   * Creating a look is the act of publishing it, so it is blocked outright: no
-   * photographs at all, or any photograph that names no source, and the look
-   * is not created. Updating one that is already live cannot be blocked, or a
-   * single missing credit makes the whole record read-only and an editor
-   * cannot fix a wrong price without first solving an unrelated problem. Those
-   * save, and say what is still outstanding.
+   * A published address is locked. Changing it needs the editor to press
+   * Unlock, which is what posts `slugUnlocked`; the save then records a 301
+   * from the old address, as every slug change on a live look does.
    */
-  const problems = creditProblems(parsed.data);
+  if (stored?.slugLockedAt && outfitSlug(stored) !== parsed.data.slug && !flag(form, "slugUnlocked")) {
+    return fail({
+      slug: `This slug has been public since ${stored.slugLockedAt}. Press Unlock to change it — the old address will 301 to the new one.`,
+    });
+  }
 
-  if (!isUpdate) {
-    if (parsed.data.images.length === 0) {
-      return {
-        attempt: (previous.attempt ?? 0) + 1,
-        errors: { images: "Add at least one photo before publishing this look." },
-        values: draft,
-      };
-    }
-    if (problems.length > 0) {
-      return {
-        attempt: (previous.attempt ?? 0) + 1,
-        errors: { images: `${CREDIT_REQUIRED_MESSAGE} ${problems.join(" ")}` },
-        values: draft,
-      };
-    }
+  const leadPieceId = leadPosition >= 0 ? parsed.data.items[leadPosition]?.id : undefined;
+  const outfit = {
+    ...parsed.data,
+    ...(leadPieceId ? { leadPieceId } : {}),
+    items: carryLinkHistory(parsed.data.items, stored?.items),
+  };
+
+  /**
+   * The SEO checklist, run on exactly what is about to be stored, with the
+   * same function the form runs live.
+   *
+   * It decides only the one moment that matters: a look going live. A draft
+   * saves whatever the checks say. A look that is already live saves too, and
+   * gets its failures back as warnings — every photograph and every price on
+   * the site was published before this checklist existed, and none of them
+   * should become uneditable because of it.
+   */
+  const blocking = blockingChecks(
+    seoChecks({ ...outfit, leadChosen: Boolean(leadPieceId) }, { id, owners: keywordOwners(outfitsNow) }),
+  );
+  const alreadyLive = stored ? isPublished(stored) : false;
+  const goingLive = outfit.status === "published" && !alreadyLive;
+
+  if (goingLive && blocking.length > 0) {
+    return fail({
+      status: `Not published — ${blocking.length} critical ${blocking.length === 1 ? "check fails" : "checks fail"}. Fix ${blocking.length === 1 ? "it" : "them"}, or save as a draft.`,
+      ...Object.fromEntries(
+        blocking.map((check) => [`check.${check.id}`, `${check.label}${check.detail ? ` — ${check.detail}` : ""}`]),
+      ),
+    });
   }
 
   if (isUpdate) {
-    const stored = outfitsNow.find((outfit) => outfit.id === id);
-    await updateOutfit(id, {
-      ...parsed.data,
-      items: carryLinkHistory(parsed.data.items, stored?.items),
-    });
-    // Held on the form rather than redirected away, so the warning is read
-    // beside the photographs it is about.
-    if (problems.length > 0) {
-      return { attempt: (previous.attempt ?? 0) + 1, saved: true, warnings: problems, values: draft };
+    await updateOutfit(id, outfit);
+    // Held on the form rather than redirected away, so what is still missing
+    // is read beside the fields it is about.
+    if (outfit.status === "published" && blocking.length > 0) {
+      return {
+        attempt: (previous.attempt ?? 0) + 1,
+        saved: true,
+        warnings: blocking.map((check) => `${check.label}${check.detail ? ` — ${check.detail}` : ""}`),
+        values: draft,
+      };
     }
   } else {
-    await createOutfit(parsed.data);
+    await createOutfit(outfit);
   }
   redirect("/admin/outfits");
 }

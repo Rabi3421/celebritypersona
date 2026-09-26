@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { OutfitForm } from "@/components/admin/OutfitForm";
 import { getOccasionViews, getAllOutfits } from "@/lib/db/content";
+import { keywordOwners } from "@/lib/keyword-owners";
+import { outfitSlug } from "@/lib/slugs";
 
 export default async function EditOutfitPage({
   params,
@@ -18,6 +20,8 @@ export default async function EditOutfitPage({
     <OutfitForm
       outfit={outfit}
       occasions={occasions.map((occasion) => occasion.name)}
+      takenSlugs={outfits.filter((item) => item.id !== outfit.id).map(outfitSlug)}
+      owners={keywordOwners(outfits)}
     />
   );
 }

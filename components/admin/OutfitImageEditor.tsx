@@ -5,6 +5,8 @@ import type { OutfitImage, OutfitItem } from "@/lib/types";
 import { nameSlug } from "@/lib/slugs";
 import { compressImage, formatBytes, TARGET_BYTES } from "@/lib/image-compress";
 import styles from "@/app/admin/panel.module.css";
+import { suggestPhotoAlt } from "@/lib/photo-alt";
+import { useOutfitSeo } from "@/components/admin/seo/OutfitSeoContext";
 
 type Spot = { x: number; y: number } | null;
 
@@ -42,7 +44,16 @@ export function OutfitImageEditor({
     initialItems.map((item) => item.hotspot ?? null),
   );
   const [active, setActive] = useState(0);
+  /** Bumped when an alt is filled in for the editor, to remount the
+   *  uncontrolled box so it shows the new words. */
+  const [altVersion, setAltVersion] = useState(0);
+  const [dragging, setDragging] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const { snapshot } = useOutfitSeo();
+
+  /** "{Celebrity} wearing the {lead piece} by {label}", from the form as it
+   *  stands — the same line the backfill wrote. Empty until a celebrity is in. */
+  const suggestedAlt = () => (snapshot?.celebrity ? suggestPhotoAlt(snapshot) : "");
   /**
    * Paths uploaded during this edit. Nothing saved points at them yet, so
    * taking one back can delete the file straight away. Photos the look was
@@ -129,7 +140,10 @@ export function OutfitImageEditor({
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Upload failed.");
         freshRef.current.add(data.path);
-        setImages((current) => [...current, { url: data.url, path: data.path }]);
+        // Starts with a suggested alt rather than none, so no photo reaches
+        // the page undescribed; the editor refines it below.
+        const alt = suggestedAlt();
+        setImages((current) => [...current, { url: data.url, path: data.path, ...(alt ? { alt } : {}) }]);
       } catch (cause) {
         setError(
           `${file.name}: ${cause instanceof Error ? cause.message : "Upload failed."}`,
@@ -187,6 +201,19 @@ export function OutfitImageEditor({
       ...current.filter((_, i) => i !== index),
     ]);
     setShown(0);
+  }
+
+  /** Moves a photo within the set. Position 0 is the cover, and the dots are
+   *  placed on the cover, so moving a photo there works like Make cover. */
+  function move(from: number, to: number) {
+    if (from === to || to < 0 || to >= images.length) return;
+    setImages((current) => {
+      const next = [...current];
+      const [photo] = next.splice(from, 1);
+      next.splice(to, 0, photo);
+      return next;
+    });
+    setShown(to);
   }
 
   function place(event: React.MouseEvent<HTMLDivElement>) {
@@ -261,17 +288,44 @@ export function OutfitImageEditor({
           <div className={styles.shots}>
             {images.map((image, index) => (
               <div
-                className={
-                  index === shown ? `${styles.shot} ${styles.shotOn}` : styles.shot
-                }
+                className={[
+                  styles.shot,
+                  index === shown ? styles.shotOn : "",
+                  dragging === index ? styles.shotDragging : "",
+                ].join(" ")}
                 key={image.path || image.url}
+                // Drag to reorder; the arrow buttons below do the same without
+                // a mouse.
+                draggable
+                onDragStart={(event) => {
+                  setDragging(index);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(event) => {
+                  if (dragging !== null) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragging !== null) move(dragging, index);
+                  setDragging(null);
+                }}
+                onDragEnd={() => setDragging(null)}
               >
                 <button type="button" onClick={() => setShown(index)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={image.url} alt="" />
                   <b>{index === 0 ? "Cover" : index + 1}</b>
+                  {image.alt?.trim() ? null : <em className={styles.noAlt}>no alt</em>}
                 </button>
                 <span className={styles.shotBar}>
+                  <button
+                    type="button"
+                    aria-label={`Move photo ${index + 1} earlier`}
+                    disabled={index === 0}
+                    onClick={() => move(index, index - 1)}
+                  >
+                    ←
+                  </button>
                   {index === 0 ? (
                     <em>dots here</em>
                   ) : (
@@ -279,6 +333,14 @@ export function OutfitImageEditor({
                       Make cover
                     </button>
                   )}
+                  <button
+                    type="button"
+                    aria-label={`Move photo ${index + 1} later`}
+                    disabled={index === images.length - 1}
+                    onClick={() => move(index, index + 1)}
+                  >
+                    →
+                  </button>
                   <button type="button" onClick={() => removeAt(index)}>
                     Remove
                   </button>
@@ -294,18 +356,31 @@ export function OutfitImageEditor({
               still shows that photo's words. */}
           <div className={styles.shotMeta}>
             <label>
-              <span>Alt text · photo {shown + 1}</span>
+              <span>Alt text · photo {shown + 1} · required</span>
               <input
-                key={`alt-${images[shown]?.path ?? shown}`}
+                key={`alt-${images[shown]?.path ?? shown}-${altVersion}`}
                 type="text"
                 maxLength={160}
                 defaultValue={images[shown]?.alt ?? ""}
-                placeholder="Ritika Nayak in a pink floral draped jumpsuit by Ewoke Studio"
+                placeholder="Rukmini Vasanth wearing the Black Bardot Midi Dress by Club L London"
+                aria-invalid={images[shown]?.alt?.trim() ? undefined : true}
                 onChange={(event) => describe(shown, "alt", event.target.value)}
               />
               <small>
                 What the photo shows, for a reader who cannot see it and for
-                image search. Empty falls back to the celebrity and the event.
+                image search. Name the celebrity, the colour, the garment and
+                the label; add what makes this photo different if it is.{" "}
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  disabled={!suggestedAlt()}
+                  onClick={() => {
+                    describe(shown, "alt", suggestedAlt());
+                    setAltVersion((version) => version + 1);
+                  }}
+                >
+                  Use the suggested line
+                </button>
               </small>
             </label>
             <label>

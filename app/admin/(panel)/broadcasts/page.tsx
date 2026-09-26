@@ -4,7 +4,7 @@ import { stopBroadcast } from "./actions";
 import { getMailJobs, getAllOutfits, getSubscribers } from "@/lib/db/content";
 import { mailConfigured } from "@/lib/mail/transport";
 import { outfitSlug } from "@/lib/slugs";
-import { isMailable } from "@/lib/types";
+import { isMailable, isPublished } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
 
 const when = new Intl.DateTimeFormat("en-IN", {
@@ -25,10 +25,11 @@ export default async function AdminBroadcasts() {
   const audience = subscribers.filter(isMailable).length;
   const pending = subscribers.filter((one) => one.status === "Pending").length;
   const announced = new Set(jobs.map((job) => job.outfitId));
-  // Newest first, and only what has not already gone out.
+  // Newest first, only what is live, and only what has not already gone out.
+  // A draft has no page, so an announcement would mail everyone a 404.
   const candidates = [...outfits]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .filter((outfit) => !announced.has(outfit.id))
+    .filter((outfit) => isPublished(outfit) && !announced.has(outfit.id))
     .slice(0, 12)
     .map((outfit) => ({
       id: outfit.id,

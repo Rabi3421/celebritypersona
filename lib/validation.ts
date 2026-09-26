@@ -251,12 +251,52 @@ export const outfitSchema = z.object({
     .default([]),
   notes: z.array(z.string().trim().min(1)).default([]),
   items: z.array(outfitItemSchema).min(1, "Add at least one piece"),
+  /**
+   * Required rather than defaulted. A tab left open from before the field
+   * existed would otherwise post nothing and have a default decide whether a
+   * live look comes off the site.
+   */
+  status: z.enum(["draft", "published"], "Choose Draft or Published"),
+  /** Planning and checks only; never rendered. Stored lowercase, single-spaced. */
+  primaryKeyword: z
+    .string()
+    .trim()
+    .max(80, "Keep the primary keyword under 80 characters")
+    .optional()
+    .transform((value) => value?.toLowerCase().replace(/\s+/g, " ") || undefined),
+  secondaryKeywords: z
+    .array(z.string().trim().max(80, "Keep each secondary keyword under 80 characters"))
+    .max(5, "Five secondary keywords at most")
+    .default([])
+    .transform((list) => [...new Set(list.map((value) => value.toLowerCase().replace(/\s+/g, " ")).filter(Boolean))]),
+  faqs: z
+    .array(
+      z.object({
+        question: z.string().trim().max(200, "Keep each question under 200 characters"),
+        answer: z.string().trim().max(1200, "Keep each answer under 1200 characters"),
+      }),
+    )
+    .default([])
+    .superRefine((faqs, ctx) => {
+      faqs.forEach((faq, index) => {
+        if (Boolean(faq.question) !== Boolean(faq.answer)) {
+          ctx.addIssue({
+            code: "custom",
+            path: [index, faq.question ? "answer" : "question"],
+            message: `Question ${index + 1} needs both a question and an answer`,
+          });
+        }
+      });
+    }),
 })
   // An empty optional is dropped rather than stored as an empty string, so a
   // cleared field reads the same as one that was never filled in.
-  .transform(({ seoTitle, seoDescription, images, photoCredit, occasions, ...outfit }) => ({
+  .transform(({ seoTitle, seoDescription, images, photoCredit, occasions, primaryKeyword, secondaryKeywords, faqs, ...outfit }) => ({
     ...(photoCredit ? { photoCredit } : {}),
     ...outfit,
+    ...(primaryKeyword ? { primaryKeyword } : {}),
+    ...(secondaryKeywords.length ? { secondaryKeywords } : {}),
+    ...(faqs.some((faq) => faq.question) ? { faqs: faqs.filter((faq) => faq.question) } : {}),
     // The primary always leads the list and is always in it, whatever was
     // posted, so the two fields cannot disagree about what a look is filed as.
     occasions: outfitOccasions({ occasion: outfit.occasion, occasions }),
