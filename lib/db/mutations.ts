@@ -8,6 +8,7 @@ import { getDb } from "@/lib/mongodb";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
+import { blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import type { InstagramReel } from "@/lib/instagram";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
@@ -94,6 +95,33 @@ async function nextId(collection: string) {
 
 /* ---------------------------------------------------------------- outfits */
 
+/**
+ * Creates a record for any celebrity or occasion this look names that has
+ * none, so every name the archive uses has a document to hold an intro and
+ * its search fields. The virtual rows in `celebrityViews`/`occasionViews`
+ * stay as a safety net for data written outside the panel.
+ */
+async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion" | "occasions">) {
+  const db = await getDb();
+  const celebrities = db.collection<Celebrity>("celebrities");
+  const occasions = db.collection<Occasion>("occasions");
+  const noId = { projection: { _id: 0, name: 1 } } as const;
+  const missing = missingRecords(
+    {
+      celebrities: await celebrities.find({}, noId).toArray(),
+      occasions: await occasions.find({}, noId).toArray(),
+    },
+    [outfit],
+  );
+
+  for (const name of missing.celebrities) {
+    await celebrities.insertOne(blankCelebrity(await nextId("celebrities"), name));
+  }
+  for (const name of missing.occasions) {
+    await occasions.insertOne(blankOccasion(await nextId("occasions"), name));
+  }
+}
+
 export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) {
   const db = await getDb();
   const id = await nextId("outfits");
@@ -109,6 +137,7 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
     slugLockedAt: today(),
     id,
   });
+  await ensureArchiveRecords(input);
   // A new look is the whole reason IndexNow is worth having: name the page
   // itself, and the two archives it has just joined.
   revalidateSite(outfitTouched({ ...input, id } as Outfit));
@@ -261,6 +290,8 @@ export async function updateOutfit(
       },
     },
   );
+
+  await ensureArchiveRecords(input);
 
   // Photos dropped from the look have no owner left.
   const kept = new Set((input.images ?? []).map((image) => image.path));

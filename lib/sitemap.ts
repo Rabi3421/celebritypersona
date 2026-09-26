@@ -5,6 +5,7 @@ import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { policyUpdated, site } from "@/lib/site-config";
 import { effectiveCredit, hasSubstance, outfitPhotos } from "@/lib/types";
 import { isSpecificCredit } from "@/lib/photo-credit";
+import { hubIndexedNow } from "@/lib/indexing";
 import type { Outfit } from "@/lib/types";
 
 /**
@@ -164,7 +165,7 @@ export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
       ...images(outfit),
     })),
     ...celebrities
-      .filter((celebrity) => celebrity.stats.looks > 0)
+      .filter((celebrity) => hubIndexedNow(celebrity.stats))
       .map((celebrity) => ({
         url: `${site.url}/celebrities/${celebritySlug(celebrity)}`,
         ...dated(day(celebrity.stats.lastDecoded)),
@@ -172,7 +173,7 @@ export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })),
     ...occasions
-      .filter((occasion) => occasion.stats.looks > 0)
+      .filter((occasion) => hubIndexedNow(occasion.stats))
       .map((occasion) => ({
         url: `${site.url}/occasions/${occasionSlug(occasion)}`,
         ...dated(day(occasion.stats.lastDecoded)),

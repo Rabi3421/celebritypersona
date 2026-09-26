@@ -10,6 +10,8 @@ import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { removeOccasion, renameOccasion } from "./actions";
 import type { OccasionView } from "@/lib/archive";
+import { hubSearchStatus, MIN_HUB_LOOKS, MIN_INTRO_WORDS, wordCount } from "@/lib/indexing";
+import { SearchCell } from "@/components/admin/SearchCell";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -27,6 +29,8 @@ const STATES = [
   { value: "no-looks", label: "Record, no looks" },
   { value: "no-date", label: "No next date set" },
   { value: "upcoming", label: "Coming up" },
+  { value: "needs-intro", label: "Thin — needs an intro" },
+  { value: "noindex", label: "noindex now" },
 ];
 
 const SORTS = [
@@ -34,6 +38,10 @@ const SORTS = [
   { value: "az", label: "A–Z" },
   { value: "soonest", label: "Soonest first" },
 ];
+
+/** Until Phase 4 adds an intro field, the description is the editor's text. */
+const search = (occasion: OccasionView) =>
+  hubSearchStatus({ looks: occasion.stats.looks, introWords: wordCount(occasion.description) });
 
 function inState(occasion: OccasionView, state: string | undefined) {
   switch (state) {
@@ -45,6 +53,10 @@ function inState(occasion: OccasionView, state: string | undefined) {
       return !occasion.nextDate;
     case "upcoming":
       return occasion.daysAway !== null && occasion.daysAway >= 0;
+    case "needs-intro":
+      return search(occasion).needsIntro;
+    case "noindex":
+      return !search(occasion).indexed;
     default:
       return true;
   }
@@ -83,9 +95,23 @@ export default async function AdminOccasions({
   // exists is a pick rather than a retype.
   const names = all.map((occasion) => occasion.name);
   const missing = all.filter((occasion) => !occasion.record).length;
+  const thin = all.filter((occasion) => search(occasion).needsIntro).length;
 
   return (
     <>
+      {thin > 0 ? (
+        <div className={styles.notice}>
+          <strong>
+            {thin} {thin === 1 ? "page is" : "pages are"} thin: fewer than {MIN_HUB_LOOKS} looks and no
+            intro of {MIN_INTRO_WORDS}+ words
+          </strong>
+          <p>
+            Indexed today, but they will be noindex, follow once the thin-page rule ships,
+            until they have a second look or an intro.{" "}
+            <Link href="/admin/occasions?state=needs-intro">Show just those →</Link>
+          </p>
+        </div>
+      ) : null}
       {missing > 0 ? (
         <div className={styles.notice}>
           <strong>
@@ -152,6 +178,7 @@ export default async function AdminOccasions({
                   <th>Group</th>
                   <th>Next date</th>
                   <th>Looks decoded</th>
+                  <th>Search</th>
                   <th>Swaps from</th>
                   <th />
                 </tr>
@@ -187,6 +214,7 @@ export default async function AdminOccasions({
                       <td className={styles.num}>
                         {looks === 0 ? <span className={styles.chip}>none yet</span> : looks}
                       </td>
+                      <SearchCell status={search(occasion)} introWords={wordCount(occasion.description)} />
                       <td className={`${styles.num} ${styles.save}`}>
                         {swapFrom === null ? "—" : inr.format(swapFrom)}
                       </td>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { hubIndexedNow } from "@/lib/indexing";
 import { plural } from "@/lib/format";
 import { notFound, permanentRedirect } from "next/navigation";
 import { CelebrityProfile } from "@/components/celebrities/CelebrityProfile";
@@ -80,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // An archive with nothing in it is a heading, a stock-free frame and a
     // "nothing decoded here yet". Submitting twenty of those is how a new site
     // teaches Google that its pages are not worth crawling.
-    index: celebrity.stats.looks > 0,
+    index: hubIndexedNow(celebrity.stats),
   });
 }
 

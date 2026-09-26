@@ -10,6 +10,8 @@ import { paginate, readPerPage } from "@/lib/pagination";
 import { anyFilter, carry, listPath, matchesQuery } from "@/lib/admin-filters";
 import { removeCelebrity, renameCelebrity } from "./actions";
 import type { CelebrityView } from "@/lib/archive";
+import { hubSearchStatus, MIN_HUB_LOOKS, MIN_INTRO_WORDS, wordCount } from "@/lib/indexing";
+import { SearchCell } from "@/components/admin/SearchCell";
 
 type Query = { page?: string; per?: string; q?: string; state?: string; sort?: string };
 
@@ -20,6 +22,8 @@ const STATES = [
   { value: "no-record", label: "In outfits, no record" },
   { value: "no-looks", label: "Record, no looks" },
   { value: "no-bio", label: "No bio written" },
+  { value: "needs-intro", label: "Thin — needs an intro" },
+  { value: "noindex", label: "noindex now" },
   { value: "trending", label: "Trending now" },
 ];
 
@@ -30,6 +34,10 @@ const SORTS = [
   { value: "saving", label: "Biggest average saving" },
 ];
 
+/** Her bio is the intro; the generated fallback never counts. */
+const search = (celebrity: CelebrityView) =>
+  hubSearchStatus({ looks: celebrity.stats.looks, introWords: wordCount(celebrity.bio) });
+
 function inState(celebrity: CelebrityView, state: string | undefined) {
   switch (state) {
     case "no-record":
@@ -38,6 +46,10 @@ function inState(celebrity: CelebrityView, state: string | undefined) {
       return celebrity.record && celebrity.stats.looks === 0;
     case "no-bio":
       return !celebrity.bio?.length;
+    case "needs-intro":
+      return search(celebrity).needsIntro;
+    case "noindex":
+      return !search(celebrity).indexed;
     case "trending":
       return celebrity.trending;
     default:
@@ -78,6 +90,7 @@ export default async function AdminCelebrities({
   // exists is a pick rather than a retype.
   const names = all.map((celebrity) => celebrity.name);
   const missing = all.filter((celebrity) => !celebrity.record).length;
+  const thin = all.filter((celebrity) => search(celebrity).needsIntro).length;
 
   return (
     <>
@@ -90,6 +103,20 @@ export default async function AdminCelebrities({
             Their pages work and their numbers are counted, but they have no bio
             and nothing to edit until a record exists.{" "}
             <Link href="/admin/celebrities?state=no-record">Show just those →</Link>
+          </p>
+        </div>
+      ) : null}
+
+      {thin > 0 ? (
+        <div className={styles.notice}>
+          <strong>
+            {thin} {thin === 1 ? "page is" : "pages are"} thin: fewer than {MIN_HUB_LOOKS} looks and no
+            intro of {MIN_INTRO_WORDS}+ words
+          </strong>
+          <p>
+            Indexed today, but they will be noindex, follow once the thin-page rule ships,
+            until they have a second look or an intro. The generated bio does not count.{" "}
+            <Link href="/admin/celebrities?state=needs-intro">Show just those →</Link>
           </p>
         </div>
       ) : null}
@@ -139,6 +166,7 @@ export default async function AdminCelebrities({
                   <th>Name</th>
                   <th>Slug</th>
                   <th>Looks decoded</th>
+                  <th>Search</th>
                   <th>Avg saving</th>
                   <th>Last decoded</th>
                   <th />
@@ -164,6 +192,7 @@ export default async function AdminCelebrities({
                       <td className={styles.num}>
                         {looks === 0 ? <span className={styles.chip}>none yet</span> : looks}
                       </td>
+                      <SearchCell status={search(celebrity)} introWords={wordCount(celebrity.bio)} />
                       <td className={`${styles.num} ${styles.save}`}>
                         {averageSaving === null ? "—" : `${averageSaving}%`}
                       </td>

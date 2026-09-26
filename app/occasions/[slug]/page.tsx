@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { hubIndexedNow } from "@/lib/indexing";
 import { notFound, permanentRedirect } from "next/navigation";
 import { OccasionDetail } from "@/components/occasions/OccasionDetail";
 import { Footer } from "@/components/site/Footer";
@@ -78,7 +79,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? [{ url: photo, alt: `A ${occasion.name.toLowerCase()} look decoded on CelebrityPersona` }]
       : undefined,
     // An occasion with no look behind it is a guide with nothing to show.
-    index: occasion.stats.looks > 0,
+    index: hubIndexedNow(occasion.stats),
   });
 }
 
