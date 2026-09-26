@@ -1,3 +1,4 @@
+import "server-only";
 import type { MetadataRoute } from "next";
 import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
@@ -91,18 +92,6 @@ function archiveTouched(outfits: Outfit[]): Date | undefined {
   return new Date(Math.max(...days.map((value) => value.getTime())));
 }
 
-/**
- * The sitemap had no revalidate of its own, which made it the one public route
- * that genuinely never refreshed: it was generated at build and served
- * unchanged until the next deploy, so a look published on Tuesday was not
- * offered to Google until something else happened to trigger a build.
- *
- * An hour, matching every other archive route. Publishing in the panel
- * revalidates it immediately; `npm run check:links --revalidate` and the other
- * scripts do it through /api/revalidate.
- */
-export const revalidate = 3600;
-
 /** The newest of several optional days. */
 function latest(...days: (Date | undefined)[]): Date | undefined {
   const real = days.filter((value): value is Date => Boolean(value));
@@ -117,7 +106,7 @@ function images(outfit: Outfit) {
   return credited.length ? { images: credited } : {};
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const [outfits, celebrities, occasions] = await Promise.all([
     getPublishedOutfits(),
     getCelebrityViews(),
@@ -191,4 +180,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })),
   ];
+}
+
+/** The five characters XML will not take raw. Firebase download URLs carry
+ *  `&token=`, and Next's own serialiser wrote that `&` unescaped. */
+const xml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
+/**
+ * The entries as a sitemap document, in the same shape Next's metadata route
+ * produced, so nothing a crawler reads changes except that it is now valid.
+ */
+export function sitemapXml(entries: MetadataRoute.Sitemap): string {
+  const urls = entries.map((entry) => {
+    const lastModified =
+      entry.lastModified === undefined
+        ? undefined
+        : entry.lastModified instanceof Date
+          ? entry.lastModified.toISOString()
+          : String(entry.lastModified);
+    return [
+      "<url>",
+      `<loc>${xml(entry.url)}</loc>`,
+      ...(entry.images ?? []).map(
+        (image) => `<image:image>\n<image:loc>${xml(image)}</image:loc>\n</image:image>`,
+      ),
+      ...(lastModified ? [`<lastmod>${xml(lastModified)}</lastmod>`] : []),
+      ...(entry.changeFrequency ? [`<changefreq>${entry.changeFrequency}</changefreq>`] : []),
+      ...(entry.priority !== undefined ? [`<priority>${entry.priority}</priority>`] : []),
+      "</url>",
+    ].join("\n");
+  });
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n` +
+    `${urls.join("\n")}\n</urlset>\n`
+  );
 }

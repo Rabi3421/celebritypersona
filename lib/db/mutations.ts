@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
@@ -49,7 +50,8 @@ import type {
  * unhandled.
  */
 function revalidateSite(touched: string[] = []) {
-  revalidatePath("/", "layout");
+  // The layout alone missed the sitemap, llms.txt and the search index.
+  revalidatePublicSite();
   void pingIndexNow([...ARCHIVE_HUBS, ...touched]).catch(() => {});
 }
 

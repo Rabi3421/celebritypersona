@@ -1,5 +1,5 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidatePublicSite, STANDALONE_PATHS } from "@/lib/revalidation";
 
 /**
  * Refreshes the public site after something changed the database from outside
@@ -27,12 +27,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-/**
- * The route handlers that live outside the root layout and therefore are not
- * covered by the layout-wide sweep below. Every page is.
- */
-const STANDALONE = ["/sitemap.xml", "/llms.txt", "/api/search-index"];
-
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
 
@@ -53,13 +47,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not authorised" }, { status: 401 });
   }
 
-  // Every page under the root layout, which is all of them.
-  revalidatePath("/", "layout");
-  for (const path of STANDALONE) revalidatePath(path);
+  // Every page under the root layout, and the routes outside it.
+  revalidatePublicSite();
 
   return NextResponse.json({
     revalidated: true,
-    scope: ["/ (layout)", ...STANDALONE],
+    scope: ["/ (layout)", ...STANDALONE_PATHS],
     at: new Date().toISOString(),
   });
 }
