@@ -484,13 +484,42 @@ export const hasSubstance = (outfit: Outfit) =>
  * trending — is derived from the outfits themselves in `lib/archive.ts`, so a
  * record can never claim 47 looks while the archive holds three.
  */
-export type Celebrity = {
+/**
+ * What an editor can set for how a hub page — a celebrity, occasion, brand or
+ * budget page — appears in search. All optional: each page builds its own
+ * title and description when these are empty, and the keyword is for the
+ * checklist only, never rendered.
+ */
+export type HubSeo = {
+  seoTitle?: string;
+  seoDescription?: string;
+  primaryKeyword?: string;
+  /** ISO timestamp of the last editorial save, for the sitemap's lastmod. */
+  updatedAt?: string;
+};
+
+export type Celebrity = HubSeo & {
   id: number;
   name: string;
+  /** Her bio, which is the page's intro. The generated fallback is never
+   *  stored here, so this is only ever what an editor wrote. */
   bio?: string[];
   /** Her own profiles — Instagram, Wikipedia. Emitted as `sameAs` so a look
    *  page names the person Google already knows rather than a string. */
   sameAs?: string[];
+};
+
+/** A label's page. The looks on it are counted from the outfits, by name. */
+export type Brand = HubSeo & {
+  id: number;
+  name: string;
+  intro?: string[];
+};
+
+/** The editorial half of one fixed budget page, /budget/under-<cap>. */
+export type BudgetPage = HubSeo & {
+  cap: number;
+  intro?: string[];
 };
 
 export type OccasionGroup = "Wedding" | "Festival" | "Everyday";
@@ -499,7 +528,7 @@ export type OccasionGroup = "Wedding" | "Festival" | "Everyday";
  * The editorial half of an occasion. Its counts, price averages, cheapest
  * complete look and garment tally all come from the archive.
  */
-export type Occasion = {
+export type Occasion = HubSeo & {
   id: number;
   name: string;
   group: OccasionGroup;
@@ -509,6 +538,9 @@ export type Occasion = {
   /** The next real-world date this occasion falls on, YYYY-MM-DD. Drives the
    *  "Coming up" rail, whose countdown is calculated rather than typed. */
   nextDate?: string;
+  /** The page's intro, 100–300 words. `description` stays the one-line blurb
+   *  the cards use. */
+  intro?: string[];
 };
 
 export type SearchIntent =

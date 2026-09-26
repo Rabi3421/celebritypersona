@@ -16,6 +16,7 @@ export const footerColumns: { heading: string; links: { label: string; href: str
       { label: "All outfits", href: "/outfits" },
       { label: "Celebrities", href: "/celebrities" },
       { label: "Occasions", href: "/occasions" },
+      { label: "Brands", href: "/brands" },
       { label: "By budget", href: "/budget" },
       { label: "Trending", href: "/trending" },
       // Pointed at "#" on every page of the site until now.

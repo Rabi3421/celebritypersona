@@ -5,14 +5,18 @@ import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
-import { storageDeletesAllowed } from "@/lib/db-guard";
+import { storageDeleteAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
-import { blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
+import { budgetBucket, budgetSlug } from "@/lib/budget";
+import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import type { InstagramReel } from "@/lib/instagram";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
+  BudgetPage,
+  HubSeo,
+  Brand,
   Celebrity,
   MailDelivery,
   MailJob,
@@ -74,8 +78,9 @@ export const outfitTotals = (items: OutfitItem[]) => ({
  * content change the editor actually asked for.
  */
 async function forgetImages(paths: (string | undefined)[]) {
-  // Development shares the production bucket; see lib/db-guard.ts.
-  if (!storageDeletesAllowed()) return;
+  // Development shares the production bucket and may only delete its own
+  // dev/ uploads; see lib/db-guard.ts.
+  paths = paths.filter((path) => path && storageDeleteAllowed(path));
   await Promise.all(
     paths.filter(Boolean).map(async (path) => {
       try {
@@ -96,6 +101,46 @@ async function nextId(collection: string) {
   return ((highest?.id as number) ?? 0) + 1;
 }
 
+/* ------------------------------------------------------------------- hubs */
+
+/**
+ * The update for a hub record's editorial save: what was posted, stamped with
+ * the time for the sitemap, and every optional field the editor emptied
+ * removed — or the page would keep serving the old title.
+ */
+function hubWrite<T extends HubSeo & { intro?: string[]; bio?: string[] }>(input: T) {
+  const cleared = (["seoTitle", "seoDescription", "primaryKeyword"] as const).filter((key) => !input[key]);
+  // An emptied optional arrives as `undefined`; left in $set it would be
+  // written as null, and MongoDB refuses to $set and $unset one path at once.
+  const present = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)) as T;
+  return {
+    $set: { ...present, updatedAt: new Date().toISOString() },
+    ...(cleared.length
+      ? { $unset: Object.fromEntries(cleared.map((key) => [key, "" as const])) as Record<string, ""> }
+      : {}),
+  };
+}
+
+/** A brand page's intro and search fields. The record itself is created when
+ *  a look first names the label. */
+export async function updateBrand(id: number, input: Omit<Brand, "id" | "name">) {
+  const db = await getDb();
+  await db.collection<Brand>("brands").updateOne({ id }, hubWrite(input));
+  revalidateSite();
+}
+
+/** One budget page's intro and search fields, created on first save. */
+export async function saveBudgetPage(cap: number, input: Omit<BudgetPage, "cap">) {
+  const db = await getDb();
+  const write = hubWrite(input);
+  await db.collection<BudgetPage>("budgetPages").updateOne(
+    { cap },
+    { ...write, $set: { ...write.$set, cap } },
+    { upsert: true },
+  );
+  revalidateSite();
+}
+
 /* ---------------------------------------------------------------- outfits */
 
 /**
@@ -104,15 +149,17 @@ async function nextId(collection: string) {
  * its search fields. The virtual rows in `celebrityViews`/`occasionViews`
  * stay as a safety net for data written outside the panel.
  */
-async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion" | "occasions">) {
+async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion" | "occasions" | "items">) {
   const db = await getDb();
   const celebrities = db.collection<Celebrity>("celebrities");
   const occasions = db.collection<Occasion>("occasions");
+  const brands = db.collection<Brand>("brands");
   const noId = { projection: { _id: 0, name: 1 } } as const;
   const missing = missingRecords(
     {
       celebrities: await celebrities.find({}, noId).toArray(),
       occasions: await occasions.find({}, noId).toArray(),
+      brands: await brands.find({}, noId).toArray(),
     },
     [outfit],
   );
@@ -122,6 +169,9 @@ async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion
   }
   for (const name of missing.occasions) {
     await occasions.insertOne(blankOccasion(await nextId("occasions"), name));
+  }
+  for (const name of missing.brands) {
+    await brands.insertOne(blankBrand(await nextId("brands"), name));
   }
 }
 
@@ -155,6 +205,11 @@ function outfitTouched(outfit: Outfit): string[] {
     `/celebrities/${nameSlug(outfit.celebrity)}`,
     // Every occasion page it appears on, not only the primary.
     ...outfitOccasions(outfit).map((name) => `/occasions/${nameSlug(name)}`),
+    // Every label it names, and the budget page it sits on.
+    ...[...new Set(outfit.items.flatMap((item) => [item.wornBrand, item.swapBrand]).filter(Boolean))].map(
+      (name) => `/brands/${nameSlug(name as string)}`,
+    ),
+    ...(budgetBucket(outfit) ? [`/budget/${budgetSlug(budgetBucket(outfit)!)}`] : []),
   ];
 }
 
@@ -349,7 +404,7 @@ export async function deleteOutfit(id: number) {
 export async function createCelebrity(input: Omit<Celebrity, "id">) {
   const db = await getDb();
   const id = await nextId("celebrities");
-  await db.collection<Celebrity>("celebrities").insertOne({ ...input, id });
+  await db.collection<Celebrity>("celebrities").insertOne({ ...input, id, updatedAt: new Date().toISOString() });
   revalidateSite();
   return id;
 }
@@ -363,7 +418,7 @@ export async function updateCelebrity(id: number, input: Omit<Celebrity, "id">) 
     await rememberSlugMove("celebrity", celebritySlug(previous), celebritySlug({ ...previous, ...input }));
   }
 
-  await collection.updateOne({ id }, { $set: input });
+  await collection.updateOne({ id }, hubWrite(input));
 
   // Her looks are filed under her name, so they have to move with it.
   if (previous) await renameAcrossOutfits("celebrity", previous.name, input.name);
@@ -436,7 +491,7 @@ export async function deleteCelebrity(id: number) {
 export async function createOccasion(input: Omit<Occasion, "id">) {
   const db = await getDb();
   const id = await nextId("occasions");
-  await db.collection<Occasion>("occasions").insertOne({ ...input, id });
+  await db.collection<Occasion>("occasions").insertOne({ ...input, id, updatedAt: new Date().toISOString() });
   revalidateSite();
   return id;
 }
@@ -450,7 +505,7 @@ export async function updateOccasion(id: number, input: Omit<Occasion, "id">) {
     await rememberSlugMove("occasion", occasionSlug(previous), occasionSlug({ ...previous, ...input }));
   }
 
-  await collection.updateOne({ id }, { $set: input });
+  await collection.updateOne({ id }, hubWrite(input));
 
   // The looks carry the occasion's name, so renaming it has to move them too.
   if (previous) await renameAcrossOutfits("occasion", previous.name, input.name);

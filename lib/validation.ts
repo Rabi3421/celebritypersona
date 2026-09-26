@@ -310,10 +310,29 @@ export const outfitSchema = z.object({
     ...(seoDescription ? { seoDescription } : {}),
   }));
 
+/**
+ * The search fields every hub page carries. All optional; an empty one is
+ * dropped, so the page's own generated title and description apply.
+ */
+const hubSeoFields = {
+  seoTitle: seoText("Search title", 60),
+  seoDescription: seoText("Search description", 160),
+  primaryKeyword: z
+    .string()
+    .trim()
+    .max(80, "Keep the primary keyword under 80 characters")
+    .optional()
+    .transform((value) => value?.toLowerCase().replace(/\s+/g, " ") || undefined),
+};
+
+/** Intro paragraphs, one per line. */
+const introField = z.array(z.string().trim().min(1)).default([]);
+
 /** Only what an editor writes. Look counts, savings, price ranges and the
  *  labels she repeats are counted from the outfits, so there is nothing here
  *  to keep in step by hand. */
 export const celebritySchema = z.object({
+  ...hubSeoFields,
   name: required("Name"),
   bio: z.array(z.string().trim().min(1)).default([]),
   // Her official profiles, one per line. They become `sameAs` on the Person a
@@ -331,6 +350,8 @@ export const celebritySchema = z.object({
 /** Counts, averages and the garment tally now come from the archive. What is
  *  left is editorial, plus the one real-world date the countdown needs. */
 export const occasionSchema = z.object({
+  ...hubSeoFields,
+  intro: introField,
   name: required("Name"),
   group: z.enum(["Wedding", "Festival", "Everyday"]),
   peak: required("Peak"),
@@ -351,6 +372,13 @@ export const occasionSchema = z.object({
     }))
     .min(1, "Add at least one colour"),
 });
+
+/** A brand page: its intro and search fields. The name is the label as the
+ *  outfits spell it, and is not edited here. */
+export const brandSchema = z.object({ ...hubSeoFields, intro: introField });
+
+/** One of the four fixed budget pages. */
+export const budgetPageSchema = z.object({ ...hubSeoFields, intro: introField });
 
 export const trendingSearchSchema = z.object({
   term: required("Term"),

@@ -1,4 +1,4 @@
-import type { Celebrity, Occasion } from "@/lib/types";
+import type { Brand, Celebrity, Occasion } from "@/lib/types";
 import {
   hasSwap,
   outfitOccasions,
@@ -224,6 +224,27 @@ export function brandRoll(outfits: Outfit[], limit = 16) {
   }
   return rolled;
 }
+
+/** Every label the archive names, worn or swapped to, commonest first. Each
+ *  one has a page at /brands/<slug>. */
+export const brandNames = (outfits: Outfit[]) =>
+  tally(
+    outfits.flatMap((outfit) =>
+      outfit.items.flatMap((item) => [item.wornBrand, item.swapBrand].filter((name): name is string => Boolean(name?.trim()))),
+    ),
+  ).map((entry) => entry.name);
+
+/** Looks where she wore this label. */
+export const wornByBrand = (outfits: Outfit[], name: string) =>
+  outfits.filter((outfit) => outfit.items.some((item) => sameName(item.wornBrand, name)));
+
+/** Looks where this label is the swap, and was not also the one worn. */
+export const swappedToBrand = (outfits: Outfit[], name: string) =>
+  outfits.filter(
+    (outfit) =>
+      outfit.items.some((item) => sameName(item.swapBrand, name)) &&
+      !outfit.items.some((item) => sameName(item.wornBrand, name)),
+  );
 
 /* ------------------------------------------------------------- garments */
 
@@ -831,6 +852,41 @@ export function celebrityViews(
       trending: hottest.has(celebrity.name),
       record,
     }))
+    .sort((a, b) => b.stats.looks - a.stats.looks || a.name.localeCompare(b.name));
+}
+
+export type BrandStats = {
+  looks: number;
+  worn: number;
+  swapped: number;
+  lastDecoded: string | null;
+  photo?: string;
+};
+
+export type BrandView = Brand & { stats: BrandStats; record: boolean };
+
+export function brandStats(outfits: Outfit[], name: string): BrandStats {
+  const worn = wornByBrand(outfits, name);
+  const swapped = swappedToBrand(outfits, name);
+  const all = [...worn, ...swapped];
+  return {
+    looks: all.length,
+    worn: worn.length,
+    swapped: swapped.length,
+    lastDecoded: latestDate(all),
+    photo: newestFirst(all).flatMap((outfit) => outfitPhotos(outfit).map((photo) => photo.url))[0],
+  };
+}
+
+/** Brand records joined to the looks the archive holds for them, plus a row
+ *  for every label the outfits name that has no record yet. */
+export function brandViews(brands: Brand[], outfits: Outfit[]): BrandView[] {
+  const rows: { brand: Brand; record: boolean }[] = [
+    ...brands.map((brand) => ({ brand, record: true })),
+    ...unrecorded(brands, brandNames(outfits)).map((brand) => ({ brand, record: false })),
+  ];
+  return rows
+    .map(({ brand, record }) => ({ ...brand, stats: brandStats(outfits, brand.name), record }))
     .sort((a, b) => b.stats.looks - a.stats.looks || a.name.localeCompare(b.name));
 }
 

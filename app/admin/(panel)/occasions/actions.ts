@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { canonicalName, sameName } from "@/lib/archive";
 import { getOccasionViews } from "@/lib/db/content";
 import { createOccasion, deleteOccasion, renameOccasionEverywhere, updateOccasion } from "@/lib/db/mutations";
-import { rows, text } from "@/lib/form-data";
+import { lines, rows, text } from "@/lib/form-data";
 import { fieldErrors, occasionSchema, type FieldErrors } from "@/lib/validation";
 
 export type OccasionDraft = {
@@ -15,6 +15,10 @@ export type OccasionDraft = {
   description: string;
   nextDate: string;
   colours: Record<string, string>[];
+  intro: string;
+  primaryKeyword: string;
+  seoTitle: string;
+  seoDescription: string;
 };
 
 export type OccasionFormState = { attempt?: number; errors?: FieldErrors; values?: OccasionDraft };
@@ -32,9 +36,14 @@ export async function saveOccasion(
     description: text(form, "description"),
     nextDate: text(form, "nextDate"),
     colours: rows(form, "colours", ["name", "value"]),
+    intro: String(form.get("intro") ?? ""),
+    primaryKeyword: text(form, "primaryKeyword"),
+    seoTitle: text(form, "seoTitle"),
+    seoDescription: text(form, "seoDescription"),
   };
 
-  const parsed = occasionSchema.safeParse(draft);
+  // The intro is one paragraph per line; everything else posts as typed.
+  const parsed = occasionSchema.safeParse({ ...draft, intro: lines(form, "intro") });
   if (!parsed.success) return {
       attempt: (previous.attempt ?? 0) + 1,
       errors: fieldErrors(parsed.error),

@@ -522,3 +522,6 @@
   letter-spacing:0;text-transform:none;color:var(--text);margin:0}
 .occasionGrid .primaryPick{font-family:var(--mono),ui-monospace,monospace;font-size:10px;
   letter-spacing:.06em;color:var(--muted)}
+
+/* Hub forms: the preview and checklist under the search fields. */
+.hubSeoPanel{display:grid;gap:var(--s4)}

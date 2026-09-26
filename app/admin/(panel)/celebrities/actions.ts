@@ -12,6 +12,9 @@ export type CelebrityDraft = {
   name: string;
   bio: string;
   sameAs: string;
+  primaryKeyword: string;
+  seoTitle: string;
+  seoDescription: string;
 };
 
 export type CelebrityFormState = { errors?: FieldErrors; values?: CelebrityDraft };
@@ -26,6 +29,9 @@ export async function saveCelebrity(
     name: text(form, "name"),
     bio: String(form.get("bio") ?? ""),
     sameAs: String(form.get("sameAs") ?? ""),
+    primaryKeyword: text(form, "primaryKeyword"),
+    seoTitle: text(form, "seoTitle"),
+    seoDescription: text(form, "seoDescription"),
   };
 
   const parsed = celebritySchema.safeParse({

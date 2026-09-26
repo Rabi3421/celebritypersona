@@ -3,8 +3,9 @@ import { MIN_INTRO_WORDS, type hubSearchStatus } from "@/lib/indexing";
 
 /**
  * A hub's standing with search engines, in the admin lists: whether its page
- * asks to be indexed today, and whether it will stop once the thin-page rule
- * ships — so an editor knows where an intro is needed first.
+ * asks to be indexed, and when it does not for want of an intro, how far the
+ * intro is from the length that would put it back — so an editor knows where
+ * to write first.
  */
 export function SearchCell({
   status,

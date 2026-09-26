@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import hub from "@/components/hubs/hub.module.css";
+import { BUDGET_CAPS, budgetLabel, budgetSlug, looksUnder } from "@/lib/budget";
 import { BudgetExplorer } from "@/components/budget/BudgetExplorer";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
@@ -76,4 +79,17 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
     ]),
   ]);
 
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} /><Nav active="budget"/><BudgetExplorer outfits={outfits} initialBudget={initialBudget}/><Footer/><MobileTabs/><ScrollEffects/></>;}
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} /><Nav active="budget"/><BudgetExplorer outfits={outfits} initialBudget={initialBudget}/>
+    {/* The fixed budget pages, each a page of its own that search can land on. */}
+    <nav className={hub.shell} aria-label="Budget pages" style={{ paddingBottom: "var(--s8)" }}>
+      <h2 className={hub.sectionTitle}>Shop by budget</h2>
+      <div className={hub.list}>
+        {BUDGET_CAPS.map((cap) => (
+          <Link href={`/budget/${budgetSlug(cap)}`} key={cap}>
+            <b>Celebrity looks {budgetLabel(cap).toLowerCase()}</b>
+            <span>{looksUnder(outfits, cap).length}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+    <Footer/><MobileTabs/><ScrollEffects/></>;}

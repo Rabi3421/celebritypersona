@@ -1,11 +1,12 @@
 import "server-only";
 import type { MetadataRoute } from "next";
-import { getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
-import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
+import { getBrandViews, getBudgetPages, getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
+import { BUDGET_CAPS, budgetSlug, looksUnder } from "@/lib/budget";
+import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import { policyUpdated, site } from "@/lib/site-config";
 import { effectiveCredit, hasSubstance, outfitPhotos } from "@/lib/types";
 import { isSpecificCredit } from "@/lib/photo-credit";
-import { hubIndexedNow } from "@/lib/indexing";
+import { hubIndexable, wordCount } from "@/lib/indexing";
 import type { Outfit } from "@/lib/types";
 
 /**
@@ -93,6 +94,13 @@ function archiveTouched(outfits: Outfit[]): Date | undefined {
   return new Date(Math.max(...days.map((value) => value.getTime())));
 }
 
+/** An ISO timestamp an editor's save left, as a Date. */
+function stamp(value: string | undefined): Date | undefined {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
 /** The newest of several optional days. */
 function latest(...days: (Date | undefined)[]): Date | undefined {
   const real = days.filter((value): value is Date => Boolean(value));
@@ -108,10 +116,12 @@ function images(outfit: Outfit) {
 }
 
 export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
-  const [outfits, celebrities, occasions] = await Promise.all([
+  const [outfits, celebrities, occasions, brands, budgetPages] = await Promise.all([
     getPublishedOutfits(),
     getCelebrityViews(),
     getOccasionViews(),
+    getBrandViews(),
+    getBudgetPages(),
   ]);
 
   const touched = archiveTouched(outfits);
@@ -165,21 +175,45 @@ export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
       ...images(outfit),
     })),
     ...celebrities
-      .filter((celebrity) => hubIndexedNow(celebrity.stats))
+      .filter((celebrity) => hubIndexable({ looks: celebrity.stats.looks, introWords: wordCount(celebrity.bio) }))
       .map((celebrity) => ({
         url: `${site.url}/celebrities/${celebritySlug(celebrity)}`,
-        ...dated(day(celebrity.stats.lastDecoded)),
+        ...dated(latest(day(celebrity.stats.lastDecoded), stamp(celebrity.updatedAt))),
         changeFrequency: "weekly" as const,
         priority: 0.7,
       })),
     ...occasions
-      .filter((occasion) => hubIndexedNow(occasion.stats))
+      .filter((occasion) => hubIndexable({ looks: occasion.stats.looks, introWords: wordCount(occasion.intro) }))
       .map((occasion) => ({
         url: `${site.url}/occasions/${occasionSlug(occasion)}`,
-        ...dated(day(occasion.stats.lastDecoded)),
+        ...dated(latest(day(occasion.stats.lastDecoded), stamp(occasion.updatedAt))),
         changeFrequency: "weekly" as const,
         priority: 0.7,
       })),
+    ...(brands.some((brand) => brand.stats.looks > 0)
+      ? [{ url: `${site.url}/brands`, ...dated(touched), changeFrequency: "weekly" as const, priority: 0.6 }]
+      : []),
+    ...brands
+      .filter((brand) => hubIndexable({ looks: brand.stats.looks, introWords: wordCount(brand.intro) }))
+      .map((brand) => ({
+        url: `${site.url}/brands/${nameSlug(brand.name)}`,
+        ...dated(latest(day(brand.stats.lastDecoded), stamp(brand.updatedAt))),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      })),
+    ...BUDGET_CAPS.flatMap((cap) => {
+      const looks = looksUnder(outfits, cap);
+      const record = budgetPages.find((page) => page.cap === cap);
+      if (!hubIndexable({ looks: looks.length, introWords: wordCount(record?.intro) })) return [];
+      return [
+        {
+          url: `${site.url}/budget/${budgetSlug(cap)}`,
+          ...dated(latest(archiveTouched(looks), stamp(record?.updatedAt))),
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        },
+      ];
+    }),
   ];
 }
 

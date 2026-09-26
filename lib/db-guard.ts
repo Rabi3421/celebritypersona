@@ -62,9 +62,24 @@ export function devDatabaseProblem(env: Env = process.env): string | null {
 }
 
 /**
- * Whether files may be deleted from Firebase Storage. Development shares the
- * production bucket, and an outfit save deletes photos the outfit no longer
- * uses — on a copy of production data, that would delete production's files.
+ * Where development's uploads go, inside the shared bucket. Production never
+ * writes here and no production record points here, so a dev upload can never
+ * land in, or be mistaken for, a production photo path.
  */
-export const storageDeletesAllowed = (env: Env = process.env) =>
-  env.NODE_ENV !== "development" || env.ALLOW_STORAGE_DELETES_IN_DEV === "1";
+export const DEV_STORAGE_PREFIX = "dev/";
+
+/** The storage folder prefix for this environment: `dev/` under `next dev`,
+ *  nothing in production. */
+export const storagePrefix = (env: Env = process.env) =>
+  env.NODE_ENV === "development" ? DEV_STORAGE_PREFIX : "";
+
+/**
+ * Whether this file may be deleted from Firebase Storage.
+ *
+ * Development shares the production bucket, and an outfit save deletes photos
+ * the outfit no longer uses — on a copy of production data, that would delete
+ * production's files. So development may only delete what development
+ * uploaded: paths under `dev/`.
+ */
+export const storageDeleteAllowed = (path: string, env: Env = process.env) =>
+  env.NODE_ENV !== "development" || path.startsWith(DEV_STORAGE_PREFIX);

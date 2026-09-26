@@ -16,6 +16,9 @@ import {
 } from "@/app/admin/(panel)/celebrities/actions";
 import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
+import { HubSeoSection } from "@/components/admin/seo/HubSeoSection";
+import { celebrityDescription, celebrityHeadline } from "@/lib/hub-pages";
+import { celebritySlug } from "@/lib/slugs";
 import { ConfirmButton } from "./ConfirmButton";
 
 /** Her look count, average saving, price range and repeated labels are counted
@@ -80,11 +83,11 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
             defaultValue={draft?.name ?? celebrity?.name} errors={errors} required wide />
           <TextAreaField
             name="bio"
-            label="Bio"
-            hint="One paragraph per line. Leave empty to generate one from her archive."
+            label="Intro (her bio)"
+            hint="One paragraph per line, 100–300 words, primary keyword in the first paragraph. This is the page's intro: with fewer than 2 looks, the page stays out of Google until it has 100+ words here. Empty shows a generated bio, which does not count."
             defaultValue={draft?.bio ?? celebrity?.bio?.join("\n")}
             errors={errors}
-            rows={6}
+            rows={8}
           />
           <TextAreaField
             name="sameAs"
@@ -94,6 +97,20 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
             placeholder={"https://www.instagram.com/…\nhttps://en.wikipedia.org/wiki/…"}
             errors={errors}
             rows={3}
+          />
+          <HubSeoSection
+            formId="entity-form"
+            introName="bio"
+            path={`/celebrities/${celebrity ? celebritySlug(celebrity) : "…"}`}
+            looks={stats?.looks ?? 0}
+            fallbackTitle={celebrity ? celebrityHeadline(celebrity) : "Built from her name and looks"}
+            fallbackDescription={celebrity ? celebrityDescription(celebrity) : "Built from her looks"}
+            defaults={{
+              primaryKeyword: draft?.primaryKeyword ?? celebrity?.primaryKeyword,
+              seoTitle: draft?.seoTitle ?? celebrity?.seoTitle,
+              seoDescription: draft?.seoDescription ?? celebrity?.seoDescription,
+            }}
+            errors={errors}
           />
         </div>
         <div className={styles.formBar}>

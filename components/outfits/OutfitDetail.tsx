@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { wornBrands } from "@/lib/archive";
 import { headline } from "@/lib/outfit-seo";
 import { PIECE_COLOURS } from "@/lib/taxonomy";
+import { budgetBucket, budgetLabel, budgetSlug } from "@/lib/budget";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
@@ -111,10 +112,16 @@ export function OutfitDetail({
   // Sleeves" was filed as Sleeves and a heel called "Black Rose" put Rose in the
   // palette. A look with no categories or colours yet shows fewer rows.
   const labels = wornBrands([outfit]);
+  // The high-street labels the swaps point at, each with a page of its own.
+  const swapLabels = [
+    ...new Set(outfit.items.flatMap((item) => (item.swapBrand ? [item.swapBrand] : []))),
+  ].filter((name) => !labels.some((label) => label.name.toLowerCase() === name.toLowerCase()));
   const garments = [...new Set(outfit.items.flatMap((item) => (item.category && item.category !== "other" ? [item.category] : [])))];
   const palette = [...new Set(outfit.items.flatMap((item) => item.colours ?? []))];
   const occasions = outfitOccasions(outfit);
   const lead = leadPiece(outfit);
+  // The smallest budget page this look fits: swap total, or worn if no swap.
+  const bucket = budgetBucket(outfit);
   // The dots were placed on the cover, so they only belong on the cover.
   const allPhotos = outfitPhotos(outfit);
   /**
@@ -554,7 +561,21 @@ export function OutfitDetail({
                 {labels.length ? (
                   <div>
                     <dt>{labels.length === 1 ? "The label" : "The labels"}</dt>
-                    {labels.map((brand) => <dd key={brand.name}>{brand.name}</dd>)}
+                    {labels.map((brand) => (
+                      <dd key={brand.name}>
+                        <Link href={`/brands/${nameSlug(brand.name)}`}>{brand.name}</Link>
+                      </dd>
+                    ))}
+                  </div>
+                ) : null}
+                {swapLabels.length ? (
+                  <div>
+                    <dt>The swaps from</dt>
+                    {swapLabels.map((name) => (
+                      <dd key={name}>
+                        <Link href={`/brands/${nameSlug(name)}`}>{name}</Link>
+                      </dd>
+                    ))}
                   </div>
                 ) : null}
                 {garments.length ? (
@@ -576,6 +597,14 @@ export function OutfitDetail({
                           {titleCase(colour)}
                         </span>
                       ))}
+                    </dd>
+                  </div>
+                ) : null}
+                {bucket ? (
+                  <div>
+                    <dt>Budget</dt>
+                    <dd>
+                      <Link href={`/budget/${budgetSlug(bucket)}`}>Looks {budgetLabel(bucket).toLowerCase()}</Link>
                     </dd>
                   </div>
                 ) : null}

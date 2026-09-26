@@ -11,6 +11,8 @@ export type AdminIconKey =
   | "outfits"
   | "celebrities"
   | "occasions"
+  | "brands"
+  | "budgets"
   | "trending"
   | "reports"
   | "requests"
@@ -71,6 +73,20 @@ export const adminRoutes: AdminRoute[] = [
     group: "Content",
     countKey: "occasions",
     description: "Groups, guide copy and the countdown dates",
+  },
+  {
+    href: "/admin/brands",
+    label: "Brands",
+    icon: "brands",
+    group: "Content",
+    description: "Intros and search fields for each label's page",
+  },
+  {
+    href: "/admin/budgets",
+    label: "Budget pages",
+    icon: "budgets",
+    group: "Content",
+    description: "Intros and search fields for the four budget pages",
   },
   {
     href: "/admin/trending",
@@ -134,6 +150,8 @@ export const adminDetailRoutes: { href: string; group: AdminGroup; label: string
   { href: "/admin/celebrities", group: "Content", label: "Edit celebrity", description: "Name and bio; her figures are counted for you" },
   { href: "/admin/occasions/new", group: "Content", label: "New occasion", description: "Add an event category" },
   { href: "/admin/occasions", group: "Content", label: "Edit occasion", description: "Group, palette, guide copy and next date" },
+  { href: "/admin/brands", group: "Content", label: "Edit brand page", description: "Intro and search fields; the looks are counted" },
+  { href: "/admin/budgets", group: "Content", label: "Edit budget page", description: "Intro and search fields; the looks are counted" },
   { href: "/admin/trending/new", group: "Operations", label: "New search term", description: "Add a leaderboard row" },
   { href: "/admin/trending", group: "Operations", label: "Edit search term", description: "Leaderboard row" },
 ];

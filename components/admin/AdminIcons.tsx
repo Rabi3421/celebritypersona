@@ -60,3 +60,16 @@ export const TrendIcon = (p: P) => (
     <path d="M10.4 4.2H14v3.6" />
   </svg>
 );
+
+export const TagIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M8.6 2H13a1 1 0 0 1 1 1v4.4a1 1 0 0 1-.3.7l-5.6 5.6a1 1 0 0 1-1.4 0L2.3 9.3a1 1 0 0 1 0-1.4l5.6-5.6A1 1 0 0 1 8.6 2Z" />
+    <circle cx="11" cy="5" r="1" />
+  </svg>
+);
+
+export const RupeeIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4.5 2.5h7M4.5 5.5h7M4.5 2.5h2.2a3 3 0 0 1 0 6H4.5l6 5" />
+  </svg>
+);

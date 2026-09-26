@@ -22,8 +22,8 @@ const STATES = [
   { value: "no-record", label: "In outfits, no record" },
   { value: "no-looks", label: "Record, no looks" },
   { value: "no-bio", label: "No bio written" },
-  { value: "needs-intro", label: "Thin — needs an intro" },
-  { value: "noindex", label: "noindex now" },
+  { value: "needs-intro", label: "noindex — needs an intro" },
+  { value: "noindex", label: "noindex (any reason)" },
   { value: "trending", label: "Trending now" },
 ];
 
@@ -114,8 +114,8 @@ export default async function AdminCelebrities({
             intro of {MIN_INTRO_WORDS}+ words
           </strong>
           <p>
-            Indexed today, but they will be noindex, follow once the thin-page rule ships,
-            until they have a second look or an intro. The generated bio does not count.{" "}
+            They are noindex, follow and out of the sitemap until they have a second
+            look or an intro of {MIN_INTRO_WORDS}+ words. The generated bio does not count.{" "}
             <Link href="/admin/celebrities?state=needs-intro">Show just those →</Link>
           </p>
         </div>

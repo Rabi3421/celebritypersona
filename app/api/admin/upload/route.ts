@@ -3,7 +3,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage
 import { readSession } from "@/lib/auth/session";
 import { nameSlug } from "@/lib/slugs";
 import { firebaseStorage } from "@/lib/firebase";
-import { storageDeletesAllowed } from "@/lib/db-guard";
+import { storageDeleteAllowed, storagePrefix } from "@/lib/db-guard";
 
 /** Images only, and small enough that a stray upload cannot fill the bucket. */
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -74,8 +74,9 @@ export async function POST(request: Request) {
    * tail keeps a replaced photo from reusing the name of the one before it,
    * which a CDN would otherwise keep serving.
    */
+  // Development writes under dev/, which production never reads.
   const named = (type: string) =>
-    `${folder}/${slug}/${slug}-${position}-${crypto.randomUUID().slice(0, 8)}.${extensionFor(type)}`;
+    `${storagePrefix()}${folder}/${slug}/${slug}-${position}-${crypto.randomUUID().slice(0, 8)}.${extensionFor(type)}`;
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
@@ -106,11 +107,12 @@ export async function POST(request: Request) {
 
 /**
  * Only ever the shapes this route writes: outfits/<slug>/<slug>-<n>-<hex8>.<ext>
- * now, and outfits/<slug>/<stamp>-<uuid>.<ext> before descriptive names.
+ * now, and outfits/<slug>/<stamp>-<uuid>.<ext> before descriptive names — each
+ * under dev/ when written by development.
  * Anything else is refused, so a stray path can never reach deleteObject.
  */
 const OWN_UPLOAD =
-  /^[a-z0-9-]+\/[a-z0-9-]+\/(?:\d+-[0-9a-f-]{36}|[a-z0-9-]+-\d{1,2}-[0-9a-f]{8})\.(jpg|png|webp|avif)$/;
+  /^(?:dev\/)?[a-z0-9-]+\/[a-z0-9-]+\/(?:\d+-[0-9a-f-]{36}|[a-z0-9-]+-\d{1,2}-[0-9a-f]{8})\.(jpg|png|webp|avif)$/;
 
 /**
  * Discards a photo the editor uploaded and then took back. Only worth calling
@@ -125,7 +127,8 @@ export async function DELETE(request: Request) {
 
   const path = new URL(request.url).searchParams.get("path") ?? "";
   // Development shares the production bucket; the file is left in place.
-  if (!storageDeletesAllowed()) return NextResponse.json({ path, skipped: "development" });
+  // Development may only delete its own dev/ uploads; the file is left in place.
+  if (!storageDeleteAllowed(path)) return NextResponse.json({ path, skipped: "development" });
   if (!OWN_UPLOAD.test(path)) {
     return NextResponse.json({ error: "Not a path this route wrote." }, { status: 400 });
   }

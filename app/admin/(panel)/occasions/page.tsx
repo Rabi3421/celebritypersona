@@ -29,8 +29,8 @@ const STATES = [
   { value: "no-looks", label: "Record, no looks" },
   { value: "no-date", label: "No next date set" },
   { value: "upcoming", label: "Coming up" },
-  { value: "needs-intro", label: "Thin — needs an intro" },
-  { value: "noindex", label: "noindex now" },
+  { value: "needs-intro", label: "noindex — needs an intro" },
+  { value: "noindex", label: "noindex (any reason)" },
 ];
 
 const SORTS = [
@@ -39,9 +39,9 @@ const SORTS = [
   { value: "soonest", label: "Soonest first" },
 ];
 
-/** Until Phase 4 adds an intro field, the description is the editor's text. */
+/** The intro counts; the one-line card description does not. */
 const search = (occasion: OccasionView) =>
-  hubSearchStatus({ looks: occasion.stats.looks, introWords: wordCount(occasion.description) });
+  hubSearchStatus({ looks: occasion.stats.looks, introWords: wordCount(occasion.intro) });
 
 function inState(occasion: OccasionView, state: string | undefined) {
   switch (state) {
@@ -106,8 +106,8 @@ export default async function AdminOccasions({
             intro of {MIN_INTRO_WORDS}+ words
           </strong>
           <p>
-            Indexed today, but they will be noindex, follow once the thin-page rule ships,
-            until they have a second look or an intro.{" "}
+            They are noindex, follow and out of the sitemap until they have a second
+            look or an intro of {MIN_INTRO_WORDS}+ words.{" "}
             <Link href="/admin/occasions?state=needs-intro">Show just those →</Link>
           </p>
         </div>
@@ -214,7 +214,7 @@ export default async function AdminOccasions({
                       <td className={styles.num}>
                         {looks === 0 ? <span className={styles.chip}>none yet</span> : looks}
                       </td>
-                      <SearchCell status={search(occasion)} introWords={wordCount(occasion.description)} />
+                      <SearchCell status={search(occasion)} introWords={wordCount(occasion.intro)} />
                       <td className={`${styles.num} ${styles.save}`}>
                         {swapFrom === null ? "—" : inr.format(swapFrom)}
                       </td>

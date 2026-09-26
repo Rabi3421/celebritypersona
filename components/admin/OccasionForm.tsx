@@ -18,6 +18,9 @@ import {
 } from "@/app/admin/(panel)/occasions/actions";
 import type { OccasionView } from "@/lib/archive";
 import styles from "@/app/admin/panel.module.css";
+import { HubSeoSection } from "@/components/admin/seo/HubSeoSection";
+import { occasionDescription, occasionHeadline } from "@/lib/hub-pages";
+import { occasionSlug } from "@/lib/slugs";
 import { ConfirmButton } from "./ConfirmButton";
 
 const GROUPS = ["Wedding", "Festival", "Everyday"] as const;
@@ -80,7 +83,15 @@ export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
           <TextField name="nextDate" label="Next date" type="date"
             hint="Drives the “Coming up” countdown. Leave empty for occasions with no fixed date."
             defaultValue={draft?.nextDate ?? occasion?.nextDate ?? ""} errors={errors} />
-          <TextAreaField name="description" label="Description" defaultValue={draft?.description ?? occasion?.description} errors={errors} rows={3} />
+          <TextAreaField name="description" label="Description" hint="One or two lines, for the occasion cards." defaultValue={draft?.description ?? occasion?.description} errors={errors} rows={3} />
+          <TextAreaField
+            name="intro"
+            label="Intro"
+            hint="One paragraph per line, 100–300 words, primary keyword in the first paragraph: what to wear, what the looks here have in common. With fewer than 2 looks, the page stays out of Google until this has 100+ words."
+            defaultValue={draft?.intro ?? occasion?.intro?.join("\n")}
+            errors={errors}
+            rows={8}
+          />
 
           <RepeatableRows
             key={`colours-${state.attempt ?? 0}`}
@@ -95,6 +106,20 @@ export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
               { key: "name", label: "Colour", placeholder: "Emerald" },
               { key: "value", label: "Hex", placeholder: "#0E5E45" },
             ]}
+          />
+          <HubSeoSection
+            formId="entity-form"
+            introName="intro"
+            path={`/occasions/${occasion ? occasionSlug(occasion) : "…"}`}
+            looks={stats?.looks ?? 0}
+            fallbackTitle={occasion ? occasionHeadline(occasion) : "Built from the occasion's name"}
+            fallbackDescription={occasion ? occasionDescription(occasion) : "Built from its looks"}
+            defaults={{
+              primaryKeyword: draft?.primaryKeyword ?? occasion?.primaryKeyword,
+              seoTitle: draft?.seoTitle ?? occasion?.seoTitle,
+              seoDescription: draft?.seoDescription ?? occasion?.seoDescription,
+            }}
+            errors={errors}
           />
         </div>
         <div className={styles.formBar}>

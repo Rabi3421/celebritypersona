@@ -1,15 +1,17 @@
 import "server-only";
 import { cache } from "react";
 import { getDb } from "@/lib/mongodb";
-import { celebrityViews, completeLooks, occasionViews } from "@/lib/archive";
+import { brandViews, celebrityViews, completeLooks, occasionViews } from "@/lib/archive";
 import { inr, plural } from "@/lib/format";
 import { MIN_ANSWERABLE_TRENDING, MIN_LOOKS_FOR_UNDER_5K, UNDER_5K } from "@/lib/thresholds";
 import { isPublished, pricing } from "@/lib/types";
 import { TRENDING_METHOD_ANSWER } from "@/lib/trending";
 import { trendingAnswerer } from "@/lib/trending-answers";
 import type { InstagramReel } from "@/lib/instagram";
-import { celebritySlug, occasionSlug, outfitSlug } from "@/lib/slugs";
+import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
 import type {
+  Brand,
+  BudgetPage,
   Celebrity,
   CelebrityRequest,
   HomeContent,
@@ -90,6 +92,30 @@ export const getCelebrityViews = cache(async () => {
 export const getCelebrityBySlug = cache(async (slug: string) => {
   const celebrities = await getCelebrityViews();
   return celebrities.find((celebrity) => celebritySlug(celebrity) === slug);
+});
+
+export const getBrands = cache(async (): Promise<Brand[]> => {
+  const db = await getDb();
+  return db.collection<Brand>("brands").find({}, NO_ID).sort({ id: 1 }).toArray();
+});
+
+/** Every label the archive names, with or without a record, joined to the
+ *  looks behind it. */
+export const getBrandViews = cache(async () => {
+  const [brands, outfits] = await Promise.all([getBrands(), getPublishedOutfits()]);
+  return brandViews(brands, outfits);
+});
+
+export const getBrandBySlug = cache(async (slug: string) => {
+  const brands = await getBrandViews();
+  return brands.find((brand) => nameSlug(brand.name) === slug);
+});
+
+/** The editorial half of the four budget pages, keyed by cap. A cap with no
+ *  document yet simply has no intro or search overrides. */
+export const getBudgetPages = cache(async (): Promise<BudgetPage[]> => {
+  const db = await getDb();
+  return db.collection<BudgetPage>("budgetPages").find({}, NO_ID).sort({ cap: 1 }).toArray();
 });
 
 export const getOccasions = cache(async (): Promise<Occasion[]> => {
@@ -358,3 +384,4 @@ const movedSlug = cache(async (kind: SlugRedirect["kind"], from: string) => {
 export const movedOutfitSlug = (slug: string) => movedSlug("outfit", slug);
 export const movedCelebritySlug = (slug: string) => movedSlug("celebrity", slug);
 export const movedOccasionSlug = (slug: string) => movedSlug("occasion", slug);
+export const movedBrandSlug = (slug: string) => movedSlug("brand", slug);

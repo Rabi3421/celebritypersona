@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { hubIndexedNow } from "@/lib/indexing";
+import { occasionDescription, occasionHeadline } from "@/lib/hub-pages";
+import { hubDescription, hubTitle } from "@/lib/hub-seo";
+import { hubIndexable, wordCount } from "@/lib/indexing";
 import { notFound, permanentRedirect } from "next/navigation";
 import { OccasionDetail } from "@/components/occasions/OccasionDetail";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { plural } from "@/lib/format";
 import { occasionSlug, outfitSlug } from "@/lib/slugs";
 import { outfitsForOccasion } from "@/lib/archive";
-import type { OccasionView } from "@/lib/archive";
 import { breadcrumbs, jsonLd, pageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site-config";
 import { getOccasionBySlug, getOccasionViews, getPublishedOutfits, movedOccasionSlug } from "@/lib/db/content";
@@ -29,41 +29,6 @@ export async function generateStaticParams() {
   return occasions.map((occasion) => ({ slug: occasionSlug(occasion) }));
 }
 
-const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
-
-/**
- * Occasion pages compete for "sangeet outfit ideas", "what to wear to a
- * mehendi", "Diwali outfit ideas" — a question, not a category. The title
- * asks it in the words people use; the description answers with what the page
- * actually holds rather than a promise it may not be able to keep.
- */
-function headline(occasion: OccasionView) {
-  const name = occasion.name;
-  const lower = name.toLowerCase();
-  // Occasions that are places or events rather than ceremonies read wrong as
-  // "Sangeet Outfit Ideas" would read right.
-  const asPlace = ["Airport", "Red carpet", "Promo tour", "Casual"].includes(name);
-  return asPlace
-    ? `Celebrity ${lower} Looks — Outfits, Brands & Prices`
-    : `${name} Outfit Ideas — Celebrity Looks, Prices & Affordable Swaps`;
-}
-
-function describe(occasion: OccasionView) {
-  const { looks, swapFrom, averageWorn } = occasion.stats;
-  const lower = occasion.name.toLowerCase();
-
-  if (looks === 0) {
-    return `${occasion.name} outfit ideas taken from celebrity looks, decoded piece by piece with brands, prices and affordable alternatives. No ${lower} look is decoded yet.`;
-  }
-
-  const from = swapFrom === null ? "" : ` Complete looks rebuild from ${inr(swapFrom)}.`;
-  const worn = averageWorn === null ? "" : ` The originals average ${inr(averageWorn)}.`;
-  return `What to wear to ${lower === "airport" ? "the airport" : `a ${lower}`}, taken from ${plural(looks, "celebrity look")} decoded piece by piece — every item identified and priced, with affordable alternatives.${from}${worn}`.slice(
-    0,
-    300,
-  );
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const occasion = await getOccasionBySlug(slug);
@@ -71,15 +36,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const photo = occasion.stats.photos[0];
   return pageMetadata({
-    title: headline(occasion),
+    // The editor's own when set, else the generated one. See lib/hub-seo.ts.
+    title: hubTitle(occasion, occasionHeadline(occasion)),
     absoluteTitle: true,
-    description: describe(occasion),
+    description: hubDescription(occasion, occasionDescription(occasion)),
     path: `/occasions/${occasionSlug(occasion)}`,
     images: photo
       ? [{ url: photo, alt: `A ${occasion.name.toLowerCase()} look decoded on CelebrityPersona` }]
       : undefined,
     // An occasion with no look behind it is a guide with nothing to show.
-    index: hubIndexedNow(occasion.stats),
+    index: hubIndexable({ looks: occasion.stats.looks, introWords: wordCount(occasion.intro) }),
   });
 }
 
@@ -122,7 +88,7 @@ export default async function OccasionPage({ params }: Props) {
       "@type": "CollectionPage",
       "@id": `${canonical}#page`,
       url: canonical,
-      name: headline(occasion),
+      name: hubTitle(occasion, occasionHeadline(occasion)),
       description: occasion.description,
       isPartOf: { "@id": `${site.url}#website` },
       inLanguage: "en-IN",

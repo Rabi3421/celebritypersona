@@ -8,7 +8,9 @@ import {
   HangerIcon,
   InboxIcon,
   PersonIcon,
+  RupeeIcon,
   SlidersIcon,
+  TagIcon,
   TrendIcon,
 } from "./AdminIcons";
 import {
@@ -24,6 +26,8 @@ const ICONS: Record<AdminIconKey, (props: { className?: string }) => React.React
   outfits: HangerIcon,
   celebrities: PersonIcon,
   occasions: CalendarIcon,
+  brands: TagIcon,
+  budgets: RupeeIcon,
   trending: TrendIcon,
   reports: InboxIcon,
   requests: PersonIcon,

@@ -1,6 +1,6 @@
 /**
- * Creates a celebrity or occasion record for every name a published look uses
- * that does not have one yet.
+ * Creates a celebrity, occasion or brand record for every name a published
+ * look uses that does not have one yet.
  *
  *     npm run backfill:records                                  # dry run
  *     npm run backfill:records -- --apply --i-know-this-is-prod
@@ -9,7 +9,8 @@
  * nothing a reader sees changes: the page, its URL (built from the name,
  * which is copied exactly as the outfits spell it) and its fallback bio are the
  * same. What changes is that the name now has a document an editor can open
- * and write an intro into.
+ * and write an intro into. Brand pages are new in Phase 4, so their records
+ * arrive with the pages.
  *
  * Only published looks count, matching what the admin lists show. A draft's
  * names get their records when the draft is next saved, as every save now
@@ -18,9 +19,9 @@
 
 import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
-import { blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
+import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import { nameSlug } from "@/lib/slugs";
-import { isPublished, type Celebrity, type Occasion, type Outfit } from "@/lib/types";
+import { isPublished, type Brand, type Celebrity, type Occasion, type Outfit } from "@/lib/types";
 import { revalidateSite } from "./revalidate";
 import { backupDocuments } from "./backup";
 
@@ -42,17 +43,20 @@ async function main() {
   await client.connect();
   const db = client.db(process.env.MONGODB_DB);
   const noId = { projection: { _id: 0 } } as const;
-  const [outfits, celebrities, occasions] = await Promise.all([
+  const [outfits, celebrities, occasions, brands] = await Promise.all([
     db.collection<Outfit>("outfits").find({}, noId).toArray(),
     db.collection<Celebrity>("celebrities").find({}, noId).sort({ id: 1 }).toArray(),
     db.collection<Occasion>("occasions").find({}, noId).sort({ id: 1 }).toArray(),
+    db.collection<Brand>("brands").find({}, noId).sort({ id: 1 }).toArray(),
   ]);
 
-  const missing = missingRecords({ celebrities, occasions }, outfits.filter(isPublished));
+  const missing = missingRecords({ celebrities, occasions, brands }, outfits.filter(isPublished));
   const nextCelebrity = Math.max(0, ...celebrities.map((record) => record.id)) + 1;
   const nextOccasion = Math.max(0, ...occasions.map((record) => record.id)) + 1;
   const newCelebrities = missing.celebrities.map((name, i) => blankCelebrity(nextCelebrity + i, name));
   const newOccasions = missing.occasions.map((name, i) => blankOccasion(nextOccasion + i, name));
+  const nextBrand = Math.max(0, ...brands.map((record) => record.id)) + 1;
+  const newBrands = missing.brands.map((name, i) => blankBrand(nextBrand + i, name));
 
   console.log(`Celebrities: ${celebrities.length} records, ${newCelebrities.length} to create`);
   for (const record of newCelebrities) {
@@ -63,21 +67,30 @@ async function main() {
     console.log(`   #${record.id} ${record.name}  → /occasions/${nameSlug(record.name)} (unchanged)`);
   }
 
+  console.log(`\nBrands: ${brands.length} records, ${newBrands.length} to create`);
+  for (const record of newBrands) {
+    console.log(`   #${record.id} ${record.name}  → /brands/${nameSlug(record.name)} (new page)`);
+  }
+
   if (!apply) {
     console.log("\nDry run. Nothing was written. Re-run with --apply to create them.");
     await client.close();
     return;
   }
 
-  if (newCelebrities.length || newOccasions.length) {
+  if (newCelebrities.length || newOccasions.length || newBrands.length) {
     // Both collections whole, as they stood. See scripts/backup.ts.
     await backupDocuments("backfill-records", [
       { collection: "celebrities", documents: celebrities },
       { collection: "occasions", documents: occasions },
+      { collection: "brands", documents: brands },
     ]);
     if (newCelebrities.length) await db.collection<Celebrity>("celebrities").insertMany(newCelebrities);
     if (newOccasions.length) await db.collection<Occasion>("occasions").insertMany(newOccasions);
-    console.log(`\nCreated ${newCelebrities.length} celebrity and ${newOccasions.length} occasion records.`);
+    if (newBrands.length) await db.collection<Brand>("brands").insertMany(newBrands);
+    console.log(
+      `\nCreated ${newCelebrities.length} celebrity, ${newOccasions.length} occasion and ${newBrands.length} brand records.`,
+    );
   }
   await client.close();
   await revalidateSite();
