@@ -10,14 +10,24 @@
  * returned untouched so the upload still happens.
  */
 
-/** Roughly 50KB, small enough to store thousands and load instantly. */
-export const TARGET_BYTES = 50 * 1024;
+/**
+ * Roughly 180KB. The old 50KB target pushed most photos down to a 1024px or
+ * 800px edge to fit, and Google Discover and large image previews want the
+ * cover at least 1200px wide. The page never serves this file directly — the
+ * image optimiser resizes it per device — so this is the ceiling, not what a
+ * phone downloads.
+ */
+export const TARGET_BYTES = 180 * 1024;
 
-/** Wide enough for the detail hero on a large screen. */
-const MAX_EDGE = 1600;
+/** A 3:4 portrait at this long edge is 1500px wide. */
+const MAX_EDGE = 2000;
 
-/** Tried in turn when the target cannot be met at the size above. */
-const NARROWER = [1280, 1024, 800];
+/**
+ * Tried in turn when the target cannot be met at the size above. Stops at
+ * 1600, where a 3:4 portrait is still 1200px wide; below that the file is
+ * allowed to run over the target rather than lose the width.
+ */
+const NARROWER = [1800, 1600];
 
 /** Below this, a photo of fabric starts to look like a photo of a JPEG. */
 const MIN_QUALITY = 0.4;

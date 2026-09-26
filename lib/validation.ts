@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
+  outfitOccasions,
   LINK_NETWORKS,
   LINK_STATUSES,
   retailerFromUrl,
@@ -13,6 +14,7 @@ import {
   REQUEST_STATUSES,
   SUBSCRIBER_STATUSES,
 } from "@/lib/types";
+import { isPieceCategory, isPieceColour, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
 
 /** Shapes the admin forms are allowed to submit. Numbers arrive as strings. */
 
@@ -50,21 +52,26 @@ const wholeNumber = (label: string) =>
  * otherwise. Only `npm run check:links` promotes anything to `ok`, so the
  * status always means something was actually checked.
  */
-function buildLink(side: PieceSide, item: Record<string, string | undefined>) {
+function buildLink(side: PieceSide, item: Record<string, unknown>) {
   const key = side === "original" ? "worn" : "swap";
-  const url = item[`${key}Url`];
+  // Only the flat string fields are read here; a piece also carries arrays.
+  const field = (name: string) => {
+    const value = item[`${key}${name}`];
+    return typeof value === "string" && value ? value : undefined;
+  };
+  const url = field("Url");
   if (!url) return {};
 
-  const network = (LINK_NETWORKS as readonly string[]).includes(item[`${key}Network`] ?? "")
-    ? (item[`${key}Network`] as LinkNetwork)
+  const network = (LINK_NETWORKS as readonly string[]).includes(field("Network") ?? "")
+    ? (field("Network") as LinkNetwork)
     : "none";
-  const status = (LINK_STATUSES as readonly string[]).includes(item[`${key}Status`] ?? "")
-    ? (item[`${key}Status`] as LinkStatus)
+  const status = (LINK_STATUSES as readonly string[]).includes(field("Status") ?? "")
+    ? (field("Status") as LinkStatus)
     : "unverified";
-  const affiliateUrl = item[`${key}AffiliateUrl`];
+  const affiliateUrl = field("AffiliateUrl");
 
   const link: PieceLink = {
-    retailer: item[`${key}Retailer`] || retailerFromUrl(url) || item[`${key}Brand`] || "Retailer",
+    retailer: field("Retailer") || retailerFromUrl(url) || field("Brand") || "Retailer",
     url,
     network,
     // `soldOut` is the old field and still the one the stock checkbox posts.
@@ -101,9 +108,21 @@ export const outfitItemSchema = z
     soldOut: z.string().trim().optional(),
     hotspotX: z.string().trim().optional(),
     hotspotY: z.string().trim().optional(),
+    category: z.string().trim().optional(),
+    // Comma-separated as posted, e.g. "black, gold".
+    colours: z.string().trim().optional(),
   })
   .transform((item) => ({
     ...item,
+    category: item.category || undefined,
+    colours: [
+      ...new Set(
+        (item.colours ?? "")
+          .split(",")
+          .map((colour) => colour.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ],
     wornBrand: item.wornBrand || undefined,
     worn: item.worn || undefined,
     wornUrl: item.wornUrl || undefined,
@@ -142,6 +161,17 @@ export const outfitItemSchema = z
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must start with http:// or https://` });
       }
     }
+    if (item.category && !isPieceCategory(item.category)) {
+      ctx.addIssue({ code: "custom", path: ["category"], message: `"${item.category}" is not a category on the list` });
+    }
+    const unknown = item.colours.filter((colour) => !isPieceColour(colour));
+    if (unknown.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["colours"],
+        message: `Not on the colour list: ${unknown.join(", ")}. Use: ${PIECE_COLOUR_NAMES.join(", ")}`,
+      });
+    }
     if (Boolean(item.hotspotX) !== Boolean(item.hotspotY)) {
       ctx.addIssue({ code: "custom", path: ["hotspotX"], message: "Set both hotspot coordinates" });
     }
@@ -170,6 +200,8 @@ export const outfitItemSchema = z
     ...(item.swapBrand ? { swapBrand: item.swapBrand } : {}),
     ...(item.swap ? { swap: Number(item.swap) } : {}),
     ...(item.swapUrl ? { swapUrl: item.swapUrl } : {}),
+    ...(item.category && isPieceCategory(item.category) ? { category: item.category } : {}),
+    ...(item.colours.length ? { colours: item.colours.filter(isPieceColour) } : {}),
   }));
 
 /** What an editor may override for the search result. Both are optional: the
@@ -187,6 +219,8 @@ export const outfitSchema = z.object({
   celebrity: required("Celebrity"),
   event: required("Event"),
   occasion: required("Occasion"),
+  /** The other occasions the look suits. The primary is folded in below. */
+  occasions: z.array(z.string().trim()).default([]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").refine(
     isCalendarDate,
     "Use a real calendar date",
@@ -220,9 +254,12 @@ export const outfitSchema = z.object({
 })
   // An empty optional is dropped rather than stored as an empty string, so a
   // cleared field reads the same as one that was never filled in.
-  .transform(({ seoTitle, seoDescription, images, photoCredit, ...outfit }) => ({
+  .transform(({ seoTitle, seoDescription, images, photoCredit, occasions, ...outfit }) => ({
     ...(photoCredit ? { photoCredit } : {}),
     ...outfit,
+    // The primary always leads the list and is always in it, whatever was
+    // posted, so the two fields cannot disagree about what a look is filed as.
+    occasions: outfitOccasions({ occasion: outfit.occasion, occasions }),
     images: images.map(({ url, path, alt, credit }) => ({
       url,
       path,

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
-import { lines, rows, text } from "@/lib/form-data";
+import { csv, lines, rows, text } from "@/lib/form-data";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import { pieceLink, type OutfitItem } from "@/lib/types";
@@ -17,6 +17,8 @@ export type OutfitDraft = {
   celebrity: string;
   event: string;
   occasion: string;
+  /** The other occasions, comma-separated as typed. */
+  occasions: string;
   date: string;
   slug: string;
   seoTitle: string;
@@ -70,6 +72,8 @@ const ITEM_FIELDS = [
   "soldOut",
   "hotspotX",
   "hotspotY",
+  "category",
+  "colours",
 ];
 
 /**
@@ -137,6 +141,7 @@ export async function saveOutfit(
     celebrity: canonicalName(text(form, "celebrity"), celebrities.map((c) => c.name)),
     event: text(form, "event"),
     occasion: canonicalName(text(form, "occasion"), occasions.map((o) => o.name)),
+    occasions: text(form, "occasions"),
     date: text(form, "date"),
     slug: text(form, "slug"),
     seoTitle: text(form, "seoTitle"),
@@ -148,7 +153,13 @@ export async function saveOutfit(
   };
 
   // The textarea is one paragraph per line; everything else posts as typed.
-  const parsed = outfitSchema.safeParse({ ...draft, notes: lines(form, "notes") });
+  const parsed = outfitSchema.safeParse({
+    ...draft,
+    notes: lines(form, "notes"),
+    // Settled against known names, like the primary, so "diwali" does not
+    // fork an occasion that already exists as "Diwali".
+    occasions: csv(form, "occasions").map((name) => canonicalName(name, occasions.map((o) => o.name))),
+  });
   if (!parsed.success) return {
       attempt: (previous.attempt ?? 0) + 1,
       errors: fieldErrors(parsed.error),

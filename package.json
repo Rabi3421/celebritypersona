@@ -21,7 +21,8 @@
     "migrate:links": "tsx --env-file=.env scripts/migrate-links.ts",
     "check:links": "tsx --env-file=.env scripts/check-links.ts",
     "retag:occasions": "tsx --env-file=.env scripts/retag-occasions.ts",
-    "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts"
+    "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts",
+    "backfill:seo": "tsx --env-file=.env scripts/backfill-seo.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

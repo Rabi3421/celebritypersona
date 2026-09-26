@@ -1,5 +1,7 @@
 /** Content types shared by the seed data, the database layer and the views. */
 
+import type { PieceCategory, PieceColour } from "@/lib/taxonomy";
+
 /**
  * The affiliate networks a link can be monetised through.
  *
@@ -98,6 +100,11 @@ export type OutfitItem = {
   /** Where this piece sits on the outfit photo, as percentages of width and
    *  height, so the dot stays put at any image size. */
   hotspot?: { x: number; y: number };
+  /** What kind of piece this is, picked from `PIECE_CATEGORIES`. Absent on
+   *  pieces filed before the field existed; the SEO checklist flags those. */
+  category?: PieceCategory;
+  /** The colours an editor says it is, picked from `PIECE_COLOURS`. */
+  colours?: PieceColour[];
 };
 
 export type OutfitImage = {
@@ -374,7 +381,68 @@ export type Outfit = {
    */
   contentChangedAt?: string;
   items: OutfitItem[];
+  /**
+   * Every occasion the look suits, the primary one included.
+   *
+   * `occasion` stays the primary and stays where every existing reader finds
+   * it; this list only adds the others. Validation and the backfill both keep
+   * the primary in it, so read it through `outfitOccasions()`, which also
+   * answers for a document written before the field existed.
+   */
+  occasions?: string[];
+  /** The one search phrase the page targets, e.g. "rukmini vasanth black
+   *  dress". Used for planning and checks only; never rendered or emitted as a
+   *  meta keywords tag. */
+  primaryKeyword?: string;
+  /** Two to five supporting phrases. Same rules as `primaryKeyword`. */
+  secondaryKeywords?: string[];
+  /**
+   * The piece the look is about, by its stable `id`. One field on the look
+   * rather than a flag on every piece, so there cannot be two leads or none.
+   * Read through `leadPiece()`, which falls back when it is absent or names a
+   * piece that has since been removed.
+   */
+  leadPieceId?: string;
+  /** The day the slug was first published. After it, changing the slug is a
+   *  deliberate unlock that records a 301. */
+  slugLockedAt?: string;
+  /** Questions the page answers, rendered visibly. */
+  faqs?: { question: string; answer: string }[];
 };
+
+/** Every occasion a look is filed under, primary first, never empty for a
+ *  look that has a primary. */
+export const outfitOccasions = (outfit: Pick<Outfit, "occasion" | "occasions">): string[] => {
+  const all = [outfit.occasion, ...(outfit.occasions ?? [])].map((name) => name?.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  return all.filter((name) => {
+    const key = name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+/**
+ * The piece the look is really about.
+ *
+ * The editor's choice when there is one and it still exists. Otherwise the
+ * dearest piece we could price, and the first otherwise — the rule the title
+ * and H1 were already built on, so a look nobody has chosen a lead for reads
+ * exactly as it did.
+ */
+export function leadPiece(outfit: Pick<Outfit, "items" | "leadPieceId">): OutfitItem | undefined {
+  const chosen = outfit.leadPieceId
+    ? outfit.items.find((item) => item.id === outfit.leadPieceId)
+    : undefined;
+  if (chosen) return chosen;
+
+  const priced = outfit.items.filter(hasWornPrice);
+  if (priced.length) {
+    return priced.reduce((dearest, item) => ((item.worn ?? 0) > (dearest.worn ?? 0) ? item : dearest));
+  }
+  return outfit.items[0];
+}
 
 export type OutfitStatus = "draft" | "published";
 
@@ -690,7 +758,7 @@ export type HomeContent = {
  * matches nothing live, so a name reused later still wins over its own history.
  */
 export type SlugRedirect = {
-  kind: "outfit" | "celebrity" | "occasion";
+  kind: "outfit" | "celebrity" | "occasion" | "brand";
   from: string;
   to: string;
   at: string;

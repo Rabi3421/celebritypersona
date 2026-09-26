@@ -66,8 +66,15 @@ export async function POST(request: Request) {
   // A look saved before it had a slug still needs somewhere to go.
   const folder = nameSlug(String(form.get("folder") ?? "")) || "outfits";
   const slug = nameSlug(String(form.get("slug") ?? "")) || "unfiled";
+  const position = Math.max(1, Math.min(99, Number(form.get("position")) || 1));
+  /**
+   * Named for the look and its place in the set — the slug is what the page is
+   * about, so the file says the same thing to image search. The short random
+   * tail keeps a replaced photo from reusing the name of the one before it,
+   * which a CDN would otherwise keep serving.
+   */
   const named = (type: string) =>
-    `${folder}/${slug}/${Date.now()}-${crypto.randomUUID()}.${extensionFor(type)}`;
+    `${folder}/${slug}/${slug}-${position}-${crypto.randomUUID().slice(0, 8)}.${extensionFor(type)}`;
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
@@ -97,10 +104,12 @@ export async function POST(request: Request) {
 }
 
 /**
- * Only ever the shape this route writes: outfits/<slug>/<stamp>-<uuid>.<ext>.
+ * Only ever the shapes this route writes: outfits/<slug>/<slug>-<n>-<hex8>.<ext>
+ * now, and outfits/<slug>/<stamp>-<uuid>.<ext> before descriptive names.
  * Anything else is refused, so a stray path can never reach deleteObject.
  */
-const OWN_UPLOAD = /^[a-z0-9-]+\/[a-z0-9-]+\/\d+-[0-9a-f-]{36}\.(jpg|png|webp|avif)$/;
+const OWN_UPLOAD =
+  /^[a-z0-9-]+\/[a-z0-9-]+\/(?:\d+-[0-9a-f-]{36}|[a-z0-9-]+-\d{1,2}-[0-9a-f]{8})\.(jpg|png|webp|avif)$/;
 
 /**
  * Discards a photo the editor uploaded and then took back. Only worth calling

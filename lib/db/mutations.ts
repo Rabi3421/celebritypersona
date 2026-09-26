@@ -5,7 +5,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
-import { hasSwap, hasWornPrice, MAILABLE, outfitPhotos } from "@/lib/types";
+import { hasSwap, hasWornPrice, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
 import type { InstagramReel } from "@/lib/instagram";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
@@ -103,6 +103,8 @@ export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) 
     // from here, and an edit never moves it, so fixing a price on a month-old
     // look does not put it back at the front of the queue as new.
     publishedAt: today(),
+    // Creating a look publishes it, so its address is a promise from today.
+    slugLockedAt: today(),
     id,
   });
   // A new look is the whole reason IndexNow is worth having: name the page
@@ -166,8 +168,12 @@ async function renameAcrossOutfits(
 
   const db = await getDb();
   const collection = db.collection<Outfit>("outfits");
-  const affected = (await collection.find({}).toArray()).filter((outfit) =>
-    sameName(outfit[field], from),
+  // A look can suit an occasion without it being the primary, so the list
+  // counts too — otherwise a rename leaves the old name behind in it.
+  const affected = (await collection.find({}).toArray()).filter(
+    (outfit) =>
+      sameName(outfit[field], from) ||
+      (field === "occasion" && (outfit.occasions ?? []).some((name) => sameName(name, from))),
   );
 
   for (const outfit of affected) {
@@ -186,9 +192,23 @@ async function renameAcrossOutfits(
      * because nothing moved. Changing a slug stays an explicit act in the
      * outfit form, which does record one.
      */
+    const renamed = (name: string) => (sameName(name, from) ? to : name);
     await collection.updateOne(
       { id: outfit.id },
-      { $set: { [field]: to, slug: outfitSlug(outfit) } },
+      {
+        $set: {
+          [field]: renamed(outfit[field]),
+          slug: outfitSlug(outfit),
+          ...(field === "occasion"
+            ? {
+                occasions: outfitOccasions({
+                  occasion: renamed(outfit.occasion),
+                  occasions: (outfit.occasions ?? []).map(renamed),
+                }),
+              }
+            : {}),
+        },
+      },
     );
   }
   return affected.length;

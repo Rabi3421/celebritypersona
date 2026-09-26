@@ -17,6 +17,7 @@ import { LINK_STATUSES, outfitPhotos, pieceLink, type Outfit, type OutfitItem } 
 import { networkOptions } from "@/lib/affiliate/networks";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
 import { outfitSlug, suggestOutfitSlug } from "@/lib/slugs";
+import { PIECE_CATEGORIES, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
 import styles from "@/app/admin/panel.module.css";
 import { ConfirmButton } from "./ConfirmButton";
 
@@ -54,8 +55,14 @@ function flattenItem(item: OutfitItem) {
     swapAffiliateUrl: swap?.affiliateUrl,
     swapNetwork: swap?.network,
     swapStatus: swap?.status,
+    colours: item.colours?.join(", "),
   };
 }
+
+const categoryOptions = [
+  { value: "", label: "Choose…" },
+  ...PIECE_CATEGORIES.map((value) => ({ value, label: value })),
+];
 
 /**
  * Fills the slug from what is already typed into the form.
@@ -171,6 +178,17 @@ export function OutfitForm({
             required
           />
           <TextField
+            name="occasions"
+            label="Also suits (optional)"
+            hint="Other occasions this look works for, comma-separated — e.g. Cocktail party, Date night. The one above stays the primary."
+            defaultValue={
+              draft?.occasions ??
+              outfit?.occasions?.filter((name) => name !== outfit.occasion).join(", ")
+            }
+            placeholder="Cocktail party, Date night"
+            errors={errors}
+          />
+          <TextField
             name="date"
             label="Date"
             type="date"
@@ -264,7 +282,7 @@ export function OutfitForm({
             key={`items-${state.attempt ?? 0}`}
             name="items"
             title="Pieces"
-            hint="Only the piece name is required — totals are calculated from what you fill in"
+            hint={`Only the piece name is required — totals are calculated from what you fill in. Colours are comma-separated, from: ${PIECE_COLOUR_NAMES.join(", ")}.`}
             columns="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)"
             error={errors?.items}
             initial={draft?.items ?? outfit?.items.map(flattenItem) ?? []}
@@ -275,6 +293,12 @@ export function OutfitForm({
               // the schema assigns one.
               { key: "id", label: "Piece id", type: "hidden" },
               { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
+              { key: "category", label: "Category", options: categoryOptions },
+              {
+                key: "colours",
+                label: "Colours",
+                placeholder: "black, gold",
+              },
               {
                 key: "note",
                 label: "Note (optional)",

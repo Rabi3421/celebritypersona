@@ -7,7 +7,7 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { garmentOf, sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
-import { hasSubstance, hasWornBrand, hasWornPrice, outfitPhotos, pricing } from "@/lib/types";
+import { hasSubstance, hasWornBrand, leadPiece, outfitPhotos, pricing } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
@@ -81,21 +81,6 @@ function describe(outfit: Outfit) {
 /** Google shows about 60 characters, and 65 is where a fitted title starts
  *  being cut. */
 const TITLE_LIMIT = 62;
-
-/**
- * The piece the look is really about: the dearest one we could price, and the
- * first otherwise. A page called "Ritika Nayak at Fashion Photoshoot" answers
- * a question nobody asks — the searches are for the garment and the label.
- */
-function leadPiece(outfit: Outfit) {
-  const priced = outfit.items.filter(hasWornPrice);
-  if (priced.length) {
-    return priced.reduce((dearest, item) =>
-      (item.worn ?? 0) > (dearest.worn ?? 0) ? item : dearest,
-    );
-  }
-  return outfit.items[0];
-}
 
 /**
  * Occasion words worth carrying into the title, because "<name> airport look"

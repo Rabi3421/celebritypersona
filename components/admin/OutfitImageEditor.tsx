@@ -122,6 +122,9 @@ export function OutfitImageEditor({
         body.append("file", shrunk.file);
         body.append("folder", "outfits");
         body.append("slug", slug);
+        // Its place in the set, so the stored file is named
+        // <slug>-<n>.webp rather than a timestamp and a UUID.
+        body.append("position", String(images.length + index + 1));
         const response = await fetch("/api/admin/upload", { method: "POST", body });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Upload failed.");
