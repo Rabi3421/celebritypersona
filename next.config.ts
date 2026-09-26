@@ -1,4 +1,10 @@
 import type { NextConfig } from "next";
+import { devDatabaseProblem } from "./lib/db-guard";
+
+// `next dev` must never run against the production database. Next has loaded
+// the .env files by the time this runs, so the check sees what the app would.
+const databaseProblem = devDatabaseProblem();
+if (databaseProblem) throw new Error(databaseProblem);
 
 const firebaseBucket =
   process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "celebritypersona-918fc.firebasestorage.app";

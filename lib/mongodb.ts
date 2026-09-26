@@ -1,4 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
+import { devDatabaseProblem } from "@/lib/db-guard";
 
 /**
  * One MongoClient for the whole process, cached on globalThis so that hot
@@ -11,6 +12,11 @@ const dbName = process.env.MONGODB_DB ?? "celebritypersona";
 if (!uri) {
   throw new Error("MONGODB_URI is not set. Copy .env.example to .env.local.");
 }
+
+// The same check next.config.ts makes at startup, in case the environment was
+// changed after it ran. See lib/db-guard.ts.
+const databaseProblem = devDatabaseProblem();
+if (databaseProblem) throw new Error(databaseProblem);
 
 const globalForMongo = globalThis as typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;

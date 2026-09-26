@@ -24,7 +24,8 @@
     "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts",
     "backfill:seo": "tsx --env-file=.env scripts/backfill-seo.ts",
     "backfill:records": "tsx --env-file=.env scripts/backfill-records.ts",
-    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts"
+    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts",
+    "db:seed-dev": "tsx --env-file=.env --env-file=.env.development.local scripts/seed-dev-db.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

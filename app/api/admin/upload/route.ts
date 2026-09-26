@@ -3,6 +3,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage
 import { readSession } from "@/lib/auth/session";
 import { nameSlug } from "@/lib/slugs";
 import { firebaseStorage } from "@/lib/firebase";
+import { storageDeletesAllowed } from "@/lib/db-guard";
 
 /** Images only, and small enough that a stray upload cannot fill the bucket. */
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -123,6 +124,8 @@ export async function DELETE(request: Request) {
   }
 
   const path = new URL(request.url).searchParams.get("path") ?? "";
+  // Development shares the production bucket; the file is left in place.
+  if (!storageDeletesAllowed()) return NextResponse.json({ path, skipped: "development" });
   if (!OWN_UPLOAD.test(path)) {
     return NextResponse.json({ error: "Not a path this route wrote." }, { status: 400 });
   }

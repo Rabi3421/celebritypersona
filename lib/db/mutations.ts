@@ -5,6 +5,7 @@ import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
+import { storageDeletesAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { sameName } from "@/lib/archive";
@@ -73,6 +74,8 @@ export const outfitTotals = (items: OutfitItem[]) => ({
  * content change the editor actually asked for.
  */
 async function forgetImages(paths: (string | undefined)[]) {
+  // Development shares the production bucket; see lib/db-guard.ts.
+  if (!storageDeletesAllowed()) return;
   await Promise.all(
     paths.filter(Boolean).map(async (path) => {
       try {
