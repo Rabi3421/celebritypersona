@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { archiveTotals, celebrityNames, isNewLook, occasionNames, publishableSavingPct, sameName, savingThresholds, swapPriceRange } from "@/lib/archive";
+import { archiveTotals, celebrityNames, isNewLook, occasionNames, publishableSavingPct, hasOccasion, sameName, savingThresholds, swapPriceRange } from "@/lib/archive";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { outfitSlug } from "@/lib/slugs";
 import { piecePrice } from "@/lib/link-display";
@@ -86,7 +86,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
 
   const results = useMemo(() => {
     const filtered = outfits.filter((outfit) => {
-      if (occasions.length && !occasions.includes(outfit.occasion)) return false;
+      if (occasions.length && !occasions.some((occasion) => hasOccasion(outfit, occasion))) return false;
       if (celebrities.length && !celebrities.includes(outfit.celebrity)) return false;
       if (budget < anyBudget && swapSortKey(outfit) > budget) return false;
       if (minimumSaving && (saving(outfit) ?? -1) < minimumSaving) return false;
@@ -198,7 +198,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
                 <FilterOption
                   key={occasion}
                   selected={occasions.includes(occasion)}
-                  count={outfits.filter((outfit) => sameName(outfit.occasion, occasion)).length}
+                  count={outfits.filter((outfit) => hasOccasion(outfit, occasion)).length}
                   onClick={() => { setOccasions(toggleValue(occasions, occasion)); resetShown(); }}
                 >{occasion}</FilterOption>
               ))}

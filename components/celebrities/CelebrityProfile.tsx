@@ -11,16 +11,15 @@ import {
   pricing,
   savingPercent,
   savingSortKey,
-  swapPrice,
   swapSortKey,
-  wornPrice,
   wornSortKey,
 } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import type { CelebrityView } from "@/lib/archive";
 import styles from "@/app/celebrities/[slug]/celebrity-profile.module.css";
-import { sameName } from "@/lib/archive";
+import { hasOccasion } from "@/lib/archive";
 import { trackEvent } from "@/lib/analytics";
+import { CardPrice, cardPriceValues } from "@/components/site/CardPrice";
 
 type SortMode = "new" | "saving" | "cheap" | "lux";
 const inr = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
@@ -61,7 +60,7 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
   }, [celebrity]);
 
   const results = useMemo(() => {
-    const filtered = outfits.filter((outfit) => !occasion || sameName(outfit.occasion, occasion));
+    const filtered = outfits.filter((outfit) => !occasion || hasOccasion(outfit, occasion));
     return filtered.sort((a, b) => {
       if (sort === "saving") return savingSortKey(b) - savingSortKey(a);
       if (sort === "cheap") return swapSortKey(a) - swapSortKey(b);
@@ -190,15 +189,12 @@ function compactPrice(value:number){ return value >= 100000 ? `₹${(value/10000
 /** Both ends of the range are real looks now, so the card always links
  *  somewhere and never quotes a price the archive cannot show you. */
 function ExtremeCard({ outfit, label }: { outfit:Outfit; label:string }) {
-  const money = pricing(outfit);
-  return <Link className={styles.extremeCard} href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} decorative sizes="(max-width:1023px) 100vw, 45vw" /></div><section><p>{label} · {outfit.event}</p><h3>{outfit.items.map((item)=>item.name).slice(0,2).join(" and ")}</h3><span>{money.anyPriced ? <s>{inr.format(money.wornTotal)}</s> : null}{money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : <em>No swap yet</em>}</span></section></Link>;
+  return <Link className={styles.extremeCard} href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} decorative sizes="(max-width:1023px) 100vw, 45vw" /></div><section><p>{label} · {outfit.event}</p><h3>{outfit.items.map((item)=>item.name).slice(0,2).join(" and ")}</h3><span><CardPrice {...cardPriceValues(outfit)} /></span></section></Link>;
 }
 
 /** A look with nothing to compare gets no saving badge and no swap figure,
  *  rather than "−100%" beside "₹0". */
 function ProfileOutfitCard({ outfit, saved, onSave }: { outfit:Outfit; saved:boolean; onSave:()=>void }) {
-  const worn = wornPrice(outfit);
-  const swap = swapPrice(outfit);
   const cut = savingPercent(outfit);
-  return <article className={styles.outfitCard}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} sizes="(max-width:560px) 50vw, 25vw" /><span>{shortDate.format(new Date(`${outfit.date}T00:00:00`))}</span><em>{outfit.occasion}</em>{cut === null ? null : <b>−{cut}%</b>}</div><section><h3>{outfit.event}</h3><p>{outfit.occasion}</p><span>{worn === null ? <em>Price unconfirmed</em> : <s>{inr.format(worn)}</s>}{swap === null ? <em>No swap yet</em> : <b>{inr.format(swap)}</b>}</span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;
+  return <article className={styles.outfitCard}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} sizes="(max-width:560px) 50vw, 25vw" /><span>{shortDate.format(new Date(`${outfit.date}T00:00:00`))}</span><em>{outfit.occasion}</em>{cut === null ? null : <b>−{cut}%</b>}</div><section><h3>{outfit.event}</h3><p>{outfit.occasion}</p><span><CardPrice {...cardPriceValues(outfit)} /></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;
 }

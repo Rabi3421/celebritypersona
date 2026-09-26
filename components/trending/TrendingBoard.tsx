@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/content";
 import { biggestSavers, freshestLooks, savingPercent, trendingBrands, trendingDupes, trendingOccasions } from "@/lib/trending";
 import styles from "@/app/trending/trending.module.css";
+import { CardPrice, cardPriceValues } from "@/components/site/CardPrice";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -317,7 +318,6 @@ export async function TrendingBoard() {
 }
 
 function LookCard({ outfit }: { outfit: Outfit }) {
-  const money = pricing(outfit);
   const cut = savingPercent(outfit);
   return (
     <article className={styles.look}>
@@ -334,8 +334,7 @@ function LookCard({ outfit }: { outfit: Outfit }) {
           <h3>{outfit.celebrity}</h3>
           <p>{outfit.event}</p>
           <p className={styles.lookPrice}>
-            {money.anyPriced ? <s>{inr.format(money.wornTotal)}</s> : <em>Price unconfirmed</em>}
-            {money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : <em>No swap yet</em>}
+            <CardPrice {...cardPriceValues(outfit)} />
           </p>
         </div>
       </Link>

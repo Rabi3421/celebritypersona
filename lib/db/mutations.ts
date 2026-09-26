@@ -153,7 +153,8 @@ function outfitTouched(outfit: Outfit): string[] {
   return [
     `/outfits/${outfitSlug(outfit)}`,
     `/celebrities/${nameSlug(outfit.celebrity)}`,
-    `/occasions/${nameSlug(outfit.occasion)}`,
+    // Every occasion page it appears on, not only the primary.
+    ...outfitOccasions(outfit).map((name) => `/occasions/${nameSlug(name)}`),
   ];
 }
 

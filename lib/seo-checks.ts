@@ -1,6 +1,6 @@
 import { wordCount } from "@/lib/indexing";
 import { creditProblems } from "@/lib/photo-credit";
-import { describe, headline, keywordWords, missingWords, words, type OutfitSeoInput } from "@/lib/outfit-seo";
+import { finalDescription, headline, keywordWords, missingWords, words, type OutfitSeoInput } from "@/lib/outfit-seo";
 import { outfitOccasions, hasSwap, hasWornPrice } from "@/lib/types";
 import type { PieceCategory } from "@/lib/taxonomy";
 
@@ -87,7 +87,8 @@ export function seoChecks(
   const keyword = draft.primaryKeyword?.trim();
   const title = headline(draft);
   const ownDescription = draft.seoDescription?.trim();
-  const description = ownDescription || describe(draft);
+  // What the page will actually print, fallbacks and all.
+  const description = finalDescription(draft);
   const notes = draft.notes ?? [];
   const about = notes.join(" ");
   const aboutWords = wordCount(notes);
@@ -111,7 +112,7 @@ export function seoChecks(
   const undecoded = mentioned.filter((category) => !draft.items.some((item) => item.category === category));
 
   const dollarsIn = [
-    ...(hasDollars(description) && !hasRupees(description) ? ["the search description"] : []),
+    ...(ownDescription && hasDollars(ownDescription) && !hasRupees(ownDescription) ? ["the search description"] : []),
     ...(hasDollars(about) && !hasRupees(about) ? ["About this look"] : []),
   ];
 
@@ -183,11 +184,12 @@ export function seoChecks(
       keyword ? `Missing: ${list(descriptionGap)}` : undefined,
     ),
     warning("title-length", title.length <= TITLE_MAX, `Title ${TITLE_MAX} characters or fewer`, `${title.length} characters.`),
+    // The fallbacks are trimmed to fit; only the editor's own can run over.
     warning(
       "description-length",
-      description.length <= DESCRIPTION_MAX,
+      (ownDescription ?? "").length <= DESCRIPTION_MAX,
       `Description ${DESCRIPTION_MAX} characters or fewer`,
-      `${description.length} characters; Google will cut it.`,
+      `${ownDescription?.length} characters; Google will cut it.`,
     ),
     warning(
       "rupees",

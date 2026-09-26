@@ -2,7 +2,7 @@ import { celebritySlug, nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSwap, outfitPhoto, pricing } from "@/lib/types";
 import type { Celebrity, Occasion, Outfit } from "@/lib/types";
 import { plural } from "@/lib/format";
-import { sameName } from "@/lib/archive";
+import { hasOccasion, sameName } from "@/lib/archive";
 
 /**
  * One index for the whole site, built from the archive.
@@ -85,7 +85,7 @@ export function buildSearchIndex({
   });
 
   const occasionEntries: SearchEntry[] = occasions.map((occasion) => {
-    const theirs = outfits.filter((outfit) => sameName(outfit.occasion, occasion.name));
+    const theirs = outfits.filter((outfit) => hasOccasion(outfit, occasion.name));
     const cheapest = theirs
       .filter((outfit) => outfit.items.length > 0 && outfit.items.every(hasSwap))
       .map((outfit) => pricing(outfit).swapTotal)

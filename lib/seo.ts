@@ -135,7 +135,14 @@ export function pageMetadata({
       canonical: path,
       languages: { "en-IN": path, "x-default": path },
     },
-    robots: index ? undefined : { index: false, follow: true },
+    /**
+     * Indexable pages ask for the large image preview Discover needs, and put
+     * no cap on the snippet or video preview. A page that declines the index
+     * still passes its links on: "noindex, follow", never "nofollow".
+     */
+    robots: index
+      ? { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 }
+      : { index: false, follow: true },
     openGraph: {
       type,
       siteName: site.name,

@@ -3,11 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { garmentsIn, paletteIn, wornBrands } from "@/lib/archive";
+import { wornBrands } from "@/lib/archive";
+import { headline } from "@/lib/outfit-seo";
+import { PIECE_COLOURS } from "@/lib/taxonomy";
 import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { effectiveCredit, isBuyable, isMonetised, outfitPhotos, pieceLink, pricing, wornLabel } from "@/lib/types";
+import {
+  effectiveCredit,
+  isBuyable,
+  isMonetised,
+  leadPiece,
+  outfitOccasions,
+  outfitPhotos,
+  pieceLink,
+  pricing,
+  wornLabel,
+  type OutfitItem,
+} from "@/lib/types";
 import { piecePrice, sideOf, tagFor } from "@/lib/link-display";
 
 /** Both halves of a look, rendered together so neither depends on hydration. */
@@ -24,6 +37,7 @@ import { trackEvent } from "@/lib/analytics";
 import styles from "@/app/outfits/[slug]/outfit-detail.module.css";
 
 import type { PriceMode } from "@/lib/link-display";
+import { CardPrice, cardPriceValues } from "@/components/site/CardPrice";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -91,12 +105,16 @@ export function OutfitDetail({
     (item) =>
       isMonetised(pieceLink(item, "original")) || isMonetised(pieceLink(item, "swap")),
   );
-  // The look sheet beside the write-up. Every line is read off the pieces
-  // themselves, so a look with one label and no colour in its piece names
-  // simply shows fewer rows rather than an invented one.
+  // The look sheet beside the write-up, read off what the editor filed each
+  // piece under. It used to be parsed out of piece names — the last word as the
+  // garment, any colour word as a swatch — which is how "… Midi Dress with Mesh
+  // Sleeves" was filed as Sleeves and a heel called "Black Rose" put Rose in the
+  // palette. A look with no categories or colours yet shows fewer rows.
   const labels = wornBrands([outfit]);
-  const garments = garmentsIn([outfit], 6);
-  const palette = paletteIn([outfit], 5);
+  const garments = [...new Set(outfit.items.flatMap((item) => (item.category && item.category !== "other" ? [item.category] : [])))];
+  const palette = [...new Set(outfit.items.flatMap((item) => item.colours ?? []))];
+  const occasions = outfitOccasions(outfit);
+  const lead = leadPiece(outfit);
   // The dots were placed on the cover, so they only belong on the cover.
   const allPhotos = outfitPhotos(outfit);
   /**
@@ -327,7 +345,9 @@ export function OutfitDetail({
                     key={photo.path || photo.url}
                     onClick={() => setShot(index)}
                   >
-                    <Image src={photo.url} alt="" fill sizes="90px" />
+                    {/* The photo's own alt, so every picture in the set is
+                        described for image search, not only the one shown. */}
+                    <Image src={photo.url} alt={outfitAlt(outfit, index)} fill sizes="90px" />
                   </button>
                 ))}
               </div>
@@ -403,10 +423,17 @@ export function OutfitDetail({
             */}
             {PRICE_MODES.map((pane) => (
             <div className={styles.lines} key={pane} style={pane === mode ? undefined : HIDDEN}>
+              {/* The tabs above say which list this is to a sighted reader; the
+                  heading says it to everything else, and gives the page its
+                  H2s. Visually hidden, because the tab already shows it. */}
+              <h2 className={styles.srOnly}>{pane === "worn" ? "As worn" : "The swap"}</h2>
               {outfit.items.map((item, index) => (
                 <article id={pane === mode ? `outfit-item-${index}` : undefined} className={`${styles.line} ${highlighted === index && pane === mode ? styles.highlighted : ""}`} key={item.name}>
                   <div>
-                    <h2>{item.name}</h2>
+                    {/* Both lists are in the HTML, so the same name under both
+                        would repeat every heading. The swap list names what it
+                        is a swap for. */}
+                    <h3>{pane === "worn" ? item.name : `Swap for the ${item.name}`}</h3>
                     <p>{pane === "worn" ? wornLabel(item) : (item.swapBrand ?? "No swap found yet")}</p>
                     <span className={`${styles.stockTag} ${tagFor(item, pane).archived ? styles.archived : ""}`}>
                       {tagFor(item, pane).text}
@@ -445,26 +472,15 @@ export function OutfitDetail({
                 been priced — a mark standing in for data, under a label that
                 had already said the prices were unconfirmed. It says one thing
                 or the other now, not both. */}
-            {PRICE_MODES.map((pane) => (
-            <div className={styles.total} key={pane} style={pane === mode ? undefined : HIDDEN}>
-              <span>
-                {pane === "worn"
-                  ? money.allPriced
-                    ? "Total as worn"
-                    : money.anyPriced
-                      ? `Total for ${money.priced} of ${money.pieces} priced`
-                      : "Original prices unconfirmed"
-                  : money.allSwapped
-                    ? "Total for the swap"
-                    : `Total for ${money.swapped} of ${money.pieces} swapped`}
-              </span>
-              {pane === "worn" && !money.anyPriced ? null : (
-                <b aria-live="polite">
-                  {pane === "worn" ? inr.format(money.wornTotal) : inr.format(money.swapTotal)}
-                </b>
-              )}
-            </div>
-            ))}
+            {PRICE_MODES.map((pane) => {
+              const total = paneTotal(pane, money, lead);
+              return (
+                <div className={styles.total} key={pane} style={pane === mode ? undefined : HIDDEN}>
+                  <span>{total.label}</span>
+                  {total.amount === null ? null : <b aria-live="polite">{inr.format(total.amount)}</b>}
+                </div>
+              );
+            })}
             <div className={styles.purchaseBox}>
               <p className={`${styles.freshness} ${styles[freshness.tone]}`}>
                 ◷ <strong>{freshness.label}</strong>
@@ -544,35 +560,39 @@ export function OutfitDetail({
                 {garments.length ? (
                   <div>
                     <dt>{garments.length === 1 ? "The piece" : "The pieces"}</dt>
-                    <dd>{garments.map((garment) => garment.name).join(" · ")}</dd>
+                    <dd>{garments.map(titleCase).join(" · ")}</dd>
                   </div>
                 ) : null}
                 {palette.length ? (
                   <div>
                     <dt>Palette</dt>
                     <dd className={styles.swatches}>
-                      {palette.map((colour) => (
-                        <span key={colour.name}>
-                          <i style={{ background: colour.value }} />{colour.name}
+                      {palette.map((colour, index) => (
+                        <span key={colour}>
+                          {/* A separator the eye does not need but a text
+                              reader does: without it the row read "BlackRose". */}
+                          {index > 0 ? <span className={styles.srOnly}>, </span> : null}
+                          <i style={{ background: PIECE_COLOURS[colour] }} />
+                          {titleCase(colour)}
                         </span>
                       ))}
                     </dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt>Occasion</dt>
-                  <dd>
-                    <Link href={`/occasions/${nameSlug(outfit.occasion)}`}>
-                      {outfit.occasion} looks
-                    </Link>
-                  </dd>
+                  <dt>{occasions.length === 1 ? "Occasion" : "Occasions"}</dt>
+                  {occasions.map((name) => (
+                    <dd key={name}>
+                      <Link href={`/occasions/${nameSlug(name)}`}>{name} looks</Link>
+                    </dd>
+                  ))}
                 </div>
               </dl>
               {asidePhoto ? (
                 <figure className={styles.asideShot}>
                   <Image
                     src={asidePhoto.url}
-                    alt={asidePhoto.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`}
+                    alt={outfitAlt(outfit, allPhotos.length - 1)}
                     fill
                     sizes="(max-width: 1023px) 100vw, 340px"
                   />
@@ -582,6 +602,24 @@ export function OutfitDetail({
                 </figure>
               ) : null}
             </div>
+          </section>
+        ) : null}
+
+        {outfit.faqs?.length ? (
+          <section className={styles.faqs}>
+            <h2>Questions</h2>
+            {/* Shown, not marked up: Google keeps FAQ rich results for
+                government and health sites, and the answers are for readers. */}
+            <dl>
+              {outfit.faqs.map((faq) => (
+                <div key={faq.question}>
+                  <dt>
+                    <h3>{faq.question}</h3>
+                  </dt>
+                  <dd>{faq.answer}</dd>
+                </div>
+              ))}
+            </dl>
           </section>
         ) : null}
 
@@ -641,11 +679,9 @@ export function OutfitDetail({
 
 /** The rail used to print the stored ₹0 as a swap price. */
 function RelatedPrice({ outfit }: { outfit: Outfit }) {
-  const money = pricing(outfit);
   return (
     <span>
-      {money.anyPriced ? <s>{inr.format(money.wornTotal)}</s> : <em>Price unconfirmed</em>}
-      {money.anySwapped ? <b>{inr.format(money.swapTotal)}</b> : <em>No swap yet</em>}
+      <CardPrice {...cardPriceValues(outfit)} />
     </span>
   );
 }
@@ -680,7 +716,9 @@ function RelatedRail({
           <Link className={styles.relatedCard} href={`/outfits/${outfitSlug(outfit)}`} key={outfit.id}>
             <div><OutfitThumb outfit={outfit} decorative sizes="220px" /></div>
             <section>
-              <h3>{outfit.celebrity}</h3>
+              {/* The look's own title: every card in "More from her" used to
+                  carry the same H3, her name. */}
+              <h3>{headline(outfit)}</h3>
               <p>{outfit.event} · {shortDate.format(new Date(`${outfit.date}T00:00:00`))}</p>
               <RelatedPrice outfit={outfit} />
             </section>
@@ -689,4 +727,37 @@ function RelatedRail({
       </div>
     </section>
   );
+}
+
+const titleCase = (value: string) =>
+  value.replace(/(^|[\s-])([a-z])/g, (_, lead: string, letter: string) => lead + letter.toUpperCase());
+
+/**
+ * What the totals line says under each list.
+ *
+ * "Total for 1 of 2 priced" left the reader to work out which one, and said it
+ * even when the missing price was the piece the look is about — a total that
+ * leaves out the dress is not a total of this look. The worn total is shown
+ * only when the lead piece is priced; the swap total always says how many
+ * pieces it covers, and there is no ₹0 for a look with no swap yet.
+ */
+function paneTotal(
+  pane: PriceMode,
+  money: ReturnType<typeof pricing>,
+  lead: OutfitItem | undefined,
+): { label: string; amount: number | null } {
+  const of = (count: number) => `${count} of ${money.pieces} ${money.pieces === 1 ? "piece" : "pieces"}`;
+  if (pane === "worn") {
+    if (money.allPriced) return { label: "Total as worn", amount: money.wornTotal };
+    if (!money.anyPriced) return { label: "Original prices unconfirmed", amount: null };
+    if (lead && typeof lead.worn !== "number") {
+      // The category is shorter and says the same thing: "the dress".
+      const what = lead.category && lead.category !== "other" ? lead.category : "lead piece";
+      return { label: `Original price of the ${what} unconfirmed`, amount: null };
+    }
+    return { label: `Worn total (${of(money.priced)})`, amount: money.wornTotal };
+  }
+  if (!money.anySwapped) return { label: "No swap found yet", amount: null };
+  if (money.allSwapped) return { label: "Total for the swap", amount: money.swapTotal };
+  return { label: `Swap total (${of(money.swapped)})`, amount: money.swapTotal };
 }

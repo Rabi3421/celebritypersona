@@ -5,10 +5,11 @@ import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
-import { sameName } from "@/lib/archive";
+import { hasOccasion, sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, outfitPhotos } from "@/lib/types";
-import { describe, headline } from "@/lib/outfit-seo";
+import { articleDates, finalDescription, headline } from "@/lib/outfit-seo";
+import { outfitAlt } from "@/components/site/Thumb";
 import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
 import { author, site } from "@/lib/site-config";
@@ -42,7 +43,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const outfit = await getOutfitBySlug(slug);
   if (!outfit) return {};
 
-  const description = outfit.seoDescription?.trim() || describe(outfit);
+  const description = finalDescription(outfit);
+  const dates = articleDates(outfit);
   const photos = outfitPhotos(outfit);
   const path = `/outfits/${outfitSlug(outfit)}`;
 
@@ -54,12 +56,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     path,
     type: "article",
-    images: photos.map((photo) => ({
-      url: photo.url,
-      alt: photo.alt?.trim() || `${outfit.celebrity} at ${outfit.event}`,
-    })),
-    publishedTime: outfit.date,
-    modifiedTime: outfit.pricesCheckedAt ?? outfit.date,
+    // Cover first, so og:image and og:image:alt are the cover and its alt.
+    images: photos.map((photo, index) => ({ url: photo.url, alt: outfitAlt(outfit, index) })),
+    publishedTime: dates.published,
+    modifiedTime: dates.modified,
     // A look with no swap, no notes and no piece notes is a brand's product
     // name and a buy link. It stays browsable, but it is not worth a place in
     // the index until it says something the merchant's own page does not.
@@ -77,6 +77,8 @@ export default async function OutfitPage({ params }: Props) {
   if (!outfit) {
     // The record may simply have been renamed since this link was made.
     const moved = await movedOutfitSlug(slug);
+    // A fallback for moves made since the last deploy; the build serves every
+    // stored move from next.config.ts, before any page renders. See there.
     if (moved) permanentRedirect(`/outfits/${moved}`);
     notFound();
   }
@@ -85,7 +87,7 @@ export default async function OutfitPage({ params }: Props) {
     .filter((item) => item.id !== outfit.id && sameName(item.celebrity, outfit.celebrity))
     .slice(0, 4);
   const sameOccasion = outfits
-    .filter((item) => item.id !== outfit.id && sameName(item.occasion, outfit.occasion))
+    .filter((item) => item.id !== outfit.id && hasOccasion(item, outfit.occasion))
     .slice(0, 4);
 
   // metadataBase covers the <link rel=canonical>; JSON-LD needs it spelled out.
@@ -103,10 +105,10 @@ export default async function OutfitPage({ params }: Props) {
         "@id": `${canonical}#article`,
         mainEntityOfPage: canonical,
         headline: headline(outfit),
-        description: outfit.seoDescription?.trim() || describe(outfit),
+        description: finalDescription(outfit),
         inLanguage: "en-IN",
-        datePublished: outfit.date,
-        dateModified: outfit.pricesCheckedAt ?? outfit.date,
+        datePublished: articleDates(outfit).published,
+        dateModified: articleDates(outfit).modified,
         // Points at the author page rather than /about, which is about the
         // site rather than the person Google is asking about.
         author: {

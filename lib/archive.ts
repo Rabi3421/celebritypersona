@@ -1,6 +1,7 @@
 import type { Celebrity, Occasion } from "@/lib/types";
 import {
   hasSwap,
+  outfitOccasions,
   hasWornBrand,
   hasWornPrice,
   isFullySwapped,
@@ -254,7 +255,7 @@ export function paletteIn(outfits: Outfit[], limit = 5) {
  *  each has. The filter rails used to offer a fixed list that could not tell
  *  you whether anything was behind a chip. */
 export const occasionNames = (outfits: Outfit[]) =>
-  tally(outfits.map((outfit) => outfit.occasion)).map((entry) => entry.name);
+  tally(outfits.flatMap(outfitOccasions)).map((entry) => entry.name);
 
 export const celebrityNames = (outfits: Outfit[]) =>
   tally(outfits.map((outfit) => outfit.celebrity)).map((entry) => entry.name);
@@ -306,7 +307,7 @@ export function budgetTiers(outfits: Outfit[], count = 3): BudgetTier[] {
       cap,
       looks: within.length,
       cheapest: min(within.map(swapTotal)) ?? 0,
-      occasions: tally(within.map((outfit) => outfit.occasion)).slice(0, 3).map((entry) => entry.name),
+      occasions: tally(within.flatMap(outfitOccasions)).slice(0, 3).map((entry) => entry.name),
     };
   });
 }
@@ -415,7 +416,7 @@ export function occasionCoverage(outfits: Outfit[], budget: number) {
   const within = completeLooks(outfits).filter((outfit) => swapTotal(outfit) <= budget);
   return occasionNames(outfits).map((name) => ({
     name,
-    looks: within.filter((outfit) => sameName(outfit.occasion, name)).length,
+    looks: within.filter((outfit) => hasOccasion(outfit, name)).length,
   }));
 }
 
@@ -470,7 +471,7 @@ export function celebrityStats(
       ...brand,
       highStreet: highStreet.has(brand.name),
     })),
-    occasions: tally(hers.map((outfit) => outfit.occasion)),
+    occasions: tally(hers.flatMap(outfitOccasions)),
     garments: garmentsIn(hers),
     palette: paletteIn(hers),
     cheapestSwap: min(completeLooks(hers).map(swapTotal)),
@@ -501,8 +502,7 @@ export type OccasionStats = {
   lastChecked: string | null;
 };
 
-const matchesOccasion = (outfit: Outfit, name: string) =>
-  sameName(outfit.occasion, name);
+const matchesOccasion = (outfit: Outfit, name: string) => hasOccasion(outfit, name);
 
 export function occasionStats(outfits: Outfit[], name: string): OccasionStats {
   const theirs = outfits.filter((outfit) => matchesOccasion(outfit, name));
@@ -568,7 +568,7 @@ export type OccasionTile = { name: string; looks: number; image?: string };
 /** Occasion and archive tiles, counted off the outfits and illustrated with a
  *  real photo from the group rather than a placeholder seed. */
 export function occasionTiles(outfits: Outfit[], limit = 8): OccasionTile[] {
-  return tally(outfits.map((outfit) => outfit.occasion))
+  return tally(outfits.flatMap(outfitOccasions))
     .slice(0, limit)
     .map((entry) => ({
       name: entry.name,
@@ -779,6 +779,15 @@ export const sameName = (a: string | undefined, b: string | undefined) =>
   (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
 
 /**
+ * Whether a look belongs on an occasion's page: its primary occasion or any of
+ * the others it suits. Every surface that files a look under an occasion —
+ * the occasion page, its counts, the tiles, the filters, search — asks this,
+ * so a look ticked for "Date night" appears there as well as under its primary.
+ */
+export const hasOccasion = (outfit: Pick<Outfit, "occasion" | "occasions">, name: string) =>
+  outfitOccasions(outfit).some((occasion) => sameName(occasion, name));
+
+/**
  * Settles a typed name against the names already in use.
  *
  * Occasion and celebrity are typed by hand, and an archive keyed on those
@@ -873,7 +882,7 @@ export function looksInGroup(occasions: Occasion[], outfits: Outfit[], group: Oc
   const names = new Set(
     occasions.filter((occasion) => occasion.group === group).map((occasion) => occasion.name.toLowerCase()),
   );
-  return outfits.filter((outfit) => names.has(outfit.occasion.toLowerCase()));
+  return outfits.filter((outfit) => outfitOccasions(outfit).some((name) => names.has(name.toLowerCase())));
 }
 
 /**

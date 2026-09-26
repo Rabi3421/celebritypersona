@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { inr, plural } from "@/lib/format";
 import { useSavedList } from "@/lib/saved";
 import styles from "@/app/saved/saved.module.css";
+import { CardPrice } from "@/components/site/CardPrice";
 
 /** Just enough of a look to draw its card. The whole archive is handed over so
  *  the page can resolve a browser-held list without a round trip. */
@@ -168,8 +169,7 @@ export function SavedLibrary({ looks, people }: { looks: SavedLook[]; people: Sa
                           {look.event} · {shortDate.format(new Date(`${look.date}T00:00:00`))}
                         </p>
                         <p className={styles.prices}>
-                          {look.worn === null ? <em>Price unconfirmed</em> : <s>{inr(look.worn)}</s>}
-                          {look.swap === null ? <em>No swap yet</em> : <b>{inr(look.swap)}</b>}
+                          <CardPrice worn={look.worn} swap={look.swap} complete={look.complete} />
                         </p>
                       </div>
                     </article>

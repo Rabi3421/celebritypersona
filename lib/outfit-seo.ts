@@ -16,7 +16,12 @@ import { hasWornBrand, leadPiece, pricing, type Outfit } from "@/lib/types";
 export type OutfitSeoInput = Pick<
   Outfit,
   "celebrity" | "event" | "occasion" | "items" | "notes" | "seoTitle" | "seoDescription" | "leadPieceId"
->;
+> & { primaryKeyword?: string };
+
+/** A dollar amount with no rupee amount beside it. The site prices in ₹, and
+ *  a description quoting "$109" on a page that says ₹9,600 is a mismatch
+ *  Google shows to Indian readers. */
+export const dollarsOnly = (text: string) => /\$\s?\d/.test(text) && !/₹|\bRs\.?\s?\d|\bINR\b/i.test(text);
 
 const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -28,7 +33,7 @@ const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
  */
 export function describe(outfit: OutfitSeoInput) {
   const notes = outfit.notes?.[0]?.trim();
-  if (notes) return notes.length > 158 ? `${notes.slice(0, 155).trimEnd()}…` : notes;
+  if (notes && !dollarsOnly(notes)) return notes.length > 158 ? `${notes.slice(0, 155).trimEnd()}…` : notes;
 
   const money = pricing(outfit);
 
@@ -125,10 +130,23 @@ export function headline(outfit: OutfitSeoInput) {
   return candidates.find((candidate) => candidate.length <= TITLE_LIMIT) ?? fallback;
 }
 
-/** The description a page actually prints: the editor's own, or the
- *  generated line, trimmed to what a result shows. */
-export const finalDescription = (outfit: OutfitSeoInput) =>
-  clampDescription(outfit.seoDescription?.trim() || describe(outfit));
+/**
+ * The description a page actually prints, trimmed to what a result shows:
+ *
+ *   1. the editor's own search description;
+ *   2. with a primary keyword, the generated line — which opens with the
+ *      keyword and quotes the swap in ₹;
+ *   3. otherwise the first paragraph, or a line built from the pieces.
+ *
+ * Any candidate quoting dollars without rupees is passed over for the next,
+ * so "$" never reaches a result on its own. The checklist warns about it too.
+ */
+export function finalDescription(outfit: OutfitSeoInput): string {
+  const own = outfit.seoDescription?.trim();
+  if (own && !dollarsOnly(own)) return clampDescription(own);
+  if (outfit.primaryKeyword?.trim()) return generateDescription(outfit);
+  return clampDescription(describe(outfit));
+}
 
 /** What a piece is called in a title: its category, or failing that the last
  *  word of its name. */
@@ -281,4 +299,27 @@ export function suggestKeywordSlug(
     if (!used.has(`${base}-${suffix}`)) return `${base}-${suffix}`;
   }
   return base;
+}
+
+/* ----------------------------------------------------------------- dates */
+
+/** A YYYY-MM-DD day as the start of that day in India, which is where the
+ *  archive is written: Google asks for a time zone on article dates. */
+const istDay = (day: string) => `${day}T00:00:00+05:30`;
+
+/**
+ * When the article was published and last changed.
+ *
+ * `date` is the day she wore the look, not the day the page went up, so it is
+ * only the fallback for a look saved before `publishedAt` existed. Modified is
+ * the latest real change — a price re-check or a link moving — and never
+ * earlier than publication.
+ */
+export function articleDates(outfit: Pick<Outfit, "date" | "publishedAt" | "pricesCheckedAt" | "contentChangedAt">) {
+  const published = outfit.publishedAt ?? outfit.date;
+  const modified = [published, outfit.pricesCheckedAt, outfit.contentChangedAt]
+    .filter((day): day is string => Boolean(day))
+    .sort()
+    .at(-1)!;
+  return { published: istDay(published), modified: istDay(modified) };
 }

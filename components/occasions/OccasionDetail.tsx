@@ -5,13 +5,14 @@ import {useMemo,useState} from "react";
 import { OutfitThumb } from "@/components/site/Thumb";
 import { occasionSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
-import { pricing, savingPercent, savingSortKey, swapSortKey } from "@/lib/types";
+import { savingPercent, savingSortKey, swapSortKey } from "@/lib/types";
 import type { Outfit } from "@/lib/types";
 import type { OccasionView } from "@/lib/archive";
 import { bandComposition, budgetTiers } from "@/lib/archive";
 import styles from "@/app/occasions/[slug]/occasion-detail.module.css";
 import { dayValue, daysUntilDay, formatDay } from "@/lib/dates";
 import { plural } from "@/lib/format";
+import { CardPrice, cardPriceValues } from "@/components/site/CardPrice";
 
 type SortMode="new"|"saving"|"cheap";
 const inr=new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
@@ -83,4 +84,4 @@ export function OccasionDetail({occasion,outfits,related}:{occasion:OccasionView
  */
 function deliveryVerdict(value:string){const days=daysUntilDay(value);const eventValue=dayValue(value);const order=eventValue===null?null:new Date(eventValue-14*86400000);const orderBy=order===null?"Choose a date":formatDay(order.toISOString().slice(0,10))??"Choose a date";if(!Number.isFinite(days))return{tone:"bad",title:"Choose a date",body:"Pick the day of the event and we'll work backwards from it.",days:0,orderBy};if(days<0)return{tone:"bad",title:"That date has passed",body:"Pick a future date and we'll work backwards from it.",days:0,orderBy};if(days>=28)return{tone:"ok",title:"You have plenty of time",body:`Order by ${orderBy} and you'll have room to try things on and exchange a size.`,days,orderBy};if(days>=14)return{tone:"warn",title:"Getting tight — order this week",body:"You have delivery time, but limited room for a size exchange.",days,orderBy};return{tone:"bad",title:"Express delivery or local shopping",body:"You are inside the comfortable online-ordering window.",days:Math.max(days,0),orderBy};}
 function SectionHeading({eyebrow,title,body}:{eyebrow:string;title:string;body?:string}){return <div className={styles.sectionHeading}><p>{eyebrow}</p><h2>{title}</h2>{body&&<span>{body}</span>}</div>;}
-function OutfitCard({outfit,saved,onSave}:{outfit:Outfit;saved:boolean;onSave:()=>void}){const money=pricing(outfit);const cut=saving(outfit);return <article className={styles.card}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} sizes="(max-width:520px) 50vw, 25vw"/><span>{dateFmt.format(new Date(`${outfit.date}T00:00:00`))}</span>{cut===null?null:<b>−{cut}%</b>}</div><section><h3>{outfit.celebrity}</h3><p>{outfit.event}</p><span>{money.anyPriced?<s>{inr.format(money.wornTotal)}</s>:<em>Price unconfirmed</em>}{money.anySwapped?<b>{inr.format(money.swapTotal)}</b>:<em>No swap yet</em>}</span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;}
+function OutfitCard({outfit,saved,onSave}:{outfit:Outfit;saved:boolean;onSave:()=>void}){const cut=saving(outfit);return <article className={styles.card}><Link href={`/outfits/${outfitSlug(outfit)}`}><div><OutfitThumb outfit={outfit} sizes="(max-width:520px) 50vw, 25vw"/><span>{dateFmt.format(new Date(`${outfit.date}T00:00:00`))}</span>{cut===null?null:<b>−{cut}%</b>}</div><section><h3>{outfit.celebrity}</h3><p>{outfit.event}</p><span><CardPrice {...cardPriceValues(outfit)} /></span></section></Link><button type="button" aria-pressed={saved} onClick={onSave}>{saved?"♥":"♡"}</button></article>;}

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { devDatabaseProblem } from "./lib/db-guard";
+import { storedRedirects } from "./lib/stored-redirects";
 
 // `next dev` must never run against the production database. Next has loaded
 // the .env files by the time this runs, so the check sees what the app would.
@@ -24,11 +25,12 @@ const nextConfig: NextConfig = {
     // the one used, so AVIF is listed first.
     formats: ["image/avif", "image/webp"],
 
-    // deviceSizes is deliberately left at its default. Capping it would trim
-    // the srcSet on 180px thumbnails, but the same list feeds the full-bleed
-    // hero images, where dropping the 3840 candidate visibly softens the
-    // picture on a retina laptop. A few KB of (gzipped) markup is not worth
-    // that trade.
+    // Capped at 2048. The default list runs to 3840, but no image this site
+    // renders is wider than 2000px (new uploads stop there; the home hero is
+    // 1672), so the 3048 and 3840 candidates could only ever return a copy of
+    // a smaller source — and audits read `w=3840` as the page asking for it.
+    // 2048 still covers a 1024px-wide slot on a 2x screen.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     remotePatterns: [
       // Firebase download URLs always carry ?alt=media&token=…, and the URL
       // form of this rule would forbid a query string, so spell it out and
@@ -54,6 +56,12 @@ const nextConfig: NextConfig = {
    * sniffing, referrer leakage to the merchants the affiliate links point at,
    * and the page being framed by someone else.
    */
+  /** Every recorded slug move, answered before any page renders. See
+   *  lib/stored-redirects.ts for why this is not left to the pages. */
+  async redirects() {
+    return storedRedirects();
+  },
+
   async headers() {
     const isDevelopment = process.env.NODE_ENV === "development";
     const securityHeaders = [
@@ -92,6 +100,12 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // The outbound redirector. robots.txt already keeps crawlers out;
+        // this covers anything that follows a link without reading it.
+        source: "/go/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];
   },
