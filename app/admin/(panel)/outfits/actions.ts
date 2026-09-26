@@ -7,6 +7,7 @@ import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
 import { lines, rows, text } from "@/lib/form-data";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
+import { pieceLink, type OutfitItem } from "@/lib/types";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 import { CREDIT_REQUIRED_MESSAGE, creditProblems } from "@/lib/photo-credit";
 
@@ -42,19 +43,78 @@ export type OutfitFormState = {
 
 const IMAGE_FIELDS = ["url", "path", "alt", "credit"];
 
+/**
+ * Every key a piece row posts. `rows()` reads only what is listed here, so a
+ * field the form sends but this list omits is silently dropped on save — which
+ * is how every save used to wipe a piece's retailer, affiliate link, network
+ * and status, and hand it a new id that orphaned its click history.
+ */
 const ITEM_FIELDS = [
+  "id",
   "name",
   "wornBrand",
   "worn",
   "wornUrl",
+  "wornRetailer",
+  "wornAffiliateUrl",
+  "wornNetwork",
+  "wornStatus",
   "swapBrand",
   "swap",
   "swapUrl",
+  "swapRetailer",
+  "swapAffiliateUrl",
+  "swapNetwork",
+  "swapStatus",
   "note",
   "soldOut",
   "hotspotX",
   "hotspotY",
 ];
+
+/**
+ * Keys that always post something: the selects fall back to their first option
+ * and the id is carried unchanged. A row with nothing but these is a blank row
+ * somebody added and left, and is skipped exactly as it was before they posted.
+ */
+const PREFILLED = new Set(["id", "wornNetwork", "wornStatus", "swapNetwork", "swapStatus"]);
+
+const hasTypedValue = (row: Record<string, string>) =>
+  Object.entries(row).some(([key, value]) => !PREFILLED.has(key) && value !== "");
+
+/**
+ * What the form cannot carry, taken from the piece as it was stored.
+ *
+ * `checkedAt` is written by `npm run check:links`, not by a person, so it has
+ * no input — and without this every save erased it. It is kept only while the
+ * URL is the one that was checked.
+ *
+ * A changed URL goes the other way: the status that came back with the form was
+ * a claim about the old URL, so unless the editor chose a new one it returns to
+ * `unverified`. Nothing an editor typed a minute ago has been checked.
+ */
+function carryLinkHistory(items: OutfitItem[], previous: OutfitItem[] | undefined) {
+  if (!previous) return items;
+  const before = new Map(previous.filter((item) => item.id).map((item) => [item.id, item]));
+
+  return items.map((item) => {
+    const old = item.id ? before.get(item.id) : undefined;
+    if (!old) return item;
+    const next = { ...item };
+    for (const side of ["original", "swap"] as const) {
+      const key = side === "original" ? "wornLink" : "swapLink";
+      const link = next[key];
+      const was = pieceLink(old, side);
+      if (!link || !was) continue;
+      if (link.url === was.url) {
+        next[key] = was.checkedAt ? { ...link, checkedAt: was.checkedAt } : link;
+      } else if (link.status === was.status && link.status !== "sold_out") {
+        next[key] = { ...link, status: "unverified" };
+      }
+    }
+    return next;
+  });
+}
 
 export async function saveOutfit(
   previous: OutfitFormState,
@@ -84,7 +144,7 @@ export async function saveOutfit(
     photoCredit: text(form, "photoCredit"),
     images: rows(form, "images", IMAGE_FIELDS) as OutfitDraft["images"],
     notes: text(form, "notes"),
-    items: rows(form, "items", ITEM_FIELDS),
+    items: rows(form, "items", ITEM_FIELDS).filter(hasTypedValue),
   };
 
   // The textarea is one paragraph per line; everything else posts as typed.
@@ -144,7 +204,11 @@ export async function saveOutfit(
   }
 
   if (isUpdate) {
-    await updateOutfit(id, parsed.data);
+    const stored = outfitsNow.find((outfit) => outfit.id === id);
+    await updateOutfit(id, {
+      ...parsed.data,
+      items: carryLinkHistory(parsed.data.items, stored?.items),
+    });
     // Held on the form rather than redirected away, so the warning is read
     // beside the photographs it is about.
     if (problems.length > 0) {

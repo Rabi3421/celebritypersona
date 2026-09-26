@@ -270,6 +270,10 @@ export function OutfitForm({
             initial={draft?.items ?? outfit?.items.map(flattenItem) ?? []}
             addLabel="Add a piece"
             fields={[
+              // Posted back unchanged, so a save keeps the id every outbound
+              // click on this piece is recorded against. Empty on a new row;
+              // the schema assigns one.
+              { key: "id", label: "Piece id", type: "hidden" },
               { key: "name", label: "Piece", placeholder: "Colour, fabric, garment" },
               {
                 key: "note",

@@ -70,7 +70,19 @@ export function RepeatableRows({
           style={{ gridTemplateColumns: `${columns} auto` }}
           key={row.id}
         >
-          {fields.map((field) => (
+          {fields.map((field) =>
+            // Carried, not edited: a value the row has to post back unchanged,
+            // such as a piece's stable id. No label, and no grid cell taken.
+            field.type === "hidden" ? (
+              <input
+                type="hidden"
+                key={field.key}
+                name={`${name}.${index}.${field.key}`}
+                defaultValue={
+                  typeof row.values[field.key] === "string" ? (row.values[field.key] as string) : ""
+                }
+              />
+            ) : (
             <div className={styles.field} key={field.key}>
               <label htmlFor={`${name}.${index}.${field.key}`}>{field.label}</label>
               {field.type === "checkbox" ? (
@@ -116,7 +128,8 @@ export function RepeatableRows({
                 />
               )}
             </div>
-          ))}
+            ),
+          )}
           <button
             className={`${styles.ghost} ${styles.drop}`}
             type="button"
