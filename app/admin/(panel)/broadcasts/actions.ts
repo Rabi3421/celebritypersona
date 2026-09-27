@@ -11,6 +11,7 @@ import { lookSubject } from "@/lib/mail/templates";
 import { outfitSlug } from "@/lib/slugs";
 import { site } from "@/lib/site-config";
 import { isMailable, isPublished, outfitPhoto, pricing } from "@/lib/types";
+import { isSandbox } from "@/lib/db-guard";
 
 export type AnnounceState = { error?: string; queued?: string };
 
@@ -26,6 +27,12 @@ export async function announceOutfit(
   form: FormData,
 ): Promise<AnnounceState> {
   await requireAdmin();
+
+  // A queued job lives in the database, and a preview usually shares
+  // production's: the live site's cron would send what a test queued here.
+  if (isSandbox()) {
+    return { error: "Broadcasts are off on previews and in development. Nothing was queued." };
+  }
 
   const outfitId = Number(form.get("outfitId"));
   if (!Number.isFinite(outfitId)) return { error: "Pick a look to announce." };

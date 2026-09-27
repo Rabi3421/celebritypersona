@@ -1,5 +1,6 @@
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
+import { isSandbox } from "@/lib/db-guard";
 
 /**
  * The last hop, and the only part of this system that is somebody else's.
@@ -42,8 +43,11 @@ function fromParts() {
     : { name: "CelebrityPersona", email: raw.trim() };
 }
 
+/** Mail goes out only from the live site. A preview or `next dev` with the
+ *  production credentials copied in still sends nothing; the drain then runs
+ *  as a dry run. */
 export const mailConfigured = () =>
-  Boolean(process.env.BREVO_API_KEY || process.env.MAIL_HOST);
+  !isSandbox() && Boolean(process.env.BREVO_API_KEY || process.env.MAIL_HOST);
 
 /**
  * Which way out.

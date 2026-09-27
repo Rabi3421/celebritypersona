@@ -62,24 +62,33 @@ export function devDatabaseProblem(env: Env = process.env): string | null {
 }
 
 /**
+ * Whether this is a place to try things rather than the live site: `next dev`,
+ * or a Vercel preview deployment. A preview runs as NODE_ENV=production and,
+ * unless its environment variables say otherwise, against the production
+ * database and bucket — so it is treated like development wherever an action
+ * would reach past the database: photo storage, search-engine pings and mail.
+ */
+export const isSandbox = (env: Env = process.env) =>
+  env.NODE_ENV === "development" || env.VERCEL_ENV === "preview";
+
+/**
  * Where development's uploads go, inside the shared bucket. Production never
  * writes here and no production record points here, so a dev upload can never
  * land in, or be mistaken for, a production photo path.
  */
 export const DEV_STORAGE_PREFIX = "dev/";
 
-/** The storage folder prefix for this environment: `dev/` under `next dev`,
- *  nothing in production. */
-export const storagePrefix = (env: Env = process.env) =>
-  env.NODE_ENV === "development" ? DEV_STORAGE_PREFIX : "";
+/** The storage folder prefix for this environment: `dev/` under `next dev`
+ *  and on previews, nothing in production. */
+export const storagePrefix = (env: Env = process.env) => (isSandbox(env) ? DEV_STORAGE_PREFIX : "");
 
 /**
  * Whether this file may be deleted from Firebase Storage.
  *
- * Development shares the production bucket, and an outfit save deletes photos
+ * Development and previews share the production bucket, and an outfit save deletes photos
  * the outfit no longer uses — on a copy of production data, that would delete
- * production's files. So development may only delete what development
- * uploaded: paths under `dev/`.
+ * production's files. So a sandbox may only delete what a sandbox uploaded:
+ * paths under `dev/`.
  */
 export const storageDeleteAllowed = (path: string, env: Env = process.env) =>
-  env.NODE_ENV !== "development" || path.startsWith(DEV_STORAGE_PREFIX);
+  !isSandbox(env) || path.startsWith(DEV_STORAGE_PREFIX);

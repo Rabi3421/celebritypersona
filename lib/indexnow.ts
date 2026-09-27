@@ -1,5 +1,6 @@
 import "server-only";
 import { site } from "@/lib/site-config";
+import { isSandbox } from "@/lib/db-guard";
 
 /**
  * Telling Bing (and so Copilot, and so DuckDuckGo) that something changed,
@@ -47,6 +48,9 @@ export const indexNowKey = () => process.env.INDEXNOW_KEY?.trim() || undefined;
 function shouldSubmit(): boolean {
   return (
     process.env.NODE_ENV === "production" &&
+    // A preview shares the canonical host's name when its env vars were
+    // copied from production; it still has nothing to announce.
+    !isSandbox() &&
     site.url === `https://${site.host}` &&
     Boolean(indexNowKey())
   );
