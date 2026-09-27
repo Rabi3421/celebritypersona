@@ -2,14 +2,22 @@ import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 import { inr } from "@/lib/format";
 import { revealClass } from "@/lib/reveal";
-import { budgetTiers } from "@/lib/archive";
+import { BUDGET_CAPS, budgetSlug, looksUnder } from "@/lib/budget";
 import { getPublishedOutfits } from "@/lib/db/content";
 
-/** Price ceilings taken from the spread of what the archive's complete looks
- *  actually cost, each carrying the number of looks it really buys. The tile
- *  hands its cap to the explorer so the slider opens where you clicked. */
+/**
+ * One tile per budget page that has looks on it, each linking to that page.
+ *
+ * The tiles used to invent their own ceilings from the spread of complete-look
+ * prices ("under ₹4,000") and send the reader to the explorer; now that every
+ * budget has a page of its own, a tile says exactly what its page lists —
+ * the same cap, the same count — so the click lands where it promised.
+ */
 export async function Budget() {
-  const tiers = budgetTiers(await getPublishedOutfits());
+  const outfits = await getPublishedOutfits();
+  const tiers = BUDGET_CAPS.map((cap) => ({ cap, looks: looksUnder(outfits, cap).length })).filter(
+    (tier) => tier.looks > 0,
+  );
   if (tiers.length === 0) return null;
 
   return (
@@ -21,14 +29,14 @@ export async function Budget() {
         moreLabel="All budgets →"
         moreHref="/budget"
       />
-      <div className="budget">
+      <div className="budget" style={{ "--cols": tiers.length } as React.CSSProperties}>
         {tiers.map((tier, i) => (
           <Link
-            href={`/budget?budget=${tier.cap}`}
+            href={`/budget/${budgetSlug(tier.cap)}`}
             className={`btile ${revealClass(i)}`}
             key={tier.cap}
           >
-            <p className="cap">Complete looks under</p>
+            <p className="cap">Celebrity looks under</p>
             <p className="big">{inr(tier.cap)}</p>
             <div className="bdots" aria-hidden="true">
               <i />

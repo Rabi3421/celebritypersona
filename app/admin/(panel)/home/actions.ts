@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { saveHomeContent } from "@/lib/db/mutations";
-import { rows, text } from "@/lib/form-data";
+import { flag, rows, text } from "@/lib/form-data";
 import { fieldErrors, homeContentSchema, type FieldErrors } from "@/lib/validation";
 
 export type HomeFormState = { errors?: FieldErrors; saved?: boolean };
@@ -15,6 +15,7 @@ export async function saveHome(
   await requireAdmin();
 
   const parsed = homeContentSchema.safeParse({
+    showStats: flag(form, "showStats"),
     swapSteps: rows(form, "swapSteps", ["n", "title", "body"]),
     trustPoints: rows(form, "trustPoints", ["n", "title", "body"]),
     campaign: {

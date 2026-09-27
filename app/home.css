@@ -325,10 +325,10 @@ button{font-family:inherit}
 .dstep p{font-size:14px;color:var(--ash);margin:3px 0 0;max-width:none}
 
 /* ────────── BUDGET ────────── */
-.budget{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4)}
+.budget{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);gap:var(--s4)}
 .btile{background:var(--ink);color:var(--bone);border-radius:var(--r-xl);padding:var(--s7) var(--s6) var(--s6);
   cursor:pointer;position:relative;overflow:hidden;transition:transform var(--base) var(--ease),box-shadow var(--base)}
-.btile:nth-child(2){background:#1F222A}.btile:nth-child(3){background:#272B34}
+.btile:nth-child(2){background:#1F222A}.btile:nth-child(3){background:#272B34}.btile:nth-child(4){background:#2E323C}
 .btile::before{content:'';position:absolute;bottom:-30%;right:-15%;width:75%;height:75%;border-radius:50%;
   background:radial-gradient(circle,rgba(224,0,108,.30),transparent 66%);
   transform:scale(.4);opacity:0;transition:transform var(--vslow) var(--ease),opacity var(--vslow) var(--ease)}
@@ -426,9 +426,11 @@ button{font-family:inherit}
 .bmq::before{left:0;background:linear-gradient(90deg,var(--paper),transparent)}
 .bmq::after{right:0;background:linear-gradient(-90deg,var(--paper),transparent)}
 .bmq-track{display:flex;gap:var(--s8);white-space:nowrap;animation:slide 34s linear infinite reverse;width:max-content}
-.bmq-track span{font-family:var(--display);font-weight:700;font-size:19px;color:var(--stone);letter-spacing:-.02em;
+.bmq-track a{font-family:var(--display);font-weight:700;font-size:19px;color:var(--stone);letter-spacing:-.02em;
   transition:color var(--fast)}
-.bmq-track span:hover{color:var(--rani)}
+.bmq-track a:hover,.bmq-track a:focus-visible{color:var(--rani)}
+/* Held still while pointed at, so a name can be clicked. */
+.bmq:hover .bmq-track,.bmq:focus-within .bmq-track{animation-play-state:paused}
 
 /* ────────── TRUST ────────── */
 .trust{background:var(--ink);color:var(--bone);padding:var(--s9) 0;position:relative;overflow:hidden}

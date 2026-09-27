@@ -779,6 +779,9 @@ export type HomeContent = {
   trustPoints: { n: string; title: string; body: string }[];
   /** The campaign band. Its look count is filled in from the archive. */
   campaign: { eyebrow: string; title: string; body: string; cta: string; href: string };
+  /** Whether the homepage shows its counters (looks decoded, pieces
+   *  identified, complete looks). Off unless an editor turns it on. */
+  showStats?: boolean;
 };
 
 /**

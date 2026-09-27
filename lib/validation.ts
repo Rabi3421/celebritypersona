@@ -451,6 +451,7 @@ export const priceReportSchema = z.object({
  *  archive tiles, the brand marquee, the dupe pick and the hero pieces — is
  *  now counted from the outfits instead. */
 export const homeContentSchema = z.object({
+  showStats: z.boolean().default(false),
   swapSteps: z
     .array(z.object({ n: required("Number"), title: required("Title"), body: required("Body") }))
     .min(1, "Add at least one step"),

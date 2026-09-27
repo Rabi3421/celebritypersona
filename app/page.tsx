@@ -53,7 +53,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function Home() {
-  const [{ swapSteps, campaign }, outfits, occasions] = await Promise.all([
+  const [{ swapSteps, campaign, showStats }, outfits, occasions] = await Promise.all([
     getHomeContent(),
     getPublishedOutfits(),
     getOccasions(),
@@ -70,7 +70,8 @@ export default async function Home() {
 
       <HeroShowcase />
 
-      <Stats stats={homeStats(outfits)} />
+      {/* Off until an editor turns it on in Admin → Homepage. */}
+      {showStats ? <Stats stats={homeStats(outfits)} /> : null}
 
       <div className="shell">
         <DecodedThisWeek />

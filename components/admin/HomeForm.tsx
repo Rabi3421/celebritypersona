@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import {
   ErrorSummary,
   FormError,
+  CheckField,
   SaveButton,
   TextAreaField,
   TextField,
@@ -57,6 +58,14 @@ export function HomeForm({
       </section>
 
       <form action={action} id="entity-form">
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <h2>Counters</h2>
+            <span>Looks decoded, pieces identified, complete looks</span>
+          </div>
+          <CheckField name="showStats" label="Show the counters on the homepage" defaultChecked={Boolean(home.showStats)} />
+        </section>
+
         <section className={styles.section}>
           <div className={styles.sectionHead}>
             <h2>How swaps work</h2>
