@@ -40,6 +40,9 @@ export type AdminUser = {
   name?: string;
   createdAt: Date;
   lastLoginAt?: Date;
+  /** Sessions signed in before this are refused: set by "Sign out
+   *  everywhere" and by every password change. */
+  sessionsValidAfter?: Date;
 };
 
 export async function adminUsers() {

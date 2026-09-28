@@ -21,18 +21,19 @@ async function clientKey() {
   );
 }
 
-export async function signIn(
-  _previous: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
+type Attempt = { ok: true; email: string } | { ok: false; error: string };
+
+/** The whole sign-in check — rate limit, both credentials, the session —
+ *  shared by the login page and the in-place sign-in prompt. */
+async function attemptSignIn(formData: FormData): Promise<Attempt> {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const from = String(formData.get("from") ?? "/admin");
 
   const key = await clientKey();
   const limit = checkRateLimit(key);
   if (!limit.ok) {
     return {
+      ok: false,
       error: `Too many attempts. Try again in ${limit.retryAfterMinutes} minute${
         limit.retryAfterMinutes === 1 ? "" : "s"
       }.`,
@@ -40,17 +41,37 @@ export async function signIn(
   }
 
   if (!email || !password) {
-    return { error: "Enter your email and password." };
+    return { ok: false, error: "Enter your email and password." };
   }
 
   const verified = await verifyCredentials(email, password);
   if (!verified) {
     recordFailure(key);
     // Deliberately vague: never reveal which half was wrong.
-    return { error: "Those details do not match." };
+    return { ok: false, error: "Those details do not match." };
   }
 
   clearAttempts(key);
   await startSession(verified);
+  return { ok: true, email: verified };
+}
+
+export async function signIn(
+  _previous: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const from = String(formData.get("from") ?? "/admin");
+  const result = await attemptSignIn(formData);
+  if (!result.ok) return { error: result.error };
   redirect(from.startsWith("/admin/") || from === "/admin" ? from : "/admin");
+}
+
+/**
+ * Sign-in without leaving the page, for the prompt that appears when a
+ * session runs out mid-edit. Nothing navigates, so the form behind the prompt
+ * keeps everything typed into it; the caller retries what failed.
+ */
+export async function signInInPlace(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const result = await attemptSignIn(formData);
+  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }

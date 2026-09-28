@@ -20,6 +20,7 @@ import { HubSeoSection } from "@/components/admin/seo/HubSeoSection";
 import { celebrityDescription, celebrityHeadline } from "@/lib/hub-pages";
 import { celebritySlug } from "@/lib/slugs";
 import { ConfirmButton } from "./ConfirmButton";
+import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
 
 /** Her look count, average saving, price range and repeated labels are counted
  *  from the outfits, so the form only asks for what a person writes. */
@@ -28,6 +29,8 @@ export function CelebrityForm({ celebrity }: { celebrity?: CelebrityView }) {
     saveCelebrity,
     {},
   );
+  // A save that found the session gone asks for the password, then posts again.
+  useRetryAfterSignIn(state, "entity-form");
   const errors = state.errors;
   const draft = state.values;
   const stats = celebrity?.stats;

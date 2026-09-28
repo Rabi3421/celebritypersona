@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/admin";
+import { adminForAction, requireAdmin, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { canonicalName, sameName } from "@/lib/archive";
 import { getCelebrityViews } from "@/lib/db/content";
 import { createCelebrity, deleteCelebrity, renameCelebrityEverywhere, updateCelebrity } from "@/lib/db/mutations";
@@ -17,13 +17,13 @@ export type CelebrityDraft = {
   seoDescription: string;
 };
 
-export type CelebrityFormState = { errors?: FieldErrors; values?: CelebrityDraft };
+export type CelebrityFormState = { errors?: FieldErrors; values?: CelebrityDraft; sessionExpired?: boolean };
 
 export async function saveCelebrity(
   _previous: CelebrityFormState,
   form: FormData,
 ): Promise<CelebrityFormState> {
-  await requireAdmin();
+  const admin = await adminForAction();
 
   const draft: CelebrityDraft = {
     name: text(form, "name"),
@@ -33,6 +33,7 @@ export async function saveCelebrity(
     seoTitle: text(form, "seoTitle"),
     seoDescription: text(form, "seoDescription"),
   };
+  if (!admin) return { sessionExpired: true, errors: { form: SESSION_EXPIRED_MESSAGE }, values: draft };
 
   const parsed = celebritySchema.safeParse({
     ...draft,

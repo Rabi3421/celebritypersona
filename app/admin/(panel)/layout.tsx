@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { requireAdmin } from "@/lib/auth/admin";
+import { idleSeconds } from "@/lib/auth/token";
+import { AdminSession } from "@/components/admin/session/AdminSession";
 import {
   getCelebrityRequests,
   getCelebrityViews,
@@ -34,7 +36,11 @@ export default async function PanelLayout({ children }: { children: ReactNode })
       getSubscribers(),
     ]);
 
+  // Often enough that the session is renewed well inside its idle window.
+  const heartbeatSeconds = Math.max(15, Math.min(10 * 60, Math.floor(idleSeconds() / 3)));
+
   return (
+    <AdminSession email={session.email} heartbeatSeconds={heartbeatSeconds}>
     <div className={styles.shell}>
       <aside className={styles.side}>
         <p className={styles.brand}>
@@ -58,5 +64,6 @@ export default async function PanelLayout({ children }: { children: ReactNode })
         <div className={styles.body}>{children}</div>
       </div>
     </div>
+    </AdminSession>
   );
 }

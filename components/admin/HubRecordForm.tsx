@@ -7,6 +7,7 @@ import { HubSeoSection } from "@/components/admin/seo/HubSeoSection";
 import type { HubFormState } from "@/lib/hub-form";
 import type { HubSeo } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
+import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
 
 /**
  * The editor's half of a brand or budget page: an intro and the search
@@ -35,6 +36,8 @@ export function HubRecordForm({
   backHref: string;
 }) {
   const [state, action] = useActionState<HubFormState, FormData>(save, {});
+  // A save that found the session gone asks for the password, then posts again.
+  useRetryAfterSignIn(state, "entity-form");
   const errors = state.errors;
   const draft = state.values;
 

@@ -1,41 +1,17 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/admin";
+import { adminForAction, requireAdmin, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
-import { csv, flag, indexedRows, lines, rows, text } from "@/lib/form-data";
+import { csv, flag, lines, text } from "@/lib/form-data";
+import { leadPosition, readOutfitDraft, type OutfitDraft } from "@/lib/outfit-form-fields";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
 import { isPublished, pieceLink, type OutfitItem } from "@/lib/types";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 import { blockingChecks, seoChecks } from "@/lib/seo-checks";
 import { keywordOwners } from "@/lib/keyword-owners";
-
-/** Exactly what the form posted, echoed back so a rejected save keeps the
- *  typing. React resets an uncontrolled form after every action. */
-export type OutfitDraft = {
-  celebrity: string;
-  event: string;
-  occasion: string;
-  /** The other occasions, comma-separated as typed. */
-  occasions: string;
-  date: string;
-  slug: string;
-  seoTitle: string;
-  seoDescription: string;
-  photoCredit: string;
-  images: { url: string; path: string; alt?: string; credit?: string }[];
-  notes: string;
-  items: Record<string, string>[];
-  status: string;
-  primaryKeyword: string;
-  /** Comma-separated as posted by the chips input. */
-  secondaryKeywords: string;
-  faqs: Record<string, string>[];
-  /** The form index of the row picked as the lead piece. */
-  leadPiece: string;
-};
 
 export type OutfitFormState = {
   attempt?: number;
@@ -49,50 +25,10 @@ export type OutfitFormState = {
    */
   warnings?: string[];
   saved?: boolean;
+  /** The session ran out before the save; the form asks for the password in
+   *  place and posts again. Nothing was written. */
+  sessionExpired?: boolean;
 };
-
-const IMAGE_FIELDS = ["url", "path", "alt", "credit"];
-
-/**
- * Every key a piece row posts. `rows()` reads only what is listed here, so a
- * field the form sends but this list omits is silently dropped on save — which
- * is how every save used to wipe a piece's retailer, affiliate link, network
- * and status, and hand it a new id that orphaned its click history.
- */
-const ITEM_FIELDS = [
-  "id",
-  "name",
-  "wornBrand",
-  "worn",
-  "wornUrl",
-  "wornRetailer",
-  "wornAffiliateUrl",
-  "wornNetwork",
-  "wornStatus",
-  "swapBrand",
-  "swap",
-  "swapUrl",
-  "swapRetailer",
-  "swapAffiliateUrl",
-  "swapNetwork",
-  "swapStatus",
-  "note",
-  "soldOut",
-  "hotspotX",
-  "hotspotY",
-  "category",
-  "colours",
-];
-
-/**
- * Keys that always post something: the selects fall back to their first option
- * and the id is carried unchanged. A row with nothing but these is a blank row
- * somebody added and left, and is skipped exactly as it was before they posted.
- */
-const PREFILLED = new Set(["id", "wornNetwork", "wornStatus", "swapNetwork", "swapStatus"]);
-
-const hasTypedValue = (row: Record<string, string>) =>
-  Object.entries(row).some(([key, value]) => !PREFILLED.has(key) && value !== "");
 
 /**
  * What the form cannot carry, taken from the piece as it was stored.
@@ -132,7 +68,7 @@ export async function saveOutfit(
   previous: OutfitFormState,
   form: FormData,
 ): Promise<OutfitFormState> {
-  await requireAdmin();
+  const admin = await adminForAction();
 
   // Celebrity and occasion are typed by hand and become archive keys, so they
   // are settled against the names already in use before anything is stored —
@@ -145,37 +81,22 @@ export async function saveOutfit(
     getAllOutfits(),
   ]);
 
-  const draft: OutfitDraft = {
-    celebrity: canonicalName(text(form, "celebrity"), celebrities.map((c) => c.name)),
-    event: text(form, "event"),
-    occasion: canonicalName(text(form, "occasion"), occasions.map((o) => o.name)),
-    occasions: text(form, "occasions"),
-    date: text(form, "date"),
-    slug: text(form, "slug"),
-    seoTitle: text(form, "seoTitle"),
-    seoDescription: text(form, "seoDescription"),
-    photoCredit: text(form, "photoCredit"),
-    images: rows(form, "images", IMAGE_FIELDS) as OutfitDraft["images"],
-    notes: text(form, "notes"),
-    items: rows(form, "items", ITEM_FIELDS).filter(hasTypedValue),
-    status: text(form, "status"),
-    primaryKeyword: text(form, "primaryKeyword"),
-    secondaryKeywords: text(form, "secondaryKeywords"),
-    faqs: rows(form, "faqs", ["question", "answer"]),
-    leadPiece: text(form, "leadPiece"),
-  };
+  // Celebrity and occasion become archive keys, so they are settled against
+  // the names already in use.
+  const draft = readOutfitDraft(form);
+  draft.celebrity = canonicalName(draft.celebrity, celebrities.map((c) => c.name));
+  draft.occasion = canonicalName(draft.occasion, occasions.map((o) => o.name));
 
-  /**
-   * The lead is a radio naming a row by the index it was posted under. Blank
-   * rows are dropped before parsing, so the index is translated into a
-   * position among the rows that survive, and from there into the piece's id
-   * once the schema has made sure every piece has one.
-   */
-  const leadPosition = indexedRows(form, "items", ITEM_FIELDS)
-    .filter((row) => hasTypedValue(row.values))
-    .findIndex((row) => String(row.index) === draft.leadPiece);
-  // Echoed on the row itself, so a rejected save reopens with the same lead.
-  if (leadPosition >= 0) draft.items[leadPosition] = { ...draft.items[leadPosition], leadPiece: "on" };
+  if (!admin) {
+    return {
+      attempt: (previous.attempt ?? 0) + 1,
+      sessionExpired: true,
+      errors: { form: SESSION_EXPIRED_MESSAGE },
+      values: draft,
+    };
+  }
+
+  const leadIndex = leadPosition(form);
 
   // The textarea is one paragraph per line; everything else posts as typed.
   const parsed = outfitSchema.safeParse({
@@ -226,7 +147,7 @@ export async function saveOutfit(
     });
   }
 
-  const leadPieceId = leadPosition >= 0 ? parsed.data.items[leadPosition]?.id : undefined;
+  const leadPieceId = leadIndex >= 0 ? parsed.data.items[leadIndex]?.id : undefined;
   const outfit = {
     ...parsed.data,
     ...(leadPieceId ? { leadPieceId } : {}),
@@ -273,7 +194,14 @@ export async function saveOutfit(
   } else {
     await createOutfit(outfit);
   }
-  redirect("/admin/outfits");
+  // The list page clears this browser's autosaved copy of the form. Only a key
+  // of the shape the form writes is passed on.
+  const draftKey = text(form, "draftKey");
+  redirect(
+    /^cp:outfit-draft:(new|\d+)$/.test(draftKey)
+      ? `/admin/outfits?draftSaved=${encodeURIComponent(draftKey)}`
+      : "/admin/outfits",
+  );
 }
 
 export async function removeOutfit(form: FormData) {

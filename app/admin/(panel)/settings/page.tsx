@@ -1,4 +1,6 @@
 import { readSession } from "@/lib/auth/session";
+import { signOutAllSessions } from "@/app/admin/actions";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import {
   contacts,
   dataProtection,
@@ -168,8 +170,8 @@ export default async function AdminSettings() {
           </div>
           <div className={styles.row}>
             <strong>Session length</strong>
-            <span>8 hours, then sign in again</span>
-            <span className={styles.status}>fixed</span>
+            <span>Renewed while you work; ends after a day without activity, or 30 days after signing in</span>
+            <span className={styles.status}>sliding</span>
           </div>
           <div className={styles.row}>
             <strong>Failed attempt limit</strong>
@@ -178,8 +180,23 @@ export default async function AdminSettings() {
           </div>
           <div className={styles.row}>
             <strong>Change password</strong>
-            <span>npm run seed:admin — reads the new password on stdin</span>
+            <span>npm run seed:admin — reads the new password on stdin, and signs every session out</span>
             <span className={styles.status}>cli</span>
+          </div>
+          <div className={styles.row}>
+            <strong>Sign out everywhere</strong>
+            <span>Ends every session on every browser and device, this one included</span>
+            <form action={signOutAllSessions}>
+              <ConfirmButton
+                className={styles.danger}
+                title="Sign out everywhere?"
+                message="Every browser and device signed in to this panel is signed out, including this one. You will need the password to come back in."
+                confirmLabel="Sign out everywhere"
+                pendingLabel="Signing out…"
+              >
+                Sign out everywhere
+              </ConfirmButton>
+            </form>
           </div>
         </div>
       </section>

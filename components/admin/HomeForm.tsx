@@ -13,6 +13,7 @@ import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
 import { saveHome, type HomeFormState } from "@/app/admin/(panel)/home/actions";
 import type { HomeContent } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
+import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
 
 /** Read-only figures the homepage now works out for itself, shown so an editor
  *  can see what publishing a look moved without hunting for a form field. */
@@ -28,6 +29,8 @@ export function HomeForm({
   saved?: boolean;
 }) {
   const [state, action] = useActionState<HomeFormState, FormData>(saveHome, {});
+  // A save that found the session gone asks for the password, then posts again.
+  useRetryAfterSignIn(state, "entity-form");
   const errors = state.errors;
 
   return (

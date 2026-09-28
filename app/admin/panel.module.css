@@ -525,3 +525,18 @@
 
 /* Hub forms: the preview and checklist under the search fields. */
 .hubSeoPanel{display:grid;gap:var(--s4)}
+
+/* ---------- session prompt: over the page, which stays as it is ---------- */
+.promptBackdrop{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:var(--s5);
+  background:rgba(6,7,10,.72);backdrop-filter:blur(3px)}
+.prompt{width:min(420px,100%);background:#14171d;color:#f4f2ee;border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r-md);padding:var(--s6);box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.prompt h2{font-size:19px;margin-bottom:var(--s2)}
+.prompt p{font-size:14px;color:rgba(244,242,238,.62);line-height:1.55;margin-bottom:var(--s4)}
+.prompt label{display:block;margin-bottom:var(--s3)}
+.prompt label span{display:block;font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:rgba(244,242,238,.4);margin-bottom:6px}
+.prompt input{width:100%;font:inherit;font-size:15px;color:#f4f2ee;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);padding:10px 12px}
+.prompt input:focus{outline:none;border-color:#e0006c}
+.promptBar{display:flex;gap:var(--s3);align-items:center;margin-top:var(--s4)}

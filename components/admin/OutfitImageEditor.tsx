@@ -6,7 +6,9 @@ import { nameSlug } from "@/lib/slugs";
 import { compressImage, formatBytes, TARGET_BYTES } from "@/lib/image-compress";
 import styles from "@/app/admin/panel.module.css";
 import { suggestPhotoAlt } from "@/lib/photo-alt";
+import { safeFileName } from "@/lib/file-names";
 import { useOutfitSeo } from "@/components/admin/seo/OutfitSeoContext";
+import { useAdminSession } from "@/components/admin/session/AdminSession";
 
 type Spot = { x: number; y: number } | null;
 
@@ -50,6 +52,7 @@ export function OutfitImageEditor({
   const [dragging, setDragging] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const { snapshot } = useOutfitSeo();
+  const { adminFetch } = useAdminSession();
 
   /** "{Celebrity} wearing the {lead piece} by {label}", from the form as it
    *  stands — the same line the backfill wrote. Empty until a celebrity is in. */
@@ -136,7 +139,9 @@ export function OutfitImageEditor({
         // Its place in the set, so the stored file is named
         // <slug>-<n>.webp rather than a timestamp and a UUID.
         body.append("position", String(images.length + index + 1));
-        const response = await fetch("/api/admin/upload", { method: "POST", body });
+        // Recovers from an expired session: renews, or asks for the password
+        // over the page, then sends the same photo again.
+        const response = await adminFetch("/api/admin/upload", { method: "POST", body });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Upload failed.");
         freshRef.current.add(data.path);
@@ -146,7 +151,7 @@ export function OutfitImageEditor({
         setImages((current) => [...current, { url: data.url, path: data.path, ...(alt ? { alt } : {}) }]);
       } catch (cause) {
         setError(
-          `${file.name}: ${cause instanceof Error ? cause.message : "Upload failed."}`,
+          `${safeFileName(file.name)}: ${cause instanceof Error ? cause.message : "Upload failed."}`,
         );
         break;
       }
@@ -165,7 +170,7 @@ export function OutfitImageEditor({
     if (!freshRef.current.has(image.path)) return;
     freshRef.current.delete(image.path);
     try {
-      const response = await fetch(
+      const response = await adminFetch(
         `/api/admin/upload?path=${encodeURIComponent(image.path)}`,
         { method: "DELETE" },
       );

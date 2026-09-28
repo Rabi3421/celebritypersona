@@ -1,18 +1,18 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/admin";
+import { adminForAction, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { saveHomeContent } from "@/lib/db/mutations";
 import { flag, rows, text } from "@/lib/form-data";
 import { fieldErrors, homeContentSchema, type FieldErrors } from "@/lib/validation";
 
-export type HomeFormState = { errors?: FieldErrors; saved?: boolean };
+export type HomeFormState = { errors?: FieldErrors; saved?: boolean; sessionExpired?: boolean };
 
 export async function saveHome(
   _previous: HomeFormState,
   form: FormData,
 ): Promise<HomeFormState> {
-  await requireAdmin();
+  if (!(await adminForAction())) return { sessionExpired: true, errors: { form: SESSION_EXPIRED_MESSAGE } };
 
   const parsed = homeContentSchema.safeParse({
     showStats: flag(form, "showStats"),

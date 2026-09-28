@@ -39,7 +39,8 @@ const passwordHash = await bcrypt.hash(password, 12);
 const result = await users.updateOne(
   { email },
   {
-    $set: { email, passwordHash },
+    // A new password signs every existing session out, wherever it is.
+    $set: { email, passwordHash, sessionsValidAfter: new Date() },
     $setOnInsert: { createdAt: new Date() },
   },
   { upsert: true },
@@ -49,6 +50,7 @@ const result = await users.updateOne(
 const removed = await users.deleteMany({ email: { $ne: email } });
 
 console.log(result.upsertedCount ? `Created admin ${email}` : `Updated password for ${email}`);
+console.log("Every existing admin session has been signed out.");
 console.log(`Other admin accounts removed: ${removed.deletedCount}`);
 console.log(`Total admin users now: ${await users.countDocuments()}`);
 

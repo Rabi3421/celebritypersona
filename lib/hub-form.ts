@@ -5,7 +5,7 @@ import type { FieldErrors } from "@/lib/validation";
  *  the typing. */
 export type HubDraft = { intro: string; primaryKeyword: string; seoTitle: string; seoDescription: string };
 
-export type HubFormState = { errors?: FieldErrors; values?: HubDraft; saved?: boolean };
+export type HubFormState = { errors?: FieldErrors; values?: HubDraft; saved?: boolean; sessionExpired?: boolean };
 
 /** The posted fields, as the draft to echo and as the input to validate. */
 export function readHubForm(form: FormData) {

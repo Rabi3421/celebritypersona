@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/admin";
+import { adminForAction, requireAdmin, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { canonicalName, sameName } from "@/lib/archive";
 import { getOccasionViews } from "@/lib/db/content";
 import { createOccasion, deleteOccasion, renameOccasionEverywhere, updateOccasion } from "@/lib/db/mutations";
@@ -21,13 +21,18 @@ export type OccasionDraft = {
   seoDescription: string;
 };
 
-export type OccasionFormState = { attempt?: number; errors?: FieldErrors; values?: OccasionDraft };
+export type OccasionFormState = {
+  attempt?: number;
+  errors?: FieldErrors;
+  values?: OccasionDraft;
+  sessionExpired?: boolean;
+};
 
 export async function saveOccasion(
   previous: OccasionFormState,
   form: FormData,
 ): Promise<OccasionFormState> {
-  await requireAdmin();
+  const admin = await adminForAction();
 
   const draft: OccasionDraft = {
     name: text(form, "name"),
@@ -41,6 +46,15 @@ export async function saveOccasion(
     seoTitle: text(form, "seoTitle"),
     seoDescription: text(form, "seoDescription"),
   };
+
+  if (!admin) {
+    return {
+      attempt: (previous.attempt ?? 0) + 1,
+      sessionExpired: true,
+      errors: { form: SESSION_EXPIRED_MESSAGE },
+      values: draft,
+    };
+  }
 
   // The intro is one paragraph per line; everything else posts as typed.
   const parsed = occasionSchema.safeParse({ ...draft, intro: lines(form, "intro") });

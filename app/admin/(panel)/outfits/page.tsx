@@ -12,6 +12,7 @@ import { removeOutfit } from "./actions";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { isPublished, outfitPhotos, pricing, type Outfit } from "@/lib/types";
 import { needsPriceReview, priceFreshness } from "@/lib/freshness";
+import { ClearSavedDraft } from "@/components/admin/session/ClearSavedDraft";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -20,6 +21,8 @@ const inr = new Intl.NumberFormat("en-IN", {
 });
 
 type Query = {
+  /** Set by a successful save, naming the autosaved draft to clear. */
+  draftSaved?: string;
   page?: string;
   per?: string;
   q?: string;
@@ -126,6 +129,7 @@ export default async function AdminOutfits({
 
   return (
     <>
+      <ClearSavedDraft draftKey={query.draftSaved} />
       <div className={styles.listTop}>
         <p>
           {active

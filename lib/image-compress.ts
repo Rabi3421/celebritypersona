@@ -10,6 +10,8 @@
  * returned untouched so the upload still happens.
  */
 
+import { safeFileName } from "@/lib/file-names";
+
 /**
  * Roughly 180KB. The old 50KB target pushed most photos down to a 1024px or
  * 800px edge to fit, and Google Discover and large image previews want the
@@ -119,7 +121,7 @@ export async function compressImage(
     // Already smaller than anything we can produce, e.g. a tiny WebP.
     if (!smallest || smallest.size >= file.size) return untouched;
 
-    const name = `${file.name.replace(/\.[^.]+$/, "")}.webp`;
+    const name = `${safeFileName(file.name.replace(/\.[^.]+$/, ""))}.webp`;
     return {
       file: new File([smallest], name, { type: "image/webp" }),
       from: file.size,

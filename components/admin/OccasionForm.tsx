@@ -22,6 +22,7 @@ import { HubSeoSection } from "@/components/admin/seo/HubSeoSection";
 import { occasionDescription, occasionHeadline } from "@/lib/hub-pages";
 import { occasionSlug } from "@/lib/slugs";
 import { ConfirmButton } from "./ConfirmButton";
+import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
 
 const GROUPS = ["Wedding", "Festival", "Everyday"] as const;
 const money = (value: number | null) =>
@@ -31,6 +32,8 @@ const money = (value: number | null) =>
  *  tally are all counted from the outfits filed under this occasion. */
 export function OccasionForm({ occasion }: { occasion?: OccasionView }) {
   const [state, action] = useActionState<OccasionFormState, FormData>(saveOccasion, {});
+  // A save that found the session gone asks for the password, then posts again.
+  useRetryAfterSignIn(state, "entity-form");
   const errors = state.errors;
   const draft = state.values;
   const stats = occasion?.stats;

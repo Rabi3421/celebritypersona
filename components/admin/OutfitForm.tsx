@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ErrorSummary,
@@ -27,6 +27,9 @@ import { OccasionPicker } from "@/components/admin/seo/OccasionPicker";
 import { ColoursInput } from "@/components/admin/seo/ColoursInput";
 import styles from "@/app/admin/panel.module.css";
 import { ConfirmButton } from "./ConfirmButton";
+import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
+import { useFormAutosave } from "@/components/admin/session/useFormAutosave";
+import { readOutfitDraft, type OutfitDraft } from "@/lib/outfit-form-fields";
 
 /** How each status reads in the dropdown, in the order an editor meets them. */
 const STATUS_LABELS: Record<(typeof LINK_STATUSES)[number], string> = {
@@ -88,8 +91,23 @@ export function OutfitForm({
   owners: KeywordOwner[];
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
+  // A save that found the session gone asks for the password, then posts again.
+  useRetryAfterSignIn(state, FORM_ID);
   const errors = state.errors;
-  const draft = state.values;
+  // The form is autosaved in this browser as it is edited, one draft per look.
+  const draftKey = `cp:outfit-draft:${outfit?.id ?? "new"}`;
+  const autosave = useFormAutosave(FORM_ID, draftKey);
+  const [restored, setRestored] = useState<OutfitDraft | null>(null);
+  /** Bumped on restore, to remount the fields with the restored values. */
+  const [restoreCount, setRestoreCount] = useState(0);
+  const draft = state.values ?? restored ?? undefined;
+
+  // A save that stood (a live look with warnings) leaves nothing unsaved. A
+  // save that redirected clears the draft from the list page instead.
+  const { saved: markSaved } = autosave;
+  useEffect(() => {
+    if (state.saved) markSaved();
+  }, [state, markSaved]);
   const status = draft?.status || (outfit ? (outfit.status ?? "published") : "draft");
   // The lead the page already uses is the one pre-selected, so an older look
   // opens with the radio on the piece its title is built from.
@@ -104,6 +122,34 @@ export function OutfitForm({
       {/* Saved, with something still outstanding. A look that is already live
           is never blocked on the checklist — that would freeze every unrelated
           edit — so the save stands and what is missing is listed here. */}
+      {autosave.offer && !restored ? (
+        <div className={styles.notice} role="status">
+          <strong>Restore unsaved draft?</strong>
+          <p>
+            This browser kept a copy of this form from{" "}
+            {new Date(autosave.offer.savedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}{" "}
+            that was never saved.
+          </p>
+          <div className={styles.formBar} style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={() => {
+                const data = autosave.restore();
+                if (!data) return;
+                setRestored(readOutfitDraft(data));
+                setRestoreCount((count) => count + 1);
+              }}
+            >
+              Restore draft
+            </button>
+            <button type="button" className={styles.ghost} onClick={autosave.discard}>
+              Discard it
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {state.saved && state.warnings?.length ? (
         <div className={styles.notice} role="status">
           <strong>Saved — this live look still fails {state.warnings.length} critical {state.warnings.length === 1 ? "check" : "checks"}</strong>
@@ -128,8 +174,10 @@ export function OutfitForm({
         <div className={styles.editorLayout}>
           <form action={action} id={FORM_ID}>
             {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
+            {/* Named so a successful save can clear this browser's draft. */}
+            <input type="hidden" name="draftKey" value={draftKey} />
 
-            <div className={styles.formGrid}>
+            <div className={styles.formGrid} key={`fields-${restoreCount}`}>
               <KeywordSection
                 primary={draft?.primaryKeyword ?? outfit?.primaryKeyword}
                 secondary={

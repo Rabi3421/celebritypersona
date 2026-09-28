@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { keywordClashes } from "@/lib/seo-checks";
 import styles from "@/app/admin/panel.module.css";
 import { fillField, useOutfitSeo } from "./OutfitSeoContext";
+import { useAdminSession } from "@/components/admin/session/AdminSession";
 
 const MAX_SECONDARY = 5;
 
@@ -152,6 +153,7 @@ export function KeywordSection({
  * list: this is a hint, and it must never get in the way of the form.
  */
 function useSuggestions(keyword: string) {
+  const { adminFetch } = useAdminSession();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const last = useRef("");
 
@@ -162,7 +164,7 @@ function useSuggestions(keyword: string) {
     const timer = window.setTimeout(async () => {
       last.current = query;
       try {
-        const response = await fetch(`/api/admin/suggest?${new URLSearchParams({ q: query })}`, {
+        const response = await adminFetch(`/api/admin/suggest?${new URLSearchParams({ q: query })}`, {
           signal: controller.signal,
         });
         const data = response.ok ? await response.json() : { suggestions: [] };
@@ -175,7 +177,7 @@ function useSuggestions(keyword: string) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [keyword]);
+  }, [keyword, adminFetch]);
 
   return keyword.trim().length < 3 ? [] : suggestions;
 }

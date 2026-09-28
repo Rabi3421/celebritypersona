@@ -52,3 +52,17 @@ export async function requireAdmin(): Promise<SessionPayload> {
   if (!session) redirect("/admin/login");
   return session;
 }
+
+/**
+ * For server actions behind a form. A redirect from an action navigates the
+ * tab away and throws the form's contents away with it, so an action asks this
+ * instead and, when it returns null, hands back the posted values with a
+ * "session expired" flag; the form keeps what was typed and asks for the
+ * password in place.
+ */
+export async function adminForAction(): Promise<SessionPayload | null> {
+  return readSession();
+}
+
+/** What a form action returns when the session has run out. */
+export const SESSION_EXPIRED_MESSAGE = "Your session expired. Sign in again to save — nothing you typed is lost.";
