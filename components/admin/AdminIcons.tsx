@@ -73,3 +73,10 @@ export const RupeeIcon = (p: P) => (
     <path d="M4.5 2.5h7M4.5 5.5h7M4.5 2.5h2.2a3 3 0 0 1 0 6H4.5l6 5" />
   </svg>
 );
+
+export const PanelIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="2" y="2.6" width="12" height="10.8" rx="1.6" />
+    <path d="M6 2.6v10.8" />
+  </svg>
+);

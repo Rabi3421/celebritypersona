@@ -63,9 +63,10 @@ export function Sidebar({ counts }: { counts: AdminCounts }) {
                   key={route.href}
                   className={styles.link}
                   aria-current={active ? "page" : undefined}
+                  title={route.label}
                 >
                   <Icon />
-                  {route.label}
+                  <span>{route.label}</span>
                   {count === undefined ? null : <b>{count}</b>}
                 </Link>
               );

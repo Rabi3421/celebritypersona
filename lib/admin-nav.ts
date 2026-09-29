@@ -182,3 +182,6 @@ export function findAdminRoute(pathname: string): AdminRoute | undefined {
 }
 
 export type AdminCounts = Partial<Record<NonNullable<AdminRoute["countKey"]>, number>>;
+
+/** Remembers whether the sidebar is folded to icons; read by the panel layout. */
+export const SIDEBAR_COOKIE = "admin-sidebar";

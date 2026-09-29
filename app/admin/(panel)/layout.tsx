@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { requireAdmin } from "@/lib/auth/admin";
 import { idleSeconds } from "@/lib/auth/token";
 import { AdminSession } from "@/components/admin/session/AdminSession";
+import { SIDEBAR_COOKIE } from "@/lib/admin-nav";
 import {
   getCelebrityRequests,
   getCelebrityViews,
@@ -26,7 +29,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
   const session = await requireAdmin();
   // The views, not the raw documents, so a sidebar count and the list it opens
   // never disagree: both include names the outfits mention with no record yet.
-  const [outfits, celebrities, occasions, priceReports, requests, subscribers] =
+  const [outfits, celebrities, occasions, priceReports, requests, subscribers, store] =
     await Promise.all([
       getAllOutfits(),
       getCelebrityViews(),
@@ -34,6 +37,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
       getPriceReports(),
       getCelebrityRequests(),
       getSubscribers(),
+      cookies(),
     ]);
 
   // Often enough that the session is renewed well inside its idle window.
@@ -41,12 +45,9 @@ export default async function PanelLayout({ children }: { children: ReactNode })
 
   return (
     <AdminSession email={session.email} heartbeatSeconds={heartbeatSeconds}>
-    <div className={styles.shell}>
-      <aside className={styles.side}>
-        <p className={styles.brand}>
-          <i />
-          CelebrityPersona
-        </p>
+    <AdminShell
+      initialCollapsed={store.get(SIDEBAR_COOKIE)?.value === "collapsed"}
+      sidebar={
         <Sidebar
           counts={{
             outfits: outfits.length,
@@ -57,13 +58,11 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             subscribers: subscribers.filter((row) => row.status === "Active").length,
           }}
         />
-      </aside>
-
-      <div className={styles.main}>
-        <AdminHeader email={session.email} />
-        <div className={styles.body}>{children}</div>
-      </div>
-    </div>
+      }
+    >
+      <AdminHeader email={session.email} />
+      <div className={styles.body}>{children}</div>
+    </AdminShell>
     </AdminSession>
   );
 }
