@@ -60,7 +60,7 @@ export async function TrendingBoard() {
             <span>Trending</span>
           </nav>
           <h1>
-            Trending celebrity
+            Trending celebrity{" "}
             <br />
             outfits right now
           </h1>
