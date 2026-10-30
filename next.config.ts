@@ -20,22 +20,34 @@ const nextConfig: NextConfig = {
   // fewer thing telling a scanner what to try.
   poweredByHeader: false,
 
+  // Every distinct (source, width, quality, format) the optimizer produces is
+  // one transformation, and the Hobby plan's monthly allowance is small:
+  // running out blocked the whole site for a month (Sep–Oct 2026). Everything
+  // below is set to keep that count down — fewer variants per photo, and each
+  // variant made once rather than again whenever its cache entry expires.
   images: {
-    // Next only emits WebP by default. AVIF is typically 20–30% smaller again
-    // at the same quality, and the optimizer picks per request from the
-    // browser's Accept header, falling back to WebP and then to the source
-    // format — so nothing regresses on a browser that cannot take it.
-    //
-    // Order matters: the first configured format the Accept header matches is
-    // the one used, so AVIF is listed first.
-    formats: ["image/avif", "image/webp"],
+    // WebP only. AVIF alongside it doubled the variants for every photo, and
+    // uploads are already WebP, so the saving it bought was a few KB a photo.
+    formats: ["image/webp"],
 
-    // Capped at 2048. The default list runs to 3840, but no image this site
-    // renders is wider than 2000px (new uploads stop there; the home hero is
-    // 1672), so the 3048 and 3840 candidates could only ever return a copy of
-    // a smaller source — and audits read `w=3840` as the page asking for it.
-    // 2048 still covers a 1024px-wide slot on a 2x screen.
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    // Four device widths instead of seven. A browser takes the smallest one at
+    // least as wide as it needs, so a gap costs some bytes on some screens,
+    // not sharpness. No source is wider than 2000px (new uploads stop there;
+    // the home hero is 1672), so 1920 is the top that can ever matter.
+    deviceSizes: [640, 828, 1200, 1920],
+
+    // The fixed-size thumbnails and avatars (24–56px, at 1x and 2x) land on
+    // 48 or 96; 256 serves the small grid tiles before 640 takes over.
+    imageSizes: [48, 96, 256],
+
+    // Required from Next 16; one quality means one variant per width.
+    qualities: [75],
+
+    // 31 days instead of 4 hours. Firebase download URLs carry a token and are
+    // never rewritten in place — a new photo is a new URL — so a variant never
+    // goes stale, and re-making it every 4 hours was spending the allowance on
+    // copies of the same image.
+    minimumCacheTTL: 2678400,
     remotePatterns: [
       // Firebase download URLs always carry ?alt=media&token=…, and the URL
       // form of this rule would forbid a query string, so spell it out and
