@@ -10,7 +10,7 @@
  * never email a real reader.
  */
 
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
@@ -30,19 +30,29 @@ const latest = (() => {
 
 if (latest) {
   console.log(`Loading your site data from .scratch/${latest} …`);
-  const restore = spawnSync(
-    "mongorestore",
-    [
-      "--uri", uri,
-      "--nsInclude", `${DB}.*`,
-      ...LEFT_OUT.flatMap((name) => ["--nsExclude", `${DB}.${name}`]),
-      `.scratch/${latest}`,
-    ],
-    { encoding: "utf8" },
-  );
+  // Async, not spawnSync: the in-memory mongod pipes its logs through this
+  // process. Blocking the event loop lets that pipe fill, mongod stalls on the
+  // write, and mongorestore times out on the handshake.
+  const restore = await new Promise((resolve) => {
+    const child = spawn(
+      "mongorestore",
+      [
+        "--uri", uri,
+        "--nsInclude", `${DB}.*`,
+        ...LEFT_OUT.flatMap((name) => ["--nsExclude", `${DB}.${name}`]),
+        `.scratch/${latest}`,
+      ],
+      { stdio: ["ignore", "ignore", "pipe"] },
+    );
+    let stderr = "";
+    child.stderr.on("data", (chunk) => (stderr += chunk));
+    child.on("error", (error) => resolve({ status: null, error, stderr }));
+    child.on("close", (status) => resolve({ status, stderr }));
+  });
   if (restore.status !== 0) {
     console.warn("Could not load the backup, so the site will start empty.");
     if (restore.error) console.warn("(Is mongorestore installed? brew install mongodb/brew/mongodb-database-tools)");
+    else console.warn(restore.stderr.trim().split("\n").slice(-3).join("\n"));
   }
 } else {
   console.warn("No backup found in .scratch/, so the site will start empty.");
