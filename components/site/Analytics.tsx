@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { flushPendingEvents } from "@/lib/analytics";
 
 /**
  * "Has the page finished loading", as a store React can read.
@@ -28,9 +29,11 @@ const loadedOnServer = () => false;
  * Google Analytics, everywhere except the panel, and never during the paint.
  *
  * The tag is Next's own component rather than a pasted snippet: it loads
- * gtag.js after hydration so it stays off the critical path, and it reports
- * the client-side navigations a raw snippet misses — which on this site is
- * most of them, since every link is a client transition.
+ * gtag.js after hydration so it stays off the critical path. It does not
+ * itself report client-side navigations — which on this site is most of them,
+ * since every link is a client transition. Those page_views come from GA4's
+ * Enhanced Measurement "Page changes based on browser history events"
+ * setting, so that setting must stay on in the property.
  *
  * The admin is excluded at the source. It is one person's working session,
  * repeated all day, against pages that are noindex and have no readers; left
@@ -64,8 +67,18 @@ export function Analytics({ gaId }: { gaId: string }) {
    * than the LCP of every session that stays.
    */
   const ready = useSyncExternalStore(subscribeToLoad, loadedNow, loadedOnServer);
+  const active = ready && !pathname.startsWith("/admin");
 
-  if (!ready) return null;
-  if (pathname.startsWith("/admin")) return null;
+  /**
+   * The view events of the landing page fired before `load` and are waiting
+   * in lib/analytics.ts. Child effects run first, so by now `<GoogleAnalytics>`
+   * has appended its inline init script — which runs on insertion — and
+   * `gtag('config')` is already queued ahead of them.
+   */
+  useEffect(() => {
+    if (active) flushPendingEvents();
+  }, [active]);
+
+  if (!active) return null;
   return <GoogleAnalytics gaId={gaId} />;
 }
