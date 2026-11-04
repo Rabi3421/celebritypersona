@@ -61,16 +61,12 @@ npm run seed:admin     # sets the admin password, reads it on stdin
 Public pages are prerendered, so these queries run at build time. The build needs
 a reachable database.
 
-No database to hand? `npm run mongo:local` starts a throwaway MongoDB on port
-27018; point `MONGODB_URI` at it while you work.
-
 ## Development database
 
-`npm run dev` starts a private MongoDB on this machine, loads the newest backup
-from `.scratch/` into it (without subscribers or the mail queue), and runs the
-site against it. Nothing done in development reaches the live database. Stop
-it with Ctrl+C; the next `npm run dev` starts fresh from the backup.
+There is one database. `npm run dev` runs the site against the same Atlas
+cluster as production, using `MONGODB_URI` from `.env.local`, so every save
+made in development is a real save on the live site.
 
-Running `next dev` directly against the live database is refused
-(`lib/db-guard.ts`). Photo deletes are also skipped in development, because
-development shares the live Firebase bucket.
+What development does not do (`lib/db-guard.ts`): send mail, ping search
+engines, or delete photos it did not upload. Its uploads go under `dev/` in the
+shared Firebase bucket.

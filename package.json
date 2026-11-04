@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "node --env-file=.env scripts/seed-admin.mjs",
     "seed:content": "tsx --env-file=.env scripts/seed-content.ts",
-    "mongo:local": "node scripts/local-mongo.mjs",
     "instagram:refresh": "node --env-file=.env scripts/instagram-refresh.mjs",
     "instagram:mirror": "tsx --env-file=.env scripts/instagram-mirror.ts",
     "mail:init": "node --env-file=.env scripts/mail-init.mjs",
@@ -24,8 +23,7 @@
     "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts",
     "backfill:seo": "tsx --env-file=.env scripts/backfill-seo.ts",
     "backfill:records": "tsx --env-file=.env scripts/backfill-records.ts",
-    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts",
-    "db:seed-dev": "tsx --env-file=.env --env-file=.env.development.local scripts/seed-dev-db.ts"
+    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",
@@ -48,7 +46,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
-    "mongodb-memory-server": "^11.2.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5"
