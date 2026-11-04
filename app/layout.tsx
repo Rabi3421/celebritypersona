@@ -147,6 +147,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en-IN"
       className={`${archivo.variable} ${plexSans.variable} ${plexMono.variable}`}
+      data-scroll-behavior="smooth"
     >
       <body>
         <NavProgress />

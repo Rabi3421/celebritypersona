@@ -68,7 +68,7 @@
 .card:hover { transform:translateY(-6px); box-shadow:var(--e3); border-color:transparent; }
 .cardMain { display:block; }
 .cardTop { display:flex; gap:var(--s4); padding:var(--s5) var(--s5) var(--s4); }
-.cardTop > img { border-radius:50%; object-fit:cover; flex:none; }
+.cardTop > img { width:66px; height:66px; border-radius:50%; object-fit:cover; flex:none; }
 .cardTop > div { flex:1; min-width:0; }
 .cardTop h2 { font-size:16.5px; line-height:1.2; }
 .cardTop p { font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:4px; }
