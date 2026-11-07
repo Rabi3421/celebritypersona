@@ -6,11 +6,70 @@ import {
   isPostHogEnabled,
   isExcludedPath,
   isExtensionNoise,
+  localTestFlag,
   pathOf,
+  redactServerText,
   redactText,
   sanitizeProperties,
   sanitizeUrl,
 } from "../lib/posthog/privacy.ts";
+
+test("test flag: honoured locally, never on Vercel", () => {
+  assert.equal(localTestFlag("1", undefined), "1");
+  assert.equal(localTestFlag("1", ""), "1");
+  assert.equal(localTestFlag("1", "1"), "", "set by mistake in Vercel: ignored");
+  assert.equal(localTestFlag("", undefined), "");
+  assert.equal(localTestFlag("true", undefined), "", "only the exact value 1");
+  assert.equal(localTestFlag(undefined, undefined), "");
+});
+
+// A realistic worst case for a server error message.
+const NASTY = [
+  "MongoServerError: auth failed for mongodb+srv://celebuser:S3cr3t%21@cluster0.abcd.mongodb.net/prod?retryWrites=true&w=majority",
+  "while handling GET https://www.celebritypersona.com/api/unsubscribe?token=tok_9f8e7d&email=reader%40example.com#frag",
+  "and /api/subscribe/confirm?token=abc123&x=1 for reader@example.com",
+  "Authorization: Bearer sk_live_51HxYz.abc-def",
+  "jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+  'config {"password":"hunter2", api_key=AKIA123456, session: s%3Aabc.def, client_secret="xyz"}',
+].join("\n");
+const SECRETS = ["celebuser", "S3cr3t", "tok_9f8e7d", "reader@example.com", "reader%40example.com", "abc123", "sk_live_51HxYz", "eyJhbGciOiJIUzI1NiJ9", "hunter2", "AKIA123456", "s%3Aabc", "xyz", "retryWrites", "#frag"];
+
+test("server text: credentials, tokens, emails, secrets and every query string are removed", () => {
+  const out = redactServerText(NASTY);
+  for (const secret of SECRETS) assert.ok(!out.includes(secret), `leaked: ${secret}\n${out}`);
+  assert.match(out, /mongodb\+srv:\/\/\[redacted\]@cluster0\.abcd\.mongodb\.net\/prod(\s|$)/);
+  assert.match(out, /https:\/\/www\.celebritypersona\.com\/api\/unsubscribe(\s|$)/, "URL kept, query dropped");
+  assert.match(out, /\/api\/subscribe\/confirm for \[redacted\]/, "relative path kept, query dropped");
+  assert.match(out, /Authorization: \[redacted\]/);
+});
+
+test("browser text: the same secrets are removed; ordinary query values in URLs survive", () => {
+  const out = redactText(NASTY + "\nsee https://www.celebritypersona.com/search?q=red%20saree&page=2");
+  for (const secret of SECRETS.filter((s) => s !== "retryWrites")) assert.ok(!out.includes(secret), `leaked: ${secret}`);
+  assert.match(out, /search\?q=red(\+|%20)saree&page=2/);
+});
+
+test("server-mode properties: nested exception text and URL keys lose queries and secrets", () => {
+  const event = {
+    $exception_list: [{ type: "Error", value: NASTY, stacktrace: { frames: [{ filename: "/var/task/.next/server/app/page.js", lineno: 3 }] } }],
+    path: "/api/unsubscribe?token=abc",
+    $current_url: "https://x.test/a?email=a@b.co",
+    digest: "1793929643",
+  };
+  const out = sanitizeProperties(event, "", "server");
+  const text = JSON.stringify(out);
+  for (const secret of [...SECRETS, "a@b.co", "token=abc"]) assert.ok(!text.includes(secret), `leaked: ${secret}`);
+  assert.equal(out.path, "/api/unsubscribe");
+  assert.equal(out.$current_url, "https://x.test/a");
+  assert.equal(out.digest, "1793929643", "digests survive");
+  assert.equal(out.$exception_list[0].stacktrace.frames[0].filename, "/var/task/.next/server/app/page.js");
+});
+
+test("ordinary error text is left readable", () => {
+  const msg = "TypeError: Cannot read properties of undefined (reading 'items') at OutfitDetail (/var/task/.next/server/chunks/12.js:1:2345)";
+  assert.equal(redactServerText(msg), msg);
+  assert.equal(redactText("Each child in a list should have a unique \"key\" prop."), "Each child in a list should have a unique \"key\" prop.");
+});
 
 test("gating: only Production with a key, or an explicit local test, enables PostHog", () => {
   assert.equal(isPostHogEnabled("phc_x", "production", ""), true);

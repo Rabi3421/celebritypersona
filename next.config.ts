@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { storedRedirects } from "./lib/stored-redirects";
+import { localTestFlag } from "./lib/posthog/privacy";
 
 const firebaseBucket =
   process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "celebritypersona-918fc.firebasestorage.app";
@@ -13,11 +14,12 @@ const nextConfig: NextConfig = {
    * Inlined at build so browser code knows which deployment it is in.
    * VERCEL_ENV is "production" only for the production deployment ("preview"
    * on previews, unset locally). CP_POSTHOG_LOCAL_TEST is set only on the
-   * command line of a local test build, never in Vercel.
+   * command line of a local test build; it is ignored on Vercel (VERCEL=1),
+   * so production traffic can never carry the test markers.
    */
   env: {
     CP_DEPLOY_ENV: process.env.VERCEL_ENV ?? "local",
-    CP_POSTHOG_LOCAL_TEST: process.env.CP_POSTHOG_LOCAL_TEST === "1" ? "1" : "",
+    CP_POSTHOG_LOCAL_TEST: localTestFlag(process.env.CP_POSTHOG_LOCAL_TEST, process.env.VERCEL),
   },
 
   /**

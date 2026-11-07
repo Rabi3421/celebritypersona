@@ -1,6 +1,7 @@
 "use client";
 
 import { sendGAEvent } from "@next/third-parties/google";
+import { readConsent, subscribeConsent } from "@/lib/consent";
 import { capturePostHogEvent } from "@/lib/posthog/client";
 
 export type AnalyticsValue = string | number | boolean | undefined;
@@ -19,9 +20,27 @@ type CleanParameters = Record<string, string | number | boolean>;
  *
  * Capped, because with no measurement ID (local, preview) nothing ever
  * flushes and the queue should not grow for the life of the tab.
+ *
+ * Only events raised after the reader accepted analytics are held or sent
+ * (lib/consent.ts). Anything raised before that is dropped on the spot, never
+ * queued, so accepting can never replay what happened before it.
  */
 const MAX_PENDING = 20;
 const pending: [string, CleanParameters][] = [];
+
+/** Set by components/site/Analytics.tsx once gtag('config') has run. */
+let gaReady = false;
+
+/**
+ * Withdrawal (in this tab or another) empties this queue at once, in the same
+ * synchronous notification that switches GA off, rather than waiting for the
+ * Analytics component's next render. Nothing held here is ever sent after it.
+ */
+if (typeof window !== "undefined") {
+  subscribeConsent(() => {
+    if (readConsent() !== "accepted") stopGaEvents();
+  });
+}
 
 function send(name: string, parameters: CleanParameters) {
   try {
@@ -37,6 +56,7 @@ function send(name: string, parameters: CleanParameters) {
  *  keeps its own queue (lib/posthog/client.ts): neither waits on the other. */
 export function trackEvent(name: string, parameters: Record<string, AnalyticsValue> = {}) {
   if (typeof window === "undefined") return;
+  if (readConsent() !== "accepted") return;
   const clean = Object.fromEntries(
     Object.entries(parameters).filter((entry): entry is [string, string | number | boolean] =>
       entry[1] !== undefined,
@@ -47,16 +67,23 @@ export function trackEvent(name: string, parameters: Record<string, AnalyticsVal
   } catch {
     // Same rule as GA: analytics never interrupts the page.
   }
-  if (!Array.isArray(window.dataLayer)) {
+  if (!gaReady) {
     if (pending.length < MAX_PENDING) pending.push([name, clean]);
     return;
   }
   send(name, clean);
 }
 
-/** Sends everything raised before the tag mounted. Called by the Analytics
- *  component once gtag's init script has run. */
+/** Sends everything raised (after consent) before the tag mounted. Called by
+ *  the Analytics component once gtag's init script has run. */
 export function flushPendingEvents() {
   if (typeof window === "undefined" || !Array.isArray(window.dataLayer)) return;
+  gaReady = true;
   for (const [name, parameters] of pending.splice(0)) send(name, parameters);
+}
+
+/** Consent withdrawn: forget anything held and stop sending to GA. */
+export function stopGaEvents() {
+  gaReady = false;
+  pending.length = 0;
 }

@@ -51,6 +51,13 @@ const fiduciaryName = pending(legalEntity.name)
   ? `the publisher of ${site.host}`
   : legalEntity.name;
 
+/**
+ * The privacy and cookie policies changed for analytics (Google Analytics and
+ * PostHog) after the shared policyUpdated date, so they carry their own. Set it
+ * to the day these changes go live.
+ */
+const analyticsPolicyUpdated = "7 November 2026";
+
 /** The identity rows every document that has to publish them shares. */
 const publisherRows = [
   { label: "Published by", value: legalEntity.name },
@@ -76,7 +83,7 @@ export const legalDocs: LegalDoc[] = [
     eyebrow: "Legal",
     h1: "Privacy policy",
     lede: "We collect very little, and we would rather tell you exactly what that is than hide it in nine pages of defined terms. This policy is written against India's Digital Personal Data Protection Act, 2023.",
-    updated: policyUpdated,
+    updated: analyticsPolicyUpdated,
     sections: [
       {
         id: "scope",
@@ -103,13 +110,15 @@ export const legalDocs: LegalDoc[] = [
         id: "what-we-collect",
         heading: "2. What we collect",
         blocks: [
-          { type: "p", text: "Three categories, and no more than these." },
+          { type: "p", text: "These, and no more than these." },
           {
             type: "list",
             items: [
               "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
-              "Automatically, on every visit: your IP address, browser and device type, the pages you opened and the page that referred you. This is ordinary web server and analytics data.",
+              "Only if you accept analytics (analytics): the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (from the search box we record how many characters you typed and how many results came back, never the words; on the search results page the words are part of the page address, which analytics records like any other page address), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop. Our hosting provider also sees your IP address in its server logs.",
+              "This analytics data is linked to a random identifier stored in your browser, not to your name or email address. That makes it pseudonymous rather than anonymous: it lets us tell that the same browser came back, not who you are. We do not combine it with your email address and we do not build a profile of you.",
+              "If something on the site breaks (error reports): if you have accepted analytics, your browser reports the page address, your browser and operating system, and the error with the place in our code where it happened. Before a report leaves your browser we remove anything private-looking from the address — sign-in and unsubscribe tokens, email addresses, and everything after a # — and strip email addresses, passwords and tokens from the error text. A report never includes what you typed into a form. Errors on our own servers are reported whatever you chose, because they hold nothing about you: only the page path without its query string, the kind of request and the error, with passwords, tokens, email addresses and web addresses' query strings removed, and nothing that identifies you.",
               "When you click through to a retailer: we count the click, recording which piece and which page it came from. That record holds nothing about you — no IP address, no device, no identifier of any kind — so it tells us which looks people shop and nothing about who shopped them.",
             ],
           },
@@ -150,6 +159,10 @@ export const legalDocs: LegalDoc[] = [
             type: "p",
             text: `You can withdraw consent at any time and it takes effect from then on. Use the unsubscribe link at the foot of any email we send, or write to ${dataProtection.contact}. Withdrawing is as easy as giving it was: one click, no reason required, and no attempt to talk you out of it.`,
           },
+          {
+            type: "p",
+            text: "Analytics, described in section 2, runs only if you choose Accept analytics. Until you choose, Google Analytics and PostHog are not loaded and nothing is sent to them; if you reject, they never load. To change your mind, use Analytics choices at the foot of any page. Withdrawing takes effect at once: nothing new is recorded from that moment, on the page you are on or in other tabs of this site, its cookies and browser storage are deleted, and it does not load on later visits. We remember your answer in your browser (see the Cookie Policy) so we do not ask on every page.",
+          },
         ],
       },
       {
@@ -188,14 +201,15 @@ export const legalDocs: LegalDoc[] = [
             type: "list",
             items: [
               "Our hosting and content delivery provider, which processes server logs.",
-              "Our analytics provider, which processes page views in aggregate.",
+              "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses.",
+              "PostHog, which receives the same analytics events and our error reports, linked to its own random browser identifier. We use PostHog's US cloud, and our project is set to discard IP addresses.",
               "Our email sending provider, if you subscribed.",
               "Affiliate networks, when you click through to a retailer. They set their own attribution cookie and their own privacy policy applies from that point.",
             ],
           },
           {
             type: "p",
-            text: "Some of these providers process data outside India. Where that happens, it is under contract terms that hold them to this policy.",
+            text: "Some of these providers process data outside India — PostHog in the United States, and Google in the United States and other countries. Where that happens, it is under contract terms that hold them to this policy.",
           },
         ],
       },
@@ -222,7 +236,8 @@ export const legalDocs: LegalDoc[] = [
             items: [
               "Subscription details: until you unsubscribe, then deleted within 30 days.",
               "Server logs: 90 days, then deleted.",
-              "Analytics: retained in aggregate, which is not tied back to you.",
+              "Google Analytics: event-level data is kept for the retention period set in our Google Analytics property, at most 14 months. After that only aggregated reports remain.",
+              "PostHog analytics events and error reports: up to one year, linked only to the random browser identifier, then deleted.",
               "Saved looks: they live in your browser, so clearing your browser data removes them and we never had a copy.",
             ],
           },
@@ -506,7 +521,7 @@ export const legalDocs: LegalDoc[] = [
     eyebrow: "Legal",
     h1: "Cookies",
     lede: "We use very few. None of them are advertising trackers, and the ones that matter most are set by the shops you click through to, not by us.",
-    updated: policyUpdated,
+    updated: analyticsPolicyUpdated,
     sections: [
       {
         id: "ours",
@@ -515,8 +530,9 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Essential: keeps the site working, remembers your consent choice, and helps us block abuse. These cannot be turned off without breaking the site.",
-              "Analytics: counts page views so we know which decodes are worth doing more of. Aggregated, and not used to identify you.",
+              "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. The only first-party cookies we set are for the people who run the site, when they sign in to the editorial panel.",
+              "Google Analytics, only if you accept analytics: two first-party cookies, _ga and one named _ga_ followed by an ID. They hold a random identifier so that a return visit is counted as the same browser, and by default they last up to two years. We use them only to count and understand visits, and we tell Google that advertising use is not consented to. If you withdraw, we delete them.",
+              "PostHog, only if you accept analytics: no cookies. It keeps its identifier in browser storage instead, described below.",
             ],
           },
         ],
@@ -528,6 +544,14 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "p",
             text: "Saved looks are kept in your browser's local storage rather than sent to us. That means the list lives on the device you saved it on, we never receive a copy, and clearing your browser data erases it.",
+          },
+          {
+            type: "p",
+            text: "Your analytics choice is kept in local storage under cp_analytics_consent. It holds only your answer (accepted or rejected), its date and a version number, and it is essential: without it we would have to ask on every page. Clearing this site's data removes it, and we will ask again.",
+          },
+          {
+            type: "p",
+            text: "If you accept analytics, PostHog, which we use for analytics and error reports, keeps one entry in your browser's local storage, named ph_ followed by our project key and _posthog. It holds a random identifier, so that a return visit counts as the same browser, and details of the current session. PostHog also keeps three small entries in session storage for the current tab (its window identifier and session details), which are cleared when you close the tab. Nothing in it is shared with the shops you click through to. If you withdraw, we delete it; clearing this site's data removes it too.",
           },
         ],
       },
@@ -552,9 +576,10 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Every major browser lets you block or delete cookies in its privacy settings.",
-              "Blocking analytics cookies is fine. The site works normally without them.",
-              "Blocking essential cookies may break saving, consent and some navigation.",
+              "Analytics choices, at the foot of every page, turns analytics on or off. Turning it off deletes the Google Analytics cookies and PostHog's storage straight away.",
+              "Every major browser lets you block or delete cookies and site data in its privacy settings.",
+              "Rejecting analytics, or blocking or clearing its cookies and storage, is fine. The site works normally without them.",
+              "Blocking local storage for this site stops saved looks from working, because the saved list lives there.",
             ],
           },
         ],

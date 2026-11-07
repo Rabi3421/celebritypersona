@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@/components/site/Analytics";
+import { ConsentBanner } from "@/components/site/ConsentBanner";
 import { NavProgress } from "@/components/site/NavProgress";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { author, site, social } from "@/lib/site-config";
@@ -154,6 +155,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body>
         <NavProgress />
+        {/* Before the page content in the DOM, so keyboard and screen-reader
+            users reach the choice first; it is fixed to the bottom of the
+            screen, so this changes nothing visually. Renders nothing unless
+            this deployment has analytics to ask about. */}
+        <ConsentBanner />
         {children}
         <script
           type="application/ld+json"

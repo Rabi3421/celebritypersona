@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Brand } from "./Brand";
+import { AnalyticsChoicesButton } from "./ConsentBanner";
 import { footerColumns } from "@/lib/navigation";
 import { photoPolicy, site } from "@/lib/site-config";
 import { getPublishedOutfits } from "@/lib/db/content";
@@ -56,6 +57,8 @@ export async function Footer() {
           <span>© {copyrightYear} CelebrityPersona</span>
           <span>{credited ? photoPolicy.credited : photoPolicy.neutral}</span>
           <span>We earn commission on some links</span>
+          {/* Change or withdraw analytics consent; renders only where analytics exists. */}
+          <AnalyticsChoicesButton />
         </div>
       </div>
     </footer>
