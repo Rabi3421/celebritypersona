@@ -9,6 +9,40 @@ const nextConfig: NextConfig = {
   // fewer thing telling a scanner what to try.
   poweredByHeader: false,
 
+  /**
+   * Inlined at build so browser code knows which deployment it is in.
+   * VERCEL_ENV is "production" only for the production deployment ("preview"
+   * on previews, unset locally). CP_POSTHOG_LOCAL_TEST is set only on the
+   * command line of a local test build, never in Vercel.
+   */
+  env: {
+    CP_DEPLOY_ENV: process.env.VERCEL_ENV ?? "local",
+    CP_POSTHOG_LOCAL_TEST: process.env.CP_POSTHOG_LOCAL_TEST === "1" ? "1" : "",
+  },
+
+  /**
+   * PostHog's endpoints end in a slash (/ingest/e/, /ingest/flags/), and Next's
+   * automatic trailing-slash redirect would answer each with a 308 before the
+   * /ingest rewrite below runs. This switches that automatic redirect off for
+   * the whole site, so `redirects()` puts it back for every path except
+   * /ingest — the same 308 to the slash-less URL, query string kept.
+   */
+  skipTrailingSlashRedirect: true,
+
+  /**
+   * PostHog through this site's own origin (US cloud), as PostHog documents for
+   * Next.js: the CSP stays 'self'-only and blockers that list PostHog's hosts
+   * do not drop events. proxy.ts only matches /admin and /api/admin, so it never
+   * sees these paths. The static and array rules must precede the catch-all.
+   */
+  async rewrites() {
+    return [
+      { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
+      { source: "/ingest/array/:path*", destination: "https://us-assets.i.posthog.com/array/:path*" },
+      { source: "/ingest/:path*", destination: "https://us.i.posthog.com/:path*" },
+    ];
+  },
+
   // Every distinct (source, width, quality, format) the optimizer produces is
   // one transformation, and the Hobby plan's monthly allowance is small:
   // running out blocked the whole site for a month (Sep–Oct 2026). Everything
@@ -65,7 +99,12 @@ const nextConfig: NextConfig = {
   /** Every recorded slug move, answered before any page renders. See
    *  lib/stored-redirects.ts for why this is not left to the pages. */
   async redirects() {
-    return storedRedirects();
+    return [
+      // What skipTrailingSlashRedirect switched off: /a/b/ → /a/b, except under
+      // /ingest. At least one character before the slash, so "/" is untouched.
+      { source: "/:path((?!ingest(?:/|$)).+)/", destination: "/:path", permanent: true },
+      ...(await storedRedirects()),
+    ];
   },
 
   async headers() {

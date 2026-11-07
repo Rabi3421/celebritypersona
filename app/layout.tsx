@@ -134,11 +134,14 @@ const siteGraph = {
 };
 
 /**
- * Set in Vercel's Production environment only, so preview deployments and
- * local work never reach the live property. Absent, nothing is loaded at all.
+ * Only a Production deployment reaches the live property. The measurement ID
+ * is set for Preview as well as Production in Vercel, and a preview builds with
+ * NODE_ENV=production, so NODE_ENV alone let preview visits into GA4.
+ * VERCEL_ENV is "production" only for the production deployment; it is unset
+ * locally, so `next dev` and local builds load nothing either.
  */
 const gaId =
-  process.env.NODE_ENV === "production"
+  process.env.NODE_ENV === "production" && process.env.VERCEL_ENV === "production"
     ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
     : undefined;
 

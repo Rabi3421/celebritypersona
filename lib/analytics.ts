@@ -1,6 +1,7 @@
 "use client";
 
 import { sendGAEvent } from "@next/third-parties/google";
+import { capturePostHogEvent } from "@/lib/posthog/client";
 
 export type AnalyticsValue = string | number | boolean | undefined;
 
@@ -32,7 +33,8 @@ function send(name: string, parameters: CleanParameters) {
 }
 
 /** Sends when GA is configured on this page, and holds the event until it is
- *  when the tag has not mounted yet. */
+ *  when the tag has not mounted yet. Also hands the event to PostHog, which
+ *  keeps its own queue (lib/posthog/client.ts): neither waits on the other. */
 export function trackEvent(name: string, parameters: Record<string, AnalyticsValue> = {}) {
   if (typeof window === "undefined") return;
   const clean = Object.fromEntries(
@@ -40,6 +42,11 @@ export function trackEvent(name: string, parameters: Record<string, AnalyticsVal
       entry[1] !== undefined,
     ),
   );
+  try {
+    capturePostHogEvent(name, clean);
+  } catch {
+    // Same rule as GA: analytics never interrupts the page.
+  }
   if (!Array.isArray(window.dataLayer)) {
     if (pending.length < MAX_PENDING) pending.push([name, clean]);
     return;
