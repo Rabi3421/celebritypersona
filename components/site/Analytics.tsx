@@ -1,10 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { flushPendingEvents, stopGaEvents } from "@/lib/analytics";
 import { readConsent, subscribeConsent, type ConsentState } from "@/lib/consent";
+import { sanitizeUrl } from "@/lib/posthog/privacy";
 
 /** gtag() as Google defines it: gtag.js reads `arguments` objects, not arrays. */
 function gtag(...args: unknown[]) {
@@ -37,7 +38,42 @@ function grantAnalyticsOnly(gaId: string) {
   // ad consent is denied; the site's CSP does not allow that host, so it is
   // blocked in the browser and never sent.)
   gtag("set", { allow_google_signals: false, allow_ad_personalization_signals: false });
+  // The page's own address and referrer, with search words (and tokens,
+  // emails) removed, so the first page_view never carries them.
+  gtag("set", { page_location: sanitizeUrl(window.location.href), page_referrer: document.referrer ? sanitizeUrl(document.referrer) : "" });
   consentSent = true;
+}
+
+/**
+ * Keeps GA's page_location and page_referrer sanitized after every client-side
+ * navigation (Back, Forward and query-only changes included), for the events
+ * that use them.
+ *
+ * GA4's own history-based page views (Enhanced Measurement, "page changes
+ * based on browser history events") do NOT use these values: they carry the
+ * address GA reads itself at navigation time. On client-side navigation the
+ * search words in those page views are removed by the GA4 property's URL
+ * query-parameter redaction for `q`, which must stay on. (Sending page views
+ * ourselves would also need that GA4 history setting switched off; Google's
+ * history page views fire "even if you set send_page_view: false".)
+ */
+function SanitizedLocation() {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  // The real address detects a change (two searches differ only in their
+  // words, which sanitize to the same string); only the sanitized one is sent.
+  const previousRaw = useRef<string | null>(null);
+  const previousSanitized = useRef<string | null>(null);
+  useEffect(() => {
+    const raw = window.location.href.split("#")[0];
+    if (previousRaw.current === raw) return;
+    const here = sanitizeUrl(raw);
+    const referrer = previousSanitized.current ?? (document.referrer ? sanitizeUrl(document.referrer) : "");
+    gtag("set", { page_location: here, page_referrer: referrer });
+    previousRaw.current = raw;
+    previousSanitized.current = here;
+  }, [pathname, search]);
+  return null;
 }
 
 /** Consent withdrawn on this page: Google's documented opt-out switch, plus a denied update. */
@@ -150,6 +186,10 @@ export function Analytics({ gaId }: { gaId: string }) {
     <>
       <ConsentDefaults gaId={gaId} />
       <GoogleAnalytics gaId={gaId} />
+      {/* useSearchParams needs a Suspense boundary on statically rendered pages. */}
+      <Suspense fallback={null}>
+        <SanitizedLocation />
+      </Suspense>
     </>
   );
 }

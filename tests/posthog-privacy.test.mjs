@@ -43,10 +43,34 @@ test("server text: credentials, tokens, emails, secrets and every query string a
   assert.match(out, /Authorization: \[redacted\]/);
 });
 
-test("browser text: the same secrets are removed; ordinary query values in URLs survive", () => {
+test("browser text: the same secrets are removed; search words in URLs are removed, other query values survive", () => {
   const out = redactText(NASTY + "\nsee https://www.celebritypersona.com/search?q=red%20saree&page=2");
   for (const secret of SECRETS.filter((s) => s !== "retryWrites")) assert.ok(!out.includes(secret), `leaked: ${secret}`);
-  assert.match(out, /search\?q=red(\+|%20)saree&page=2/);
+  assert.ok(!/saree/.test(out), "search words never survive");
+  assert.match(out, /search\?q=%5Bredacted%5D&page=2/);
+});
+
+test("search queries: q and the usual search parameters are redacted, on our pages and external referrers", () => {
+  const ours = new URL(sanitizeUrl("https://www.celebritypersona.com/search?q=alia%20bhatt%20red%20saree&page=2"));
+  assert.equal(ours.searchParams.get("q"), "[redacted]");
+  assert.equal(ours.searchParams.get("page"), "2", "pagination survives");
+  for (const name of ["query", "search", "search_query", "keyword", "keywords", "term", "Q"]) {
+    const u = new URL(sanitizeUrl(`https://x.test/r?${name}=private%20words&lang=en`));
+    assert.equal(u.searchParams.get(name), "[redacted]", name);
+    assert.equal(u.searchParams.get("lang"), "en");
+  }
+  assert.equal(sanitizeUrl("/search?q=deepika+padukone"), "/search?q=%5Bredacted%5D", "relative URLs too");
+  assert.equal(sanitizeUrl("/search"), "/search", "no query, nothing to do");
+  const props = sanitizeProperties({ $current_url: "https://x.test/search?q=secret+words", $referrer: "https://www.google.com/search?q=secret+words", $initial_referrer: "https://x.test/search?query=secret" });
+  assert.ok(!/secret/.test(JSON.stringify(props)), JSON.stringify(props));
+});
+
+test("other parameters are not mistaken for search queries", () => {
+  const u = new URL(sanitizeUrl("https://x.test/go/1?side=original&from=%2Foutfits%2Fx&budget=5000&s=1"));
+  assert.equal(u.searchParams.get("side"), "original");
+  assert.equal(u.searchParams.get("from"), "/outfits/x");
+  assert.equal(u.searchParams.get("budget"), "5000");
+  assert.equal(u.searchParams.get("s"), "1");
 });
 
 test("server-mode properties: nested exception text and URL keys lose queries and secrets", () => {
@@ -100,8 +124,7 @@ test("sensitive query parameters are redacted whatever their value", () => {
 });
 
 test("ordinary parameters survive, including words that merely contain a sensitive word", () => {
-  const out = new URL(sanitizeUrl("https://x.test/search?q=alia%20bhatt&design=red&author=rabi&page=2&utm_source=news"));
-  assert.equal(out.searchParams.get("q"), "alia bhatt");
+  const out = new URL(sanitizeUrl("https://x.test/list?design=red&author=rabi&page=2&utm_source=news"));
   assert.equal(out.searchParams.get("design"), "red");
   assert.equal(out.searchParams.get("author"), "rabi");
   assert.equal(out.searchParams.get("page"), "2");

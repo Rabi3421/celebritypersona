@@ -116,7 +116,7 @@ export const legalDocs: LegalDoc[] = [
             items: [
               "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
-              "Only if you accept analytics (analytics): the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (from the search box we record how many characters you typed and how many results came back, never the words; on the search results page the words are part of the page address, which analytics records like any other page address), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop. Our hosting provider also sees your IP address in its server logs.",
+              "Only if you accept analytics (analytics): the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (we record how many characters you typed and how many results came back, never the words; the search results page has your words in its address, and we remove them from the address before it is sent to analytics), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop. Our hosting provider also sees your IP address in its server logs.",
               "This analytics data is linked to a random identifier stored in your browser, not to your name or email address. That makes it pseudonymous rather than anonymous: it lets us tell that the same browser came back, not who you are. We do not combine it with your email address and we do not build a profile of you.",
               "If something on the site breaks (error reports): if you have accepted analytics, your browser reports the page address, your browser and operating system, and the error with the place in our code where it happened. Before a report leaves your browser we remove anything private-looking from the address — sign-in and unsubscribe tokens, email addresses, and everything after a # — and strip email addresses, passwords and tokens from the error text. A report never includes what you typed into a form. Errors on our own servers are reported whatever you chose, because they hold nothing about you: only the page path without its query string, the kind of request and the error, with passwords, tokens, email addresses and web addresses' query strings removed, and nothing that identifies you.",
               "When you click through to a retailer: we count the click, recording which piece and which page it came from. That record holds nothing about you — no IP address, no device, no identifier of any kind — so it tells us which looks people shop and nothing about who shopped them.",
@@ -201,7 +201,7 @@ export const legalDocs: LegalDoc[] = [
             type: "list",
             items: [
               "Our hosting and content delivery provider, which processes server logs.",
-              "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses.",
+              "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses. In our Google Analytics property, Google signals, collection of user-provided data and ad personalisation are switched off, and search words and email addresses are removed from page addresses before they are sent.",
               "PostHog, which receives the same analytics events and our error reports, linked to its own random browser identifier. We use PostHog's US cloud, and our project is set to discard IP addresses.",
               "Our email sending provider, if you subscribed.",
               "Affiliate networks, when you click through to a retailer. They set their own attribution cookie and their own privacy policy applies from that point.",
@@ -236,7 +236,7 @@ export const legalDocs: LegalDoc[] = [
             items: [
               "Subscription details: until you unsubscribe, then deleted within 30 days.",
               "Server logs: 90 days, then deleted.",
-              "Google Analytics: event-level data is kept for the retention period set in our Google Analytics property, at most 14 months. After that only aggregated reports remain.",
+              "Google Analytics: event-level and user-level data is kept for 2 months. After that only aggregated reports remain.",
               "PostHog analytics events and error reports: up to one year, linked only to the random browser identifier, then deleted.",
               "Saved looks: they live in your browser, so clearing your browser data removes them and we never had a copy.",
             ],
@@ -531,7 +531,7 @@ export const legalDocs: LegalDoc[] = [
             type: "list",
             items: [
               "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. The only first-party cookies we set are for the people who run the site, when they sign in to the editorial panel.",
-              "Google Analytics, only if you accept analytics: two first-party cookies, _ga and one named _ga_ followed by an ID. They hold a random identifier so that a return visit is counted as the same browser, and by default they last up to two years. We use them only to count and understand visits, and we tell Google that advertising use is not consented to. If you withdraw, we delete them.",
+              "Google Analytics, only if you accept analytics: two first-party cookies, _ga and one named _ga_ followed by an ID. They hold a random identifier so that a return visit is counted as the same browser, and by default they last up to two years. We use them only to count and understand visits; Google signals and ad personalisation are switched off, and we tell Google that advertising use is not consented to. If you withdraw, we delete them.",
               "PostHog, only if you accept analytics: no cookies. It keeps its identifier in browser storage instead, described below.",
             ],
           },

@@ -38,6 +38,14 @@ export function isExcludedPath(pathname: string): boolean {
 const SENSITIVE_PARAM =
   /(?:^|[_-])(?:token|e-?mail|mail|password|passwd|pwd|secret|auth|authorization|code|key|apikey|session|sessionid|sid|sig|signature|otp|phone|mobile|tel)(?:[_-]|$)/i;
 
+/**
+ * Search-query parameters. Search words never go to analytics: their value is
+ * replaced whatever it contains (the site's own search uses `q`; the others
+ * are the usual names, so an external referrer's search is redacted too).
+ * Searches are still measured by the `search` event's character count.
+ */
+const SEARCH_QUERY_PARAM = /^(?:q|query|search|search_query|keyword|keywords|term)$/i;
+
 /** An email address, plain or percent-encoded. */
 const EMAIL = /[^\s@/?#&=,;:<>()[\]"']+(?:@|%40)[^\s@/?#&=,;:<>()[\]"']+\.[a-z]{2,}/gi;
 
@@ -111,7 +119,7 @@ function redactQueryValue(text: string): string {
 }
 
 /**
- * A URL with sensitive query values replaced, credentials and emails removed,
+ * A URL with sensitive and search-query values replaced, credentials and emails removed,
  * and its fragment dropped (a fragment can carry tokens and analytics never
  * needs it). Relative URLs stay relative. Anything that does not parse is
  * treated as text.
@@ -129,7 +137,7 @@ export function sanitizeUrl(value: string): string {
   url.username = "";
   url.password = "";
   for (const [name, raw] of [...url.searchParams.entries()]) {
-    if (SENSITIVE_PARAM.test(name)) url.searchParams.set(name, REDACTED);
+    if (SENSITIVE_PARAM.test(name) || SEARCH_QUERY_PARAM.test(name)) url.searchParams.set(name, REDACTED);
     else {
       const cleaned = redactQueryValue(raw);
       if (cleaned !== raw) url.searchParams.set(name, cleaned);
