@@ -56,7 +56,7 @@ const fiduciaryName = pending(legalEntity.name)
  * PostHog) after the shared policyUpdated date, so they carry their own. Set it
  * to the day these changes go live.
  */
-const analyticsPolicyUpdated = "7 November 2026";
+const analyticsPolicyUpdated = "9 November 2026";
 
 /** The identity rows every document that has to publish them shares. */
 const publisherRows = [
