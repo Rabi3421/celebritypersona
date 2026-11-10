@@ -47,9 +47,20 @@ export type LegalDoc = {
  * falls back to describing the publisher rather than asserting a name we do
  * not have. Either way it never renders the PENDING marker at a reader.
  */
-const fiduciaryName = pending(legalEntity.name)
-  ? `the publisher of ${site.host}`
-  : legalEntity.name;
+const individual = legalEntity.type === "individual";
+const fiduciaryName = individual
+  ? pending(legalEntity.name)
+    ? `the individual who runs ${site.host}`
+    : `${legalEntity.name}, the individual who runs ${site.host},`
+  : pending(legalEntity.name)
+    ? `the publisher of ${site.host}`
+    : legalEntity.name;
+
+/** "We" is the editorial voice of every policy; for a one-person site it has
+ *  to be said plainly who that is. */
+const weMeans = individual
+  ? " CelebrityPersona is run by one person, not a company: where this policy says “we”, “us” or “our”, it means that individual."
+  : "";
 
 /**
  * The privacy and cookie policies changed for analytics (Google Analytics and
@@ -59,10 +70,14 @@ const fiduciaryName = pending(legalEntity.name)
 const analyticsPolicyUpdated = "9 November 2026";
 
 /** The identity rows every document that has to publish them shares. */
+const addressLabel = individual ? "Address for legal notices" : "Registered address";
+
 const publisherRows = [
   { label: "Published by", value: legalEntity.name },
-  { label: "Registered address", value: legalEntity.address },
-  { label: "Registration", value: legalEntity.cin },
+  { label: "Operated as", value: individual ? "An individual (not a registered company)" : "A registered company" },
+  { label: addressLabel, value: legalEntity.address },
+  // Only a registration that exists: an individual has no CIN.
+  ...(legalEntity.registration ? [{ label: "Registration", value: legalEntity.registration }] : []),
   { label: "Contact", value: contacts.general },
 ];
 
@@ -71,7 +86,7 @@ const grievanceRows = [
   { label: "Email", value: grievanceOfficer.email },
   { label: "Acknowledged within", value: grievanceOfficer.acknowledgeWithin },
   { label: "Resolved within", value: grievanceOfficer.resolveWithin },
-  { label: "Registered address", value: legalEntity.address },
+  { label: addressLabel, value: legalEntity.address },
 ];
 
 export const legalDocs: LegalDoc[] = [
@@ -91,7 +106,7 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: `This policy covers ${site.domain} and any subdomain we run. It explains what personal data we handle when you read the site, save a look, or sign up for updates. In the language of the DPDP Act, ${fiduciaryName} is the Data Fiduciary and you are the Data Principal — which means we decide why and how your personal data is handled, and we answer for it.`,
+            text: `This policy covers ${site.domain} and any subdomain we run. It explains what personal data we handle when you read the site, save a look, or sign up for updates. In the language of the DPDP Act, ${fiduciaryName} is the Data Fiduciary and you are the Data Principal — which means we decide why and how your personal data is handled, and we answer for it.${weMeans}`,
           },
           {
             type: "details",
@@ -102,7 +117,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "You can read every page on this site without giving us anything. Nothing below is required to browse.",
+            text: "You can read every page on this site without signing up or accepting analytics. Nothing below is required to browse, apart from the basic connection details every website receives (see section 2).",
           },
         ],
       },
@@ -116,10 +131,12 @@ export const legalDocs: LegalDoc[] = [
             items: [
               "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
-              "Only if you accept analytics (analytics): the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (we record how many characters you typed and how many results came back, never the words; the search results page has your words in its address, and we remove them from the address before it is sent to analytics), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop. Our hosting provider also sees your IP address in its server logs.",
-              "This analytics data is linked to a random identifier stored in your browser, not to your name or email address. That makes it pseudonymous rather than anonymous: it lets us tell that the same browser came back, not who you are. We do not combine it with your email address and we do not build a profile of you.",
-              "If something on the site breaks (error reports): if you have accepted analytics, your browser reports the page address, your browser and operating system, and the error with the place in our code where it happened. Before a report leaves your browser we remove anything private-looking from the address — sign-in and unsubscribe tokens, email addresses, and everything after a # — and strip email addresses, passwords and tokens from the error text. A report never includes what you typed into a form. Errors on our own servers are reported whatever you chose, because they hold nothing about you: only the page path without its query string, the kind of request and the error, with passwords, tokens, email addresses and web addresses' query strings removed, and nothing that identifies you.",
-              "When you click through to a retailer: we count the click, recording which piece and which page it came from. That record holds nothing about you — no IP address, no device, no identifier of any kind — so it tells us which looks people shop and nothing about who shopped them.",
+              "Whenever you visit (server logs): like every website, our hosting provider receives your IP address, your browser's description of itself and the addresses you request, and keeps them in its server logs. This happens whether or not you accept analytics.",
+              "Only if you accept analytics: the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (we record how many characters you typed and how many results came back, not the words; the search results page has your words in its address, and we remove them from the address before it is sent to analytics), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop.",
+              "This analytics data is linked to a random identifier stored in your browser, not to your name or email address. That makes it pseudonymous rather than anonymous: it lets us tell that the same browser came back, not who you are. We do not combine it with your email address, and we do not use it to build advertising profiles.",
+              "If something on the site breaks (error reports): if you have accepted analytics, your browser reports the page address, your browser and operating system, and the error with the place in our code where it happened. Before a report leaves your browser, our code removes the private details we know can appear in addresses — sign-in and unsubscribe tokens, email addresses, search words and everything after a # — and strips email addresses, passwords and tokens it recognises from the error text. Error reports are not designed to collect what you type into forms.",
+              "Errors on our own servers are reported whether or not you accept analytics. These reports are designed not to contain personal data and are not linked to you or your browser: they hold the page path without its query string, the kind of request and the error, and our code removes passwords, tokens, email addresses and query strings it recognises before they are sent. Automatic filtering cannot guarantee that every possible identifier is caught, so we review these reports only to fix faults.",
+              "When you click through to a retailer: we count the click, recording the look, the piece, the retailer and the page it came from. That count does not store your IP address, a device identifier or any identifier for you. (If you have accepted analytics, the click is also recorded as one of the analytics actions above.)",
             ],
           },
           {
@@ -157,11 +174,11 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: `You can withdraw consent at any time and it takes effect from then on. Use the unsubscribe link at the foot of any email we send, or write to ${dataProtection.contact}. Withdrawing is as easy as giving it was: one click, no reason required, and no attempt to talk you out of it.`,
+            text: `You can withdraw consent at any time and it takes effect from then on. Use the unsubscribe link at the foot of any email we send, or write to ${dataProtection.contact}. Withdrawing is as easy as giving consent: no reason required, and no attempt to talk you out of it.`,
           },
           {
             type: "p",
-            text: "Analytics, described in section 2, runs only if you choose Accept analytics. Until you choose, Google Analytics and PostHog are not loaded and nothing is sent to them; if you reject, they never load. To change your mind, use Analytics choices at the foot of any page. Withdrawing takes effect at once: nothing new is recorded from that moment, on the page you are on or in other tabs of this site, its cookies and browser storage are deleted, and it does not load on later visits. We remember your answer in your browser (see the Cookie Policy) so we do not ask on every page.",
+            text: "Analytics, described in section 2, runs only if you choose Accept analytics. Until you choose, Google Analytics and PostHog are not loaded and nothing is sent to them; if you reject, they never load. To change your mind, use Analytics choices at the foot of any page. When you withdraw, our site immediately stops sending new analytics events, on the page you are on and in other open tabs of this site; the analytics cookies and browser storage are deleted, and analytics does not load on later visits. One limitation: an event that was already generated before you withdrew — for example a page view Google Analytics had queued a few seconds earlier — may still be delivered by the provider's own code. We remember your answer in your browser (see the Cookie Policy) so we do not ask on every page.",
           },
         ],
       },
@@ -201,7 +218,7 @@ export const legalDocs: LegalDoc[] = [
             type: "list",
             items: [
               "Our hosting and content delivery provider, which processes server logs.",
-              "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses. In our Google Analytics property, Google signals, collection of user-provided data and ad personalisation are switched off, and search words and email addresses are removed from page addresses before they are sent.",
+              "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses. In our Google Analytics property, Google signals, collection of user-provided data and ad personalisation are switched off, and the property is set to redact search words and email addresses from page addresses.",
               "PostHog, which receives the same analytics events and our error reports, linked to its own random browser identifier. We use PostHog's US cloud, and our project is set to discard IP addresses.",
               "Our email sending provider, if you subscribed.",
               "Affiliate networks, when you click through to a retailer. They set their own attribution cookie and their own privacy policy applies from that point.",
@@ -209,7 +226,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "Some of these providers process data outside India — PostHog in the United States, and Google in the United States and other countries. Where that happens, it is under contract terms that hold them to this policy.",
+            text: "Some of these providers process data outside India — PostHog in the United States, and Google in the United States and other countries. Where that happens, it is governed by each provider's applicable data processing terms.",
           },
         ],
       },
@@ -235,7 +252,7 @@ export const legalDocs: LegalDoc[] = [
             type: "list",
             items: [
               "Subscription details: until you unsubscribe, then deleted within 30 days.",
-              "Server logs: 90 days, then deleted.",
+              "Server logs: kept by our hosting provider for a limited period under its own log retention policy, then deleted.",
               "Google Analytics: event-level and user-level data is kept for 2 months. After that only aggregated reports remain.",
               "PostHog analytics events and error reports: up to one year, linked only to the random browser identifier, then deleted.",
               "Saved looks: they live in your browser, so clearing your browser data removes them and we never had a copy.",
@@ -520,7 +537,7 @@ export const legalDocs: LegalDoc[] = [
       "The cookies and browser storage CelebrityPersona uses, what each one is for, and how to turn them off.",
     eyebrow: "Legal",
     h1: "Cookies",
-    lede: "We use very few. None of them are advertising trackers, and the ones that matter most are set by the shops you click through to, not by us.",
+    lede: "We use very few. None of ours are advertising trackers, and the ones that matter most are set by the shops and affiliate networks you click through to, not by us.",
     updated: analyticsPolicyUpdated,
     sections: [
       {
@@ -530,7 +547,7 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. The only first-party cookies we set are for the people who run the site, when they sign in to the editorial panel.",
+              "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. Apart from the Google Analytics cookies below, which are set only if you accept analytics, the only cookies on this site are for the people who run it, when they sign in to the editorial panel.",
               "Google Analytics, only if you accept analytics: two first-party cookies, _ga and one named _ga_ followed by an ID. They hold a random identifier so that a return visit is counted as the same browser, and by default they last up to two years. We use them only to count and understand visits; Google signals and ad personalisation are switched off, and we tell Google that advertising use is not consented to. If you withdraw, we delete them.",
               "PostHog, only if you accept analytics: no cookies. It keeps its identifier in browser storage instead, described below.",
             ],
@@ -561,11 +578,11 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: "When you click through to a retailer, the affiliate network sets a cookie so the retailer knows the visit came from us. That cookie belongs to them, sits under their privacy policy, and typically expires after a fixed attribution window.",
+            text: "Not every link to a retailer is an affiliate link. When you follow one that is, the affiliate network or the retailer usually records that the visit came from us so that a purchase can be credited to us — often with a cookie, and sometimes with an identifier carried in the link itself. Those records belong to them, are covered by their privacy policies rather than this one, and are typically kept for an attribution period they set.",
           },
           {
             type: "p",
-            text: "Blocking third-party cookies stops this. It does not change your price and it does not stop you shopping. It only means we do not get paid for that visit.",
+            text: "Your browser's cookie and privacy settings can limit this tracking, although networks that record the referral in the link or on the retailer's own site may still credit the visit. Either way, it does not change the price you pay or stop you shopping.",
           },
         ],
       },

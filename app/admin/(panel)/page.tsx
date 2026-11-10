@@ -59,12 +59,9 @@ export default async function Overview() {
   const attention = health.filter((check) => !check.ok);
   const tiers = budgetTiers(outfits);
 
-  const unfilledLegal = [
-    legalEntity.name,
-    legalEntity.address,
-    legalEntity.cin,
-    grievanceOfficer.name,
-  ].filter(pending).length;
+  // The address is optional until confirmed for publication, and an
+  // individual operator has no CIN, so neither counts as unfilled.
+  const unfilledLegal = [legalEntity.name, grievanceOfficer.name].filter(pending).length;
 
   return (
     <>
@@ -85,9 +82,9 @@ export default async function Overview() {
             {unfilledLegal} legal detail{unfilledLegal === 1 ? "" : "s"} still unfilled
           </strong>
           <p>
-            The registered name, address and Grievance Officer are required on
-            the public policy pages by the IT Rules, 2021, and currently render
-            as amber placeholders. Fill them in{" "}
+            The operator&apos;s legal name and the Grievance Officer&apos;s name
+            belong on the public policy pages (DPDP Act 2023, IT Rules 2021) and
+            are left out of them until set. Fill them in{" "}
             <Link href="/admin/settings">Settings</Link>.
           </p>
         </div>

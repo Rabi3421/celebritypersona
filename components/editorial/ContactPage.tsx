@@ -120,7 +120,10 @@ export function ContactPage() {
               <DetailRow label="Name" value={grievanceOfficer.name} />
               <DetailRow label="Email" value={grievanceOfficer.email} />
               <DetailRow label="Published by" value={legalEntity.name} />
-              <DetailRow label="Registered address" value={legalEntity.address} />
+              <DetailRow
+                label={legalEntity.type === "individual" ? "Address for legal notices" : "Registered address"}
+                value={legalEntity.address}
+              />
             </dl>
           </div>
         </section>

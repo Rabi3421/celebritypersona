@@ -84,16 +84,17 @@ function envRows() {
 }
 
 const legalRows = [
-  { label: "Registered name", value: legalEntity.name },
-  { label: "Registered address", value: legalEntity.address },
-  { label: "CIN or GST", value: legalEntity.cin },
+  { label: "Operator type", value: legalEntity.type === "individual" ? "Individual" : "Company" },
+  { label: "Operator's legal name", value: legalEntity.name },
+  { label: "Address for legal notices", value: legalEntity.address, optional: true },
+  { label: "Registration (CIN/GSTIN)", value: legalEntity.registration ?? "None (not applicable)" },
   { label: "Grievance Officer", value: grievanceOfficer.name },
 ];
 
 export default async function AdminSettings() {
   const session = await readSession();
   const env = envRows();
-  const unfilled = legalRows.filter((row) => pending(row.value)).length;
+  const unfilled = legalRows.filter((row) => !("optional" in row) && pending(row.value)).length;
 
   return (
     <>
@@ -103,9 +104,10 @@ export default async function AdminSettings() {
             {unfilled} legal detail{unfilled === 1 ? "" : "s"} still needed
           </strong>
           <p>
-            These render as amber placeholders on the public policy pages. The
-            Grievance Officer name and an address in India are required by the
-            Information Technology Rules, 2021. Edit{" "}
+            Unset details are left out of the public policy pages. The
+            operator&apos;s legal name and the Grievance Officer&apos;s name
+            belong there (DPDP Act 2023, IT Rules 2021); the address is
+            published only once confirmed. Edit{" "}
             <code>lib/site-config.ts</code>.
           </p>
         </div>
@@ -150,7 +152,7 @@ export default async function AdminSettings() {
                   pending(row.value) ? styles.missing : styles.good
                 }`}
               >
-                {pending(row.value) ? "needed" : "set"}
+                {pending(row.value) ? ("optional" in row ? "optional" : "needed") : "set"}
               </span>
             </div>
           ))}

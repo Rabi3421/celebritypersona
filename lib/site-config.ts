@@ -4,8 +4,8 @@
  *
  * Anything wrapped in PENDING is a real-world detail nobody can invent for you.
  * Indian law requires several of them by name, so fill them in before launch:
- *  - IT Rules 2021 require a named Grievance Officer and an address in India.
- *  - The DPDP Act 2023 requires a contactable person for data questions.
+ *  - IT Rules 2021 ask for a named Grievance Officer and their contact details.
+ *  - The DPDP Act 2023 requires an identifiable Data Fiduciary and a contact for data questions.
  * Unfilled values render as a visible amber chip so they cannot ship unnoticed.
  */
 
@@ -70,10 +70,30 @@ export const site = {
   launched: "2026",
 };
 
-export const legalEntity = {
-  name: todo("registered company or proprietor name"),
-  address: todo("registered address in India"),
-  cin: todo("CIN or GST number, if registered"),
+/**
+ * Who operates the site, as the legal pages have to state it.
+ *
+ * CelebrityPersona is run by one person as an individual, not by a registered
+ * company, so there is no CIN and no registered office. `registration` stays
+ * null unless a real registration exists (a GSTIN, say) — never a placeholder
+ * number. `address` is a postal address for legal notices, published only once
+ * the operator confirms one; it is not a home address by default, and the About
+ * page never shows it (it says where the site is based instead).
+ */
+export type OperatorType = "individual" | "company";
+
+export const legalEntity: {
+  type: OperatorType;
+  name: string;
+  address: string;
+  registration: string | null;
+  basedIn: string;
+} = {
+  type: "individual",
+  name: todo("operator's full legal name, as confirmed by the operator"),
+  address: todo("postal address for legal notices, only if the operator confirms one"),
+  registration: null,
+  basedIn: "India",
 };
 
 export const contacts = {
@@ -85,9 +105,11 @@ export const contacts = {
   partnerships: `partners@${site.domain}`,
 };
 
-/** Required by IT Rules 2021 to be published with a name and contact. */
+/** Published with a name and contact, as the IT Rules 2021 ask of a Grievance
+ *  Officer. The name is the person responsible for grievances (on a site run
+ *  by one individual, usually the operator), confirmed before it is set. */
 export const grievanceOfficer = {
-  name: todo("grievance officer's full name"),
+  name: todo("full name of the person responsible for grievances"),
   designation: "Grievance Officer",
   email: `grievance@${site.domain}`,
   acknowledgeWithin: "24 hours",

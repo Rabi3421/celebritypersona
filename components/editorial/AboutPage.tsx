@@ -223,7 +223,8 @@ export async function AboutPage() {
                 <Link href={author.path}>{author.name}</Link>
               </DetailRow>
               <DetailRow label="Published by" value={legalEntity.name} />
-              <DetailRow label="Based in" value={legalEntity.address} />
+              {/* Where the site is run from, never the postal address. */}
+              <DetailRow label="Based in" value={legalEntity.basedIn} />
               <div>
                 <dt>Editorial</dt>
                 <dd>{contacts.editorial}</dd>
