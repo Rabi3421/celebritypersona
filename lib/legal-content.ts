@@ -67,7 +67,7 @@ const weMeans = individual
  * PostHog) after the shared policyUpdated date, so they carry their own. Set it
  * to the day these changes go live.
  */
-const analyticsPolicyUpdated = "9 November 2026";
+const analyticsPolicyUpdated = "10 November 2026";
 
 /** The identity rows every document that has to publish them shares. */
 const addressLabel = individual ? "Address for legal notices" : "Registered address";
