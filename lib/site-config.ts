@@ -171,4 +171,4 @@ export const social = {
   pinterest: "https://www.pinterest.com/celebritypersona",
 };
 
-export const policyUpdated = "28 August 2026";
+export const policyUpdated = "12 November 2026";
