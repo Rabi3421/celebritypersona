@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clickEnvironment } from "@/lib/click-environment";
 import { getAllOutfits } from "@/lib/db/content";
 import { recordLinkClick } from "@/lib/db/mutations";
 import { outfitSlug } from "@/lib/slugs";
@@ -94,6 +95,8 @@ export async function GET(request: Request, { params }: Params) {
         samePath(samePath(request.headers.get("referer")) ?? refererPath(request)) ??
         `/outfits/${slug}`,
       affiliate: isMonetised(link),
+      // Previews and local builds share this database; the daily report counts production only.
+      env: clickEnvironment(),
     });
   }
 

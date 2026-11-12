@@ -599,7 +599,17 @@ export type LinkClick = {
   /** Whether the click went to a monetised URL, so revenue can be separated
    *  from traffic we send for nothing. */
   affiliate: boolean;
+  /**
+   * Which of our deployments recorded the click (lib/click-environment.ts):
+   * the live site, a Vercel preview, or a local build. It describes our
+   * server, not the reader. Development, previews and production share one
+   * database, so without it a test click is indistinguishable from a real one.
+   * Absent on clicks recorded before it was added; those stay unclassified.
+   */
+  env?: ClickEnvironment;
 };
+
+export type ClickEnvironment = "production" | "preview" | "development" | "local";
 
 export type PriceReportIssue = (typeof PRICE_REPORT_ISSUES)[number];
 
