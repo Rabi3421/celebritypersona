@@ -110,8 +110,8 @@ export function ContactPage() {
                 ? "our Grievance Officer"
                 : `${grievanceOfficer.name}, our Grievance Officer,`}{" "}
               at <a href={`mailto:${grievanceOfficer.email}`}>{grievanceOfficer.email}</a>.
-              It gets acknowledged within {grievanceOfficer.acknowledgeWithin},
-              and is resolved within {grievanceOfficer.resolveWithin}. Data
+              We aim to acknowledge it within {grievanceOfficer.acknowledgeWithin}
+              and to resolve it within {grievanceOfficer.resolveWithin}. Data
               protection complaints under the DPDP Act run to a{" "}
               {dataProtection.resolveWithin} outer limit and can be escalated to
               the {dataProtection.board}.

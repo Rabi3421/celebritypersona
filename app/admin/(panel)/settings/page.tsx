@@ -219,8 +219,8 @@ export default async function AdminSettings() {
           <div className={styles.row}>
             <strong>grievance</strong>
             <span>
-              {grievanceOfficer.email} · acknowledged in{" "}
-              {grievanceOfficer.acknowledgeWithin}, resolved in{" "}
+              {grievanceOfficer.email} · target: acknowledge in{" "}
+              {grievanceOfficer.acknowledgeWithin}, resolve in{" "}
               {grievanceOfficer.resolveWithin}
             </span>
             <span className={styles.status}>alias</span>

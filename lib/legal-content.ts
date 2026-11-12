@@ -84,8 +84,8 @@ const publisherRows = [
 const grievanceRows = [
   { label: "Grievance Officer", value: grievanceOfficer.name },
   { label: "Email", value: grievanceOfficer.email },
-  { label: "Acknowledged within", value: grievanceOfficer.acknowledgeWithin },
-  { label: "Resolved within", value: grievanceOfficer.resolveWithin },
+  { label: "We aim to acknowledge within", value: grievanceOfficer.acknowledgeWithin },
+  { label: "We aim to resolve within", value: grievanceOfficer.resolveWithin },
   { label: addressLabel, value: legalEntity.address },
 ];
 
@@ -129,7 +129,7 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "If you sign up for updates: the email address you give us, and the date you gave it. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
+              "If you sign up for updates: the email address you give us, and a record of your consent — when you signed up and confirmed, which signup form you used, the wording shown next to its button, and the IP address the request came from. We also note when we last emailed you and, if you leave, when and how. The signup form asks for nothing else, and there is no WhatsApp, SMS or phone list.",
               "If you save a look: the saved list itself, which is stored in your own browser and is not sent to us.",
               "Whenever you visit (server logs): like every website, our hosting provider receives your IP address, your browser's description of itself and the addresses you request, and keeps them in its server logs. This happens whether or not you accept analytics.",
               "Only if you accept analytics: the pages you open, the page that referred you, your browser, device type and screen size, and a short list of things you do here — opening a look or a celebrity page, searching (we record how many characters you typed and how many results came back, not the words; the search results page has your words in its address, and we remove them from the address before it is sent to analytics), saving or sharing a look, reporting a price, signing up for updates (that it happened, not your address), and clicking through to a shop.",
@@ -202,7 +202,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: `Write to ${dataProtection.contact} to use any of them. We will respond within ${dataProtection.resolveWithin}, and usually much sooner.`,
+            text: `Write to ${dataProtection.contact} to use any of them. We will respond within ${dataProtection.resolveWithin}.`,
           },
         ],
       },
@@ -220,13 +220,13 @@ export const legalDocs: LegalDoc[] = [
               "Our hosting and content delivery provider, which processes server logs.",
               "Google Analytics (Google), which receives the page views and site actions listed in section 2 with a random browser identifier. Google uses your IP address to estimate your general location and states that Google Analytics 4 does not log or store IP addresses. In our Google Analytics property, Google signals, collection of user-provided data and ad personalisation are switched off, and the property is set to redact search words and email addresses from page addresses.",
               "PostHog, which receives the same analytics events and our error reports, linked to its own random browser identifier. We use PostHog's US cloud, and our project is set to discard IP addresses.",
-              "Our email sending provider, if you subscribed.",
+              "Brevo, our email sending provider, if you subscribed: it receives your email address and the emails we send you, so that it can deliver them.",
               "Affiliate networks, when you click through to a retailer. They set their own attribution cookie and their own privacy policy applies from that point.",
             ],
           },
           {
             type: "p",
-            text: "Some of these providers process data outside India — PostHog in the United States, and Google in the United States and other countries. Where that happens, it is governed by each provider's applicable data processing terms.",
+            text: "Some of these providers process data outside India — PostHog in the United States, Google in the United States and other countries, and Brevo, which is based in the European Union. Where that happens, it is governed by each provider's applicable data processing terms.",
           },
         ],
       },
@@ -251,10 +251,10 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Subscription details: until you unsubscribe, then deleted within 30 days.",
+              `Subscription details: while you are subscribed. When you unsubscribe we stop emailing you straight away, and keep your address marked as unsubscribed, with the date, so that it is not emailed again by mistake. To have it deleted entirely, write to ${dataProtection.contact}.`,
               "Server logs: kept by our hosting provider for a limited period under its own log retention policy, then deleted.",
               "Google Analytics: event-level and user-level data is kept for 2 months. After that only aggregated reports remain.",
-              "PostHog analytics events and error reports: up to one year, linked only to the random browser identifier, then deleted.",
+              "PostHog analytics events and error reports: for the data retention period of our PostHog plan, after which PostHog deletes them. They are linked only to the random browser identifier.",
               "Saved looks: they live in your browser, so clearing your browser data removes them and we never had a copy.",
             ],
           },
@@ -408,7 +408,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "Under the Information Technology Rules, 2021 a Grievance Officer handles complaints about content on this site. Anything sent to the address below gets an acknowledgement and a resolution inside the timelines shown.",
+            text: "Complaints about content on this site go to the Grievance Officer named below, published in line with the Information Technology Rules, 2021. We aim to acknowledge and resolve every complaint within the timelines shown.",
           },
           { type: "details", rows: grievanceRows },
         ],
@@ -513,7 +513,7 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: "Partly because the Central Consumer Protection Authority can fine an entity up to fifty lakh rupees for a misleading advertisement, and brands and publishers are jointly liable. Mostly because a site whose entire pitch is honest pricing cannot be coy about how it makes money.",
+            text: "Partly because Indian consumer law treats undisclosed paid promotion as a misleading advertisement, and the Central Consumer Protection Authority can impose penalties for one. Mostly because a site whose entire pitch is honest pricing cannot be coy about how it makes money.",
           },
         ],
       },
@@ -547,7 +547,7 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. Apart from the Google Analytics cookies below, which are set only if you accept analytics, the only cookies on this site are for the people who run it, when they sign in to the editorial panel.",
+              "Essential: no cookies for readers. The site sets no cookies of its own while you read it; it remembers your analytics choice in browser storage instead, described below. Apart from the Google Analytics cookies below, which are set only if you accept analytics, the only cookies on this site are for the person who runs it, when signing in to the editorial panel.",
               "Google Analytics, only if you accept analytics: two first-party cookies, _ga and one named _ga_ followed by an ID. They hold a random identifier so that a return visit is counted as the same browser, and by default they last up to two years. We use them only to count and understand visits; Google signals and ad personalisation are switched off, and we tell Google that advertising use is not consented to. If you withdraw, we delete them.",
               "PostHog, only if you accept analytics: no cookies. It keeps its identifier in browser storage instead, described below.",
             ],
@@ -634,7 +634,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "We would rather license properly than argue. If you own an image we are using and we have got the licence wrong, say so and we will either license it, credit it correctly, or take it down.",
+            text: "We would rather sort it out than argue. If you own an image we are using without your permission, say so and we will take it down, or credit it and use it only on the terms you set.",
           },
         ],
       },
@@ -644,7 +644,7 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: "Event and paparazzi photography is the most common issue on a site like this. Every photograph we publish is either licensed from the agency, used with the photographer's permission, or credited under the terms we were given. Our photo credits page explains the sourcing.",
+            text: "Photographs are the most likely issue on a site like this. Most of ours come from public social media posts, usually the featured person's own Instagram account, and the page names that source where we know it. A credit says where we found a photograph. It is not a claim that we hold a licence for it, and it does not mean the account owner or the photographer approved our use. Our photo credits page explains the sourcing.",
           },
         ],
       },
@@ -676,9 +676,9 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              `We acknowledge your notice within ${grievanceOfficer.acknowledgeWithin}.`,
+              `We aim to acknowledge your notice within ${grievanceOfficer.acknowledgeWithin}.`,
               "We review it, and where it is clearly valid we take the material down while we review rather than after.",
-              `We resolve and write back within ${grievanceOfficer.resolveWithin}.`,
+              `We aim to resolve it and write back within ${grievanceOfficer.resolveWithin}.`,
               "If we decline, we tell you why in writing rather than going silent.",
             ],
           },
@@ -728,11 +728,11 @@ export const legalDocs: LegalDoc[] = [
         blocks: [
           {
             type: "p",
-            text: "Event and street photography is licensed from the agencies and photographers who shot it. Nothing is lifted from a celebrity's own social account and presented as ours, and nothing is pulled from a search engine and hoped for the best.",
+            text: "Most photographs of outfits on this site come from public posts on social media, chiefly the Instagram account of the person wearing the outfit, and sometimes from a brand's or designer's own posts. We keep a copy so that the page loads quickly.",
           },
           {
             type: "p",
-            text: "Product photography on swap listings belongs to the retailer selling the item, and is shown to identify the product we are pointing you at.",
+            text: "We do not own these photographs and never present them as ours. Copyright stays with whoever holds it, which is usually the photographer or the brand that commissioned the shoot and is not always the account that posted it. Unless a page says otherwise, we do not claim to hold a licence for a photograph.",
           },
         ],
       },
@@ -743,9 +743,10 @@ export const legalDocs: LegalDoc[] = [
           {
             type: "list",
             items: [
-              "Every editorial photograph carries a visible credit on the image itself.",
-              "The credit names the photographer or agency as our licence requires.",
-              "Where a licence requires specific wording, we use their wording rather than ours.",
+              "Where we know where a photograph came from, the page names the source under it, for example “Instagram / @handle”.",
+              "Where we have not yet confirmed the source, the page says so (“source not yet credited”) rather than inventing one.",
+              "A credit tells you where we found the photograph. It is not a claim of permission or of a licence, and it does not mean the person, the photographer or the brand endorses us.",
+              "If the owner of a photograph asks for a particular credit, we use their wording.",
               "If a credit is wrong, that is a correction like any other and gets logged as one.",
             ],
           },
@@ -761,7 +762,7 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "The same courts have been clear that using a celebrity's name or image for news, commentary and criticism is protected speech. That is the side of the line this site sits on. We report what a person wore in public and what it cost. We do not suggest they endorse us, the retailers we link to, or any swap we name.",
+            text: "Courts have also recognised that news, commentary and criticism can use a celebrity's name or image without being commercial exploitation. We aim to stay on that side of the line: we report what a person wore and what it cost, and we do not suggest they endorse us, the retailers we link to, or any swap we name. If you represent someone featured here and think a page crosses that line, tell us and we will review it.",
           },
         ],
       },
@@ -790,17 +791,17 @@ export const legalDocs: LegalDoc[] = [
           },
           {
             type: "p",
-            text: "Requests from the person in the photograph are taken as seriously as requests from the rights holder, even when the licence is sound.",
+            text: "Requests from the person in the photograph are taken as seriously as requests from the rights holder, even when the rights holder has no objection.",
           },
         ],
       },
       {
-        id: "agencies",
-        heading: "6. Agencies we license from",
+        id: "ask",
+        heading: "6. Asking about a photograph",
         blocks: [
           {
-            type: "note",
-            text: "List the agencies and photographers you hold licences with here before launch, so readers can see the sourcing at a glance.",
+            type: "p",
+            text: `If you want to know where a particular photograph came from, or on what basis it is used here, write to ${contacts.copyright} with the page address and we will tell you.`,
           },
         ],
       },

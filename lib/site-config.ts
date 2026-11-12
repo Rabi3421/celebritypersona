@@ -6,7 +6,8 @@
  * Indian law requires several of them by name, so fill them in before launch:
  *  - IT Rules 2021 ask for a named Grievance Officer and their contact details.
  *  - The DPDP Act 2023 requires an identifiable Data Fiduciary and a contact for data questions.
- * Unfilled values render as a visible amber chip so they cannot ship unnoticed.
+ * Unfilled values are left off the public pages entirely and listed on the
+ * admin Settings page instead (see components/editorial/Pending.tsx).
  */
 
 export const PENDING = "__PENDING__" as const;
@@ -90,7 +91,7 @@ export const legalEntity: {
   basedIn: string;
 } = {
   type: "individual",
-  name: todo("operator's full legal name, as confirmed by the operator"),
+  name: "Rabi Narayan Pradhan",
   address: todo("postal address for legal notices, only if the operator confirms one"),
   registration: null,
   basedIn: "India",
@@ -106,10 +107,13 @@ export const contacts = {
 };
 
 /** Published with a name and contact, as the IT Rules 2021 ask of a Grievance
- *  Officer. The name is the person responsible for grievances (on a site run
- *  by one individual, usually the operator), confirmed before it is set. */
+ *  Officer. On a site run by one individual it is the operator, as confirmed.
+ *
+ *  The two timelines are targets the pages describe as aims ("we aim to …"),
+ *  not guarantees: one person answers every mailbox, and a promise the site
+ *  cannot keep on a busy or absent week is worse than an honest target. */
 export const grievanceOfficer = {
-  name: todo("full name of the person responsible for grievances"),
+  name: "Rabi Narayan Pradhan",
   designation: "Grievance Officer",
   email: `grievance@${site.domain}`,
   acknowledgeWithin: "24 hours",
@@ -127,9 +131,10 @@ export const dataProtection = {
  * What the footer is allowed to say about photographs.
  *
  * It said "Photos credited to their agencies", which was false twice over:
- * there are no agency licences, and 45 of the archive's 49 photographs carry
- * no credit at all. A standing claim in the footer of every page is the worst
- * place to be wrong, because it is the one line a reader takes as policy.
+ * there are no agency licences, and most of the archive's photographs carry
+ * no credit at all (40 of the 72 on live looks, at the November 2026 audit).
+ * A standing claim in the footer of every page is the worst place to be
+ * wrong, because it is the one line a reader takes as policy.
  *
  * `credited` is published only when every photograph on every published look
  * names a source — the same test `npm run audit:credits` applies. Until then

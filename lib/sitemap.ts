@@ -3,7 +3,8 @@ import type { MetadataRoute } from "next";
 import { getBrandViews, getBudgetPages, getCelebrityViews, getOccasionViews, getPublishedOutfits } from "@/lib/db/content";
 import { BUDGET_CAPS, budgetSlug, looksUnder } from "@/lib/budget";
 import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
-import { policyUpdated, site } from "@/lib/site-config";
+import { getLegalDoc } from "@/lib/legal-content";
+import { site } from "@/lib/site-config";
 import { effectiveCredit, hasSubstance, outfitPhotos } from "@/lib/types";
 import { isSpecificCredit } from "@/lib/photo-credit";
 import { hubIndexable, wordCount } from "@/lib/indexing";
@@ -72,10 +73,13 @@ function day(value: string | null | undefined): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-/** The date the legal pages themselves print, read from the one constant they
- *  all render, so the sitemap and the page can never disagree. */
-function legalDay(): Date | undefined {
-  const parsed = new Date(`${policyUpdated} 00:00:00Z`);
+/** The date a legal page itself prints ("Last updated …"), read from that
+ *  document, so the sitemap and the page can never disagree. The documents do
+ *  not share one date: privacy and cookies moved with the analytics changes. */
+function legalDay(path: string): Date | undefined {
+  const updated = getLegalDoc(path.replace(/^\//, ""))?.updated;
+  if (!updated) return undefined;
+  const parsed = new Date(`${updated} 00:00:00Z`);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
@@ -125,7 +129,6 @@ export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const touched = archiveTouched(outfits);
-  const legal = legalDay();
 
   /** `lastModified` present only when there is a date to put in it. */
   const dated = (value: Date | undefined) => (value ? { lastModified: value } : {});
@@ -144,7 +147,7 @@ export async function sitemapEntries(): Promise<MetadataRoute.Sitemap> {
     })),
     ...LEGAL_PAGES.map(([path, priority]) => ({
       url: `${site.url}${path}`,
-      ...dated(legal),
+      ...dated(legalDay(path)),
       changeFrequency: "yearly" as const,
       priority,
     })),

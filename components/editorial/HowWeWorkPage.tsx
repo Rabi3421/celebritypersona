@@ -29,8 +29,8 @@ const checks = [
     when: "On publish",
   },
   {
-    what: "Photo licence and credit",
-    how: "Checked against the agency terms",
+    what: "Photo source and credit",
+    how: "Source named under the photo, or marked as not yet credited",
     when: "On publish",
   },
 ];
@@ -81,9 +81,11 @@ export function HowWeWorkPage() {
               <div>
                 <h3>Source the photograph</h3>
                 <p>
-                  We licence event and street photography from the agency that
-                  shot it. Nothing is lifted from a search engine and hoped for
-                  the best, and every image carries its credit on the picture.
+                  Most photographs come from public posts, usually the featured
+                  person&rsquo;s own Instagram. We name the source under the
+                  photo when we know it, and say so when we have not confirmed
+                  it yet. A credit says where we found a photo; it is not a
+                  licence, and we never present a photograph as ours.
                 </p>
               </div>
             </div>

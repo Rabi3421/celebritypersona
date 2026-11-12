@@ -159,9 +159,9 @@ export function CorrectionsPage() {
             <p>
               The fastest route for a wrong price or a dead link is the report
               form. For anything else, email works. Complaints that are not about
-              accuracy go to our Grievance Officer, who answers within{" "}
-              {grievanceOfficer.acknowledgeWithin} and resolves within{" "}
-              {grievanceOfficer.resolveWithin}.
+              accuracy go to our Grievance Officer, who aims to acknowledge them
+              within {grievanceOfficer.acknowledgeWithin} and to resolve them
+              within {grievanceOfficer.resolveWithin}.
             </p>
             <dl className={styles.calloutRows}>
               <div>

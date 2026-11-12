@@ -135,9 +135,9 @@ export default async function OutfitPage({ params }: Props) {
         },
         /**
          * The photographs as objects rather than bare URLs, so the caption the
-         * editor wrote, the agency the page credits and the licensing terms
-         * travel with the image into Google Images instead of stopping at the
-         * figcaption. See `imageObject` in lib/seo.ts.
+         * editor wrote and the source the page credits travel with the image
+         * into Google Images instead of stopping at the figcaption. See
+         * `imageObject` in lib/seo.ts.
          */
         ...(photos.length ? { image: photos.map(imageObject) } : {}),
         /**

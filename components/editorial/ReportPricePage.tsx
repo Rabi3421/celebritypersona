@@ -74,8 +74,8 @@ export function ReportPricePage({ prefill }: { prefill?: ReportPrefill }) {
                   <h3>We reply, if you asked us to</h3>
                   <p>
                     Including when we looked and decided the price was right
-                    after all. Complaints go to our Grievance Officer, answered
-                    within {grievanceOfficer.acknowledgeWithin}.
+                    after all. Complaints go to our Grievance Officer, who aims
+                    to acknowledge them within {grievanceOfficer.acknowledgeWithin}.
                   </p>
                 </div>
               </div>

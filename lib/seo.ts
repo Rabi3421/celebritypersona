@@ -167,19 +167,13 @@ export function pageMetadata({
 export const absolute = (path: string) => `${site.url}${path}`;
 
 /**
- * A photograph as an `ImageObject`, with the licensing terms attached.
+ * A photograph as an `ImageObject`, with its caption and credit.
  *
- * Google will only show the Image Licensing badge in Google Images when the
- * image carries `license`; `acquireLicensePage` is what turns the badge into a
- * usable link. Without them an image-led archive like this one is invisible in
- * the one search surface where its photographs are the product.
- *
- * Both point at pages that already exist and already say the true thing:
- * /photo-credits sets out where the photographs come from, that they are
- * licensed from the agencies and photographers who shot them, and how to ask
- * for one to be taken down; /contact is where that conversation starts. The
- * markup is not claiming these photographs are ours to re-license — it is
- * naming the page that explains whose they are.
+ * No `license` or `acquireLicensePage`. Those make Google Images show a
+ * "Licensable" badge that offers the photograph for licensing through this
+ * site, and these photographs are not ours to license: most come from public
+ * social posts and the site holds no licence it could pass on (see
+ * /photo-credits). Add them back only for a photograph whose licence allows it.
  *
  * `creator` is deliberately absent. The credit line names "the photographer or
  * agency", and the archive stores it as one free-text string, so emitting it
@@ -191,8 +185,6 @@ export function imageObject(photo: { url: string; alt?: string; credit?: string 
   return {
     "@type": "ImageObject",
     url: photo.url,
-    license: absolute("/photo-credits"),
-    acquireLicensePage: absolute("/contact"),
     ...(photo.alt?.trim() ? { caption: photo.alt.trim() } : {}),
     ...(photo.credit?.trim() ? { creditText: photo.credit.trim() } : {}),
   };
