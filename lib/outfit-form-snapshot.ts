@@ -2,6 +2,7 @@ import { csv, indexedRows, lines, rows, text } from "@/lib/form-data";
 import type { SeoDraft } from "@/lib/seo-checks";
 import { isPieceCategory, isPieceColour } from "@/lib/taxonomy";
 import type { OutfitItem } from "@/lib/types";
+import type { PieceLinkInput } from "@/lib/seo-review/audit";
 
 /**
  * The outfit form as it stands right now, read out of its FormData.
@@ -15,7 +16,33 @@ import type { OutfitItem } from "@/lib/types";
 export type OutfitSnapshot = SeoDraft & {
   status: string;
   secondaryKeywords: string[];
+  /** Read only by the SEO review panel (lib/seo-review); the checklist ignores them. */
+  date: string;
+  faqs: { question: string; answer: string }[];
+  links: PieceLinkInput[];
 };
+
+const LINK_FIELDS = ["name", "wornUrl", "wornStatus", "wornAffiliateUrl", "wornNetwork", "swapUrl", "swapStatus", "swapAffiliateUrl", "swapNetwork"];
+
+/** Each piece's two shop links as the form holds them, for the review's product checks. */
+function readLinks(data: FormData): PieceLinkInput[] {
+  return indexedRows(data, "items", LINK_FIELDS)
+    .filter((row) => row.values.name)
+    .flatMap(({ values }) =>
+      (["original", "swap"] as const).map((side) => {
+        const prefix = side === "original" ? "worn" : "swap";
+        return {
+          piece: values.name,
+          side,
+          url: values[`${prefix}Url`] || undefined,
+          status: values[`${prefix}Status`] || undefined,
+          affiliateUrl: values[`${prefix}AffiliateUrl`] || undefined,
+          network: values[`${prefix}Network`] || undefined,
+        };
+      }),
+    )
+    .filter((link) => link.url || link.affiliateUrl);
+}
 
 const PIECE_FIELDS = ["id", "name", "category", "colours", "wornBrand", "worn", "swapBrand", "swap"];
 
@@ -64,5 +91,8 @@ export function readOutfitSnapshot(form: HTMLFormElement): OutfitSnapshot {
     items,
     leadPieceId: chosen >= 0 ? items[chosen].id : undefined,
     leadChosen: chosen >= 0,
+    date: text(data, "date"),
+    faqs: rows(data, "faqs", ["question", "answer"]).map((faq) => ({ question: faq.question ?? "", answer: faq.answer ?? "" })),
+    links: readLinks(data),
   };
 }

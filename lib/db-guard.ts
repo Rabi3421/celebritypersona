@@ -2,9 +2,11 @@
  * What development and Vercel previews may not do.
  *
  * Development, previews and production all share one database and one photo
- * bucket, so a test save in `next dev` is a real save. What this guards is
- * everything that reaches past the database to real people or real files:
- * mail, search-engine pings, and photo deletes.
+ * bucket. Under `next dev`, writes to that shared (remote) database are
+ * refused unless explicitly opted into (lib/dev-write-guard.ts); a Vercel
+ * preview still writes to it. What this guards is everything that reaches
+ * past the database to real people or real files: mail, search-engine pings,
+ * and photo deletes.
  *
  * No imports, so the scripts can load it as well as the app.
  */

@@ -23,6 +23,8 @@ import { KeywordSection } from "@/components/admin/seo/KeywordSection";
 import { SlugField } from "@/components/admin/seo/SlugField";
 import { SeoTextField } from "@/components/admin/seo/SeoTextField";
 import { SeoPanel } from "@/components/admin/seo/SeoPanel";
+import { SeoResearch } from "@/components/admin/seo/SeoResearch";
+import type { SeoSiteContext } from "@/lib/seo-review/site-context";
 import { OccasionPicker } from "@/components/admin/seo/OccasionPicker";
 import { ColoursInput } from "@/components/admin/seo/ColoursInput";
 import styles from "@/app/admin/panel.module.css";
@@ -82,6 +84,7 @@ export function OutfitForm({
   occasions,
   takenSlugs = [],
   owners,
+  seoContext,
 }: {
   outfit?: Outfit;
   occasions: string[];
@@ -89,6 +92,8 @@ export function OutfitForm({
   takenSlugs?: string[];
   /** Every look's primary keyword, for the cannibalisation check. */
   owners: KeywordOwner[];
+  /** The rest of the site, for the SEO research and review panel. Without it the panel is not shown. */
+  seoContext?: SeoSiteContext;
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
   // A save that found the session gone asks for the password, then posts again.
@@ -410,6 +415,8 @@ export function OutfitForm({
 
           <SeoPanel />
         </div>
+        {/* Outside the <form>: nothing in it is posted with the look. */}
+        {seoContext ? <SeoResearch context={seoContext} /> : null}
       </OutfitSeoProvider>
 
       {outfit ? (

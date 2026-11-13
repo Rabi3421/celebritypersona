@@ -1,4 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
+import { devWriteBlock, readOnlyDb } from "@/lib/dev-write-guard";
 
 /**
  * One MongoClient for the whole process, cached on globalThis so that hot
@@ -23,9 +24,15 @@ if (process.env.NODE_ENV !== "production") {
   globalForMongo._mongoClientPromise = clientPromise;
 }
 
+// Decided once per process: `next dev` against a remote database reads only
+// (lib/dev-write-guard.ts). Null in production, where this is a no-op.
+const writeBlock = devWriteBlock();
+if (writeBlock) console.warn(`\n⚠  ${writeBlock}\n`);
+
 export async function getDb(): Promise<Db> {
   const client = await clientPromise;
-  return client.db(dbName);
+  const db = client.db(dbName);
+  return writeBlock ? readOnlyDb(db, writeBlock) : db;
 }
 
 export type AdminUser = {

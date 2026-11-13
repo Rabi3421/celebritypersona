@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
     "seed:admin": "node --env-file=.env scripts/seed-admin.mjs",
     "seed:content": "tsx --env-file=.env scripts/seed-content.ts",
     "instagram:refresh": "node --env-file=.env scripts/instagram-refresh.mjs",
@@ -24,7 +24,8 @@
     "strip:seed-outfit": "tsx --env-file=.env scripts/strip-seed-outfit.ts",
     "backfill:seo": "tsx --env-file=.env scripts/backfill-seo.ts",
     "backfill:records": "tsx --env-file=.env scripts/backfill-records.ts",
-    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts"
+    "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts",
+    "seo:index": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/seo-reviews-index.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

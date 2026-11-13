@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { keywordClashes } from "@/lib/seo-checks";
 import styles from "@/app/admin/panel.module.css";
-import { fillField, useOutfitSeo } from "./OutfitSeoContext";
-import { useAdminSession } from "@/components/admin/session/AdminSession";
+import { useOutfitSeo } from "./OutfitSeoContext";
 
 const MAX_SECONDARY = 5;
 
@@ -22,11 +21,10 @@ export function KeywordSection({
   secondary: string[];
   error?: string;
 }) {
-  const { formId, snapshot, owners, outfitId } = useOutfitSeo();
+  const { snapshot, owners, outfitId } = useOutfitSeo();
   const keyword = snapshot?.primaryKeyword ?? primary ?? "";
   const clashes = keywordClashes(keyword, owners, outfitId);
   const [chips, setChips] = useState(secondary);
-  const suggestions = useSuggestions(keyword);
 
   const addChip = (value: string) => {
     const clean = value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -75,25 +73,12 @@ export function KeywordSection({
         </a>
       </p>
 
-      {suggestions.length ? (
-        <div className={styles.suggestions}>
-          <span>People also search</span>
-          {suggestions.map((suggestion) => (
-            <span key={suggestion} className={styles.suggestion}>
-              <button type="button" onClick={() => fillField(formId, "primaryKeyword", suggestion)}>
-                {suggestion}
-              </button>
-              <button
-                type="button"
-                aria-label={`Add “${suggestion}” as a secondary keyword`}
-                onClick={() => addChip(suggestion)}
-              >
-                +
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <p className={styles.keywordLinks}>
+        <small>
+          Autocomplete hints are switched off: they show that a phrase is typed, not how often. Record
+          demand you have looked up — Search Console, Keyword Planner, Trends — in Keyword research below.
+        </small>
+      </p>
 
       {clashes.length ? (
         <p className={styles.notice} role="status">
@@ -147,37 +132,3 @@ export function KeywordSection({
   );
 }
 
-/**
- * Google's autocomplete for what is typed, through our own route. The endpoint
- * is unofficial, so every failure — network, format, rate limit — is an empty
- * list: this is a hint, and it must never get in the way of the form.
- */
-function useSuggestions(keyword: string) {
-  const { adminFetch } = useAdminSession();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const last = useRef("");
-
-  useEffect(() => {
-    const query = keyword.trim();
-    if (query.length < 3 || query === last.current) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      last.current = query;
-      try {
-        const response = await adminFetch(`/api/admin/suggest?${new URLSearchParams({ q: query })}`, {
-          signal: controller.signal,
-        });
-        const data = response.ok ? await response.json() : { suggestions: [] };
-        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions.slice(0, 8) : []);
-      } catch {
-        // Aborted or offline: keep whatever was showing.
-      }
-    }, 350);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [keyword, adminFetch]);
-
-  return keyword.trim().length < 3 ? [] : suggestions;
-}

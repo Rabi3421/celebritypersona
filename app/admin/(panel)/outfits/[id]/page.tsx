@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { OutfitForm } from "@/components/admin/OutfitForm";
-import { getOccasionViews, getAllOutfits } from "@/lib/db/content";
+import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { keywordOwners } from "@/lib/keyword-owners";
 import { outfitSlug } from "@/lib/slugs";
+import { buildSiteContext } from "@/lib/seo-review/site-context";
 
 export default async function EditOutfitPage({
   params,
@@ -12,7 +13,7 @@ export default async function EditOutfitPage({
   const { id } = await params;
   // The merged view, so an occasion invented on an earlier outfit is offered
   // here too rather than having to be typed identically a second time.
-  const [outfits, occasions] = await Promise.all([getAllOutfits(), getOccasionViews()]);
+  const [outfits, occasions, celebrities] = await Promise.all([getAllOutfits(), getOccasionViews(), getCelebrityViews()]);
   const outfit = outfits.find((item) => String(item.id) === id);
   if (!outfit) notFound();
 
@@ -22,6 +23,7 @@ export default async function EditOutfitPage({
       occasions={occasions.map((occasion) => occasion.name)}
       takenSlugs={outfits.filter((item) => item.id !== outfit.id).map(outfitSlug)}
       owners={keywordOwners(outfits)}
+      seoContext={buildSiteContext({ outfits, celebrities, occasions, self: outfit })}
     />
   );
 }
