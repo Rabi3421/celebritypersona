@@ -698,15 +698,15 @@ function EvidenceTable({ candidate, today, onChange }: { candidate: Candidate; t
                 const c = confidence.get(e.id);
                 return (
                   <tr key={e.id}>
-                    <td>{e.url ? <a href={e.url} target="_blank" rel="noreferrer">{SOURCE_INFO[e.source].label} ↗</a> : SOURCE_INFO[e.source].label}</td>
-                    <td>
+                    <td data-label="Source">{e.url ? <a href={e.url} target="_blank" rel="noreferrer">{SOURCE_INFO[e.source].label} ↗</a> : SOURCE_INFO[e.source].label}</td>
+                    <td data-label="Value">
                       {e.value} <small>{SOURCE_INFO[e.source].unit}</small>
                     </td>
-                    <td>{e.period}</td>
-                    <td>{e.market}</td>
-                    <td>{e.collectedAt}</td>
-                    <td title={c?.reasons.join(" ")}>{c ? <span className={s[`conf_${c.confidence}`]}>{c.confidence}</span> : <span className={s.bad}>invalid</span>}</td>
-                    <td>
+                    <td data-label="Period">{e.period}</td>
+                    <td data-label="Market">{e.market}</td>
+                    <td data-label="Looked up">{e.collectedAt}</td>
+                    <td data-label="Confidence" title={c?.reasons.join(" ")}>{c ? <span className={s[`conf_${c.confidence}`]}>{c.confidence}</span> : <span className={s.bad}>invalid</span>}</td>
+                    <td data-label="">
                       <button type="button" className={s.danger} aria-label="Remove this evidence" onClick={() => onChange({ ...candidate, evidence: candidate.evidence.filter((x) => x.id !== e.id) })}>
                         ×
                       </button>
@@ -879,11 +879,11 @@ function SerpEditor({ review, keywords, today, onChange }: { review: SerpReview;
           <tbody>
             {review.results.map((r, i) => (
               <tr key={i}>
-                <td>{r.position}</td>
-                <td>
+                <td data-label="#">{r.position}</td>
+                <td data-label="Domain">
                   <input aria-label={`Result ${r.position} domain`} value={r.domain} placeholder="example.com" onChange={(e) => setRow(i, { domain: e.target.value })} />
                 </td>
-                <td>
+                <td data-label="Kind of page">
                   <select aria-label={`Result ${r.position} kind`} value={r.type} onChange={(e) => setRow(i, { type: e.target.value as typeof r.type })}>
                     {SERP_RESULT_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -892,7 +892,7 @@ function SerpEditor({ review, keywords, today, onChange }: { review: SerpReview;
                     ))}
                   </select>
                 </td>
-                <td>
+                <td data-label="About this look?">
                   <select aria-label={`Result ${r.position} match`} value={r.match} onChange={(e) => setRow(i, { match: e.target.value as typeof r.match })}>
                     {SERP_MATCH.map((m) => (
                       <option key={m} value={m}>

@@ -1,11 +1,14 @@
 /* The SEO research and review panel under the outfit form. Uses the admin
    shell's own tokens (--panel, --line, --text, --muted, --rani, --jade, --amber). */
 
-.research{margin-top:var(--s7,40px);max-width:1280px;border-top:1px solid var(--line);padding-top:var(--s6,32px);display:grid;gap:var(--s5,24px)}
+/* Its own size container: everything below responds to the panel's width,
+   which is the page area's, whatever the window or the sidebar is doing.
+   Capped to the editor's own width above it on very wide screens. */
+.research{container:research/inline-size;margin-top:var(--s7,40px);max-width:100rem;min-width:0;border-top:1px solid var(--line);padding-top:var(--s6,32px);display:grid;gap:var(--s5,24px)}
 .head h2{font-size:20px;margin:0 0 4px}
 .head p{margin:0;color:var(--muted);font-size:14px}
 
-.summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4,16px)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:var(--s4,16px)}
 .card{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:6px;align-content:start;min-width:0}
 .kicker{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .big{font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
@@ -20,6 +23,7 @@
 .conf_low{color:var(--muted);font-weight:600}
 
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{min-width:0;overflow-wrap:anywhere;text-align:left}
 .tabs button{font:inherit;font-size:14px;background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:10px 12px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--rani)}
 .tabs button span{font-family:var(--mono),ui-monospace,monospace;font-size:11px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
@@ -38,7 +42,8 @@
 .finding[data-severity="blocker"],.finding[data-severity="high"]{border-left-color:var(--rani)}
 .finding[data-severity="medium"]{border-left-color:var(--amber)}
 .finding p{margin:6px 0 0;font-size:14px;color:var(--muted);line-height:1.55;overflow-wrap:anywhere}
-.findingHead{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.findingHead{display:flex;justify-content:space-between;gap:4px 12px;align-items:baseline;flex-wrap:wrap}
+.findingHead strong{min-width:0;overflow-wrap:anywhere}
 .findingHead strong{font-size:14.5px}
 .area{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
 .fix{color:var(--text) !important}
@@ -63,7 +68,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .intent[data-fits="true"]{border-color:rgba(79,227,172,.45);color:var(--jade)}
 .intent[data-fits="false"]{border-color:rgba(231,189,112,.5);color:var(--amber)}
 .facets{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.facets li{font-size:13.5px;color:var(--muted);display:flex;gap:6px;align-items:baseline}
+.facets li{font-size:13.5px;color:var(--muted);display:flex;gap:2px 6px;align-items:baseline;flex-wrap:wrap;overflow-wrap:anywhere}
 .facets i{font-style:normal;width:14px;text-align:center}
 .facets b{color:var(--text);min-width:70px}
 .facets li[data-status="match"] i{color:var(--jade)}
@@ -92,12 +97,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .candidateBody{display:grid;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 
 .evidence{display:grid;gap:8px;font-size:13.5px}
-.tableWrap{overflow-x:auto;max-width:100%}
+.tableWrap{max-width:100%}
 .tableWrap table{border-collapse:collapse;width:100%;font-size:13px}
-.tableWrap th,.tableWrap td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tableWrap th,.tableWrap td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
 .tableWrap th{font-weight:500;color:var(--faint);font-size:11.5px;white-space:nowrap}
 .tableWrap td small{color:var(--faint)}
-.addEvidence{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:0}
+.addEvidence{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:0;min-width:0}
 .addEvidence legend{font-size:12.5px;color:var(--muted);padding:0 4px}
 .addEvidence label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}
 .wideLabel{grid-column:1/-1}
@@ -116,7 +121,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .saveBar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
 .saveButton{font:inherit;font-weight:600;font-size:14.5px;border:0;border-radius:8px;padding:9px 16px;background:var(--rani);color:#fff;cursor:pointer}
-.saveNote{font-size:13px;color:var(--muted);flex:1;min-width:220px}
+.saveNote{font-size:13px;color:var(--muted);flex:1;min-width:min(100%,220px)}
 .errorBox{width:100%;border:1px solid rgba(224,0,108,.5);border-radius:8px;padding:10px 12px;color:var(--rani-soft);font-size:13.5px}
 .errorBox ul{margin:6px 0 8px;padding-left:18px}
 .saveButton:disabled{opacity:.55;cursor:not-allowed}
@@ -129,11 +134,33 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .offer p{margin:0;color:var(--muted)}
 .offerActions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 
-@media (max-width:720px){
-  .summary{grid-template-columns:1fr}
+/* Narrow (the panel's own width, so phones, split screens and zoom alike). */
+@container research (max-width:45rem){
   .addRow{flex-direction:column}
   .findingHead{flex-direction:column;gap:2px}
   .candidateHead select{margin-left:0}
+  .area{white-space:normal}
+}
+/* Tables become labelled rows rather than scrolling sideways in a card. */
+@container research (max-width:40rem){
+  .tableWrap table,.tableWrap tbody,.tableWrap tr,.tableWrap td{display:block;width:100%}
+  .tableWrap{position:relative}
+  .tableWrap thead{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .tableWrap tr{border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-bottom:8px}
+  .tableWrap td{display:grid;grid-template-columns:minmax(6rem,38%) minmax(0,1fr);gap:8px;align-items:center;border:0;padding:4px 0}
+  .tableWrap td::before{content:attr(data-label);color:var(--faint);font-size:11.5px}
+  .tableWrap td>small{grid-column:2}
+  .tableWrap td[data-label=""]{display:flex;justify-content:flex-end}
+  .tableWrap td[data-label=""]::before{content:none}
+  .serpEditor td input,.serpEditor td select{width:100%}
+}
+/* Fingers need bigger targets than a mouse. */
+@media(pointer:coarse){
+  .actions button,.actions a,.addRow button,.ideas button,.candidateHead button,.addEvidence > button,.serp button,.saveButton,.secondaryButton{min-height:40px}
+  .tabs button{min-height:44px}
+  .linkButton{min-height:36px}
+  .danger{min-width:36px;min-height:36px}
+  .pickList label{min-height:32px}
 }
 
 /* AI research: download a pack, import a local comparison, tick what to keep. */
@@ -167,3 +194,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .copyText{font-family:inherit;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);background:rgba(79,227,172,.06);border-radius:6px;padding:6px 8px}
 .sourceList{display:flex;gap:10px;flex-wrap:wrap}
 .sourceList a{color:var(--muted);text-decoration:underline;text-decoration-color:var(--line)}
+
+/* At least 24×24px for every pointer (WCAG 2.2 target size). */
+.linkButton,.disclose{min-height:24px}
+.danger{min-width:24px;min-height:24px}

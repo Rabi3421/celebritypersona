@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { requireAdmin } from "@/lib/auth/admin";
 import { idleSeconds } from "@/lib/auth/token";
 import { AdminSession } from "@/components/admin/session/AdminSession";
-import { SIDEBAR_COOKIE } from "@/lib/admin-nav";
+import { SIDEBAR_COOKIE, sidebarMode } from "@/lib/admin-nav";
 import {
   getCelebrityRequests,
   getCelebrityViews,
@@ -46,7 +46,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
   return (
     <AdminSession email={session.email} heartbeatSeconds={heartbeatSeconds}>
     <AdminShell
-      initialCollapsed={store.get(SIDEBAR_COOKIE)?.value === "collapsed"}
+      initialMode={sidebarMode(store.get(SIDEBAR_COOKIE)?.value)}
       sidebar={
         <Sidebar
           counts={{

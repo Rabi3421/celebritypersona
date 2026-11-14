@@ -80,3 +80,15 @@ export const PanelIcon = (p: P) => (
     <path d="M6 2.6v10.8" />
   </svg>
 );
+
+export const MenuIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+  </svg>
+);
+
+export const CloseIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="m4 4 8 8M12 4l-8 8" />
+  </svg>
+);

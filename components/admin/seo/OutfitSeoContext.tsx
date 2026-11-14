@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { changeGate, onlyTextareaText } from "@/lib/form-snapshot-watch";
 import { readOutfitSnapshot, type OutfitSnapshot } from "@/lib/outfit-form-snapshot";
 import type { KeywordOwner } from "@/lib/seo-checks";
 
@@ -42,14 +43,22 @@ export function OutfitSeoProvider({
     if (!(form instanceof HTMLFormElement)) return;
 
     let frame = 0;
+    // Only a form whose content changed is a new snapshot; see lib/form-snapshot-watch.ts
+    // for the re-render loop this prevents.
+    const publish = changeGate<OutfitSnapshot>(setSnapshot);
     const read = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setSnapshot(readOutfitSnapshot(form)));
+      frame = requestAnimationFrame(() => publish(readOutfitSnapshot(form)));
     };
     read();
     form.addEventListener("input", read);
     form.addEventListener("change", read);
-    const observer = new MutationObserver(read);
+    // Text written inside a <textarea> by React is not an edit (typing fires
+    // `input`); everything else — hidden inputs, added or removed rows — is.
+    const observer = new MutationObserver((records) => {
+      if (onlyTextareaText(records)) return;
+      read();
+    });
     observer.observe(form, { subtree: true, childList: true, attributes: true, attributeFilter: ["value"] });
     return () => {
       cancelAnimationFrame(frame);

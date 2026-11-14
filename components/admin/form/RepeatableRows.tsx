@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import styles from "@/app/admin/panel.module.css";
 
 export type RowField = {
@@ -72,7 +72,9 @@ export function RepeatableRows({
       {rows.map((row, index) => (
         <div
           className={styles.repeatRow}
-          style={{ gridTemplateColumns: `${columns} auto` }}
+          // The caller's columns apply once the row has room for them; narrower,
+          // the stylesheet flows the fields into as many columns as fit.
+          style={{ "--row-cols": `${columns} auto` } as CSSProperties}
           key={row.id}
         >
           {fields.map((field) =>

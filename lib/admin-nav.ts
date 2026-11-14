@@ -185,3 +185,10 @@ export type AdminCounts = Partial<Record<NonNullable<AdminRoute["countKey"]>, nu
 
 /** Remembers whether the sidebar is folded to icons; read by the panel layout. */
 export const SIDEBAR_COOKIE = "admin-sidebar";
+
+/**
+ * "open" or "collapsed" when the editor chose; "auto" until then, which folds
+ * the sidebar to icons on narrower laptop screens and keeps it open on wide ones.
+ */
+export type SidebarMode = "auto" | "open" | "collapsed";
+export const sidebarMode = (cookie: string | undefined): SidebarMode => (cookie === "open" || cookie === "collapsed" ? cookie : "auto");

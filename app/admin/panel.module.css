@@ -1,16 +1,23 @@
 /* Shell for every signed-in admin page.
-   The shell fills the viewport and never scrolls itself. Only the main column
-   scrolls, so the sidebar stays put and the header sticks to the top of that
-   scrollport rather than sliding away with the content. */
+   The page itself scrolls — one scroll, the browser's — and the sidebar sticks
+   beside it at full height. (It used to be a fixed-height shell whose main
+   column scrolled on its own, which nested a second scroll inside every panel
+   that also scrolled.) */
 .shell{--panel:#0e1014;--panel-2:#14171d;--line:rgba(255,255,255,.10);
   --text:#f4f2ee;--muted:rgba(244,242,238,.56);--faint:rgba(244,242,238,.34);
   --rani:#e0006c;--rani-soft:#ff89bb;--jade:#4fe3ac;--amber:#e7bd70;
-  height:100vh;height:100dvh;overflow:hidden;background:var(--panel);color:var(--text);
-  font-family:var(--body),system-ui,sans-serif;display:grid;grid-template-columns:244px minmax(0,1fr)}
+  --side-w:15.25rem;--gutter:clamp(var(--s4),2.6vw,var(--s7));
+  min-height:100vh;min-height:100dvh;background:var(--panel);color:var(--text);
+  font-family:var(--body),system-ui,sans-serif;display:grid;grid-template-columns:var(--side-w) minmax(0,1fr)}
 
 /* ---------- sidebar ---------- */
-.side{border-right:1px solid var(--line);background:var(--panel-2);
+.side{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;
+  border-right:1px solid var(--line);background:var(--panel-2);
   display:flex;flex-direction:column;min-height:0;overflow:hidden}
+/* On wide screens the drawer wrapper is transparent: the nav is the sidebar's own child. */
+.drawer{display:contents}
+.drawerHead,.menuButton{display:none}
+.scrim{display:none}
 .brandRow{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
   padding:var(--s5) var(--s3) var(--s6) var(--s5)}
 .brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap;overflow:hidden;
@@ -33,45 +40,61 @@
 .link b{margin-left:auto;font-family:var(--mono),ui-monospace,monospace;font-size:11px;
   font-weight:400;color:var(--faint)}
 
-/* Folded to icons. Desktop only: below 900px the sidebar is already a top bar.
+/* Folded to icons: when the editor folds it, or — until they choose — on
+   narrower laptop screens, where the work needs the room more than the labels.
    Group names give way to a hairline so the sections still read as sections,
-   and each link's title carries its name as a tooltip. */
+   and each link's title carries its name as a tooltip. The rules are written
+   twice because the automatic fold is limited to a width range. */
 @media(min-width:901px){
   .shell{transition:grid-template-columns 180ms ease}
-  .shell[data-collapsed]{grid-template-columns:64px minmax(0,1fr)}
-  .shell[data-collapsed] .brandRow{flex-direction:column;gap:var(--s3);padding:var(--s5) 0 var(--s4)}
-  .shell[data-collapsed] .brand span{display:none}
-  .shell[data-collapsed] .nav{padding:0 var(--s2)}
-  .shell[data-collapsed] .group{font-size:0;padding:0;margin:var(--s3) var(--s2);
+  .shell[data-sidebar="collapsed"]{grid-template-columns:64px minmax(0,1fr)}
+  .shell[data-sidebar="collapsed"] .brandRow{flex-direction:column;gap:var(--s3);padding:var(--s5) 0 var(--s4)}
+  .shell[data-sidebar="collapsed"] .brand span{display:none}
+  .shell[data-sidebar="collapsed"] .nav{padding:0 var(--s2)}
+  .shell[data-sidebar="collapsed"] .group{font-size:0;padding:0;margin:var(--s3) var(--s2);
     border-top:1px solid var(--line)}
-  .shell[data-collapsed] .nav>div:first-child .group{display:none}
-  .shell[data-collapsed] .link{justify-content:center;padding:10px 0}
-  .shell[data-collapsed] .link span,.shell[data-collapsed] .link b{display:none}
+  .shell[data-sidebar="collapsed"] .nav>div:first-child .group{display:none}
+  .shell[data-sidebar="collapsed"] .link{justify-content:center;padding:10px 0}
+  .shell[data-sidebar="collapsed"] .link span,.shell[data-sidebar="collapsed"] .link b{display:none}
+}
+@media(min-width:901px) and (max-width:1399px){
+  .shell[data-sidebar="auto"]{grid-template-columns:64px minmax(0,1fr)}
+  .shell[data-sidebar="auto"] .brandRow{flex-direction:column;gap:var(--s3);padding:var(--s5) 0 var(--s4)}
+  .shell[data-sidebar="auto"] .brand span{display:none}
+  .shell[data-sidebar="auto"] .nav{padding:0 var(--s2)}
+  .shell[data-sidebar="auto"] .group{font-size:0;padding:0;margin:var(--s3) var(--s2);
+    border-top:1px solid var(--line)}
+  .shell[data-sidebar="auto"] .nav>div:first-child .group{display:none}
+  .shell[data-sidebar="auto"] .link{justify-content:center;padding:10px 0}
+  .shell[data-sidebar="auto"] .link span,.shell[data-sidebar="auto"] .link b{display:none}
 }
 
 /* ---------- main ---------- */
-.main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow-y:auto}
+.main{min-width:0;display:flex;flex-direction:column}
 .head{position:sticky;top:0;z-index:5;flex:none;background:var(--panel);
-  border-bottom:1px solid var(--line);padding:var(--s4) var(--s7);
-  display:flex;align-items:center;justify-content:space-between;gap:var(--s5)}
-.crumb{display:flex;align-items:center;gap:9px;min-width:0;
+  border-bottom:1px solid var(--line);padding:var(--s4) var(--gutter);
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s4)}
+.crumb{display:flex;align-items:center;gap:9px;min-width:0;flex:1;
   font-family:var(--mono),ui-monospace,monospace;font-size:11px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--faint)}
 .crumb i{font-style:normal;color:rgba(255,255,255,.22)}
 .crumb h1{font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:600;
-  color:var(--text);white-space:nowrap}
+  color:var(--text);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* The one-line standfirst, set back in the body face so it reads as prose. */
 .crumb em{font-style:normal;font-family:var(--body),system-ui,sans-serif;font-size:13.5px;
   letter-spacing:0;text-transform:none;color:var(--muted);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;min-width:0;padding-left:var(--s2);
   border-left:1px solid var(--line);margin-left:var(--s1)}
-.account{display:flex;align-items:center;gap:var(--s4)}
-.account>span{font-family:var(--mono),ui-monospace,monospace;font-size:11.5px;color:var(--faint)}
+.account{display:flex;align-items:center;gap:var(--s4);flex:none;min-width:0}
+.account>span{font-family:var(--mono),ui-monospace,monospace;font-size:11.5px;color:var(--faint);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22ch}
 .signout{font-family:inherit;font-size:13px;color:var(--text);
   background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:var(--r-sm);
   padding:8px 14px;cursor:pointer;transition:all 130ms;white-space:nowrap}
 .signout:hover{border-color:var(--rani);color:var(--rani-soft)}
-.body{padding:var(--s7);flex:1}
+/* The page area is the size container the editor's layouts respond to: they
+   follow the room they actually have (sidebar open or folded), not the window. */
+.body{padding:var(--gutter);flex:1;min-width:0;container:adminbody/inline-size}
 
 /* ---------- stat tiles ---------- */
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s4)}
@@ -156,6 +179,7 @@
   font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--faint);margin-top:var(--s3)}
 .subhead::after{content:"";flex:1;height:1px;background:var(--line)}
+.field{min-width:0}
 .field label{display:block;font-family:var(--mono),ui-monospace,monospace;font-size:10px;
   letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
 .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:15px;
@@ -174,14 +198,19 @@
   padding-top:var(--s5)}
 .check input{width:auto;accent-color:var(--rani)}
 
-/* repeatable rows, e.g. the pieces in a look */
-.repeat{grid-column:1/-1}
-.repeatHead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s4);
-  margin-bottom:var(--s3)}
+/* repeatable rows, e.g. the pieces in a look.
+   Each row's columns come from the caller (--row-cols) once the row has room
+   for them; narrower, the fields flow into as many ~13rem columns as fit —
+   two on a tablet, one on a phone — in the same reading order. */
+.repeat{grid-column:1/-1;min-width:0;container-type:inline-size}
+.repeatHead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2) var(--s4);
+  margin-bottom:var(--s3);flex-wrap:wrap}
 .repeatHead h2{font-family:var(--display),system-ui,sans-serif;font-weight:700;font-size:17px}
 .repeatHead span{font-family:var(--mono),ui-monospace,monospace;font-size:11.5px;color:var(--faint)}
-.repeatRow{display:grid;gap:var(--s3);align-items:end;padding:var(--s4);margin-bottom:var(--s3);
-  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md)}
+.repeatRow{display:grid;gap:var(--s3);align-items:end;padding:clamp(var(--s3),2cqi,var(--s4));margin-bottom:var(--s3);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md);
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))}
+@container (min-width:52rem){.repeatRow{grid-template-columns:var(--row-cols)}}
 .repeatRow .drop{align-self:end}
 .ghost{font-family:inherit;font-size:13px;color:var(--muted);background:transparent;
   border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 14px;cursor:pointer;
@@ -292,7 +321,7 @@
 .dotPickOn em{color:var(--rani-soft)}
 .dotFrame{position:relative;display:inline-block;max-width:100%;border-radius:var(--r-lg);
   overflow:hidden;border:1px solid var(--line);cursor:crosshair;line-height:0}
-.dotFrame img{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
+.dotFrame img{display:block;max-width:100%;max-height:min(460px,70vh);width:auto;height:auto}
 .dot{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;
   display:grid;place-items:center;font-family:var(--mono),ui-monospace,monospace;font-size:11px;
   font-weight:600;color:#fff;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.9);
@@ -305,7 +334,7 @@
   margin-bottom:var(--s3)}
 
 /* the photo strip for a look */
-.shotMeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--s4);
+.shotMeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--s4);
   margin-bottom:var(--s4)}
 .shotMeta label{display:block}
 .shotMeta span{display:block;font-family:var(--mono),ui-monospace,monospace;font-size:10px;
@@ -315,17 +344,20 @@
 .shotMeta input:focus{outline:none;border-color:var(--rani);box-shadow:0 0 0 3px rgba(224,0,108,.2)}
 .shotMeta small{display:block;font-size:12px;color:var(--faint);margin-top:6px;line-height:1.5}
 .shots{display:flex;flex-wrap:wrap;gap:var(--s3);margin-bottom:var(--s4)}
-.shots .shot{width:104px;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;
+.shots .shot{width:clamp(104px,26cqi,132px);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;
   background:var(--panel-2);transition:border-color 130ms}
 .shot>button{display:block;position:relative;width:100%;padding:0;border:0;background:none;
   cursor:pointer;line-height:0}
-.shot img{display:block;width:100%;height:124px;object-fit:cover}
+.shot img{display:block;width:100%;height:auto;aspect-ratio:5/6;object-fit:cover}
 .shot b{position:absolute;left:6px;top:6px;font-family:var(--mono),ui-monospace,monospace;
   font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff;
   background:rgba(0,0,0,.6);border-radius:var(--r-sm);padding:3px 6px;backdrop-filter:blur(4px)}
 .shotOn{border-color:var(--rani)}
 .shotOn b{background:var(--rani)}
-.shotBar{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px}
+/* Two rows so nothing is cut off at thumbnail width: ← action → on top, Remove beneath. */
+.shotBar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px;padding:6px}
+.shotBar>:nth-child(2){text-align:center;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
+.shotBar>:last-child{grid-column:1/-1;justify-self:center}
 .shotBar button,.shotBar em{font-family:var(--mono),ui-monospace,monospace;font-size:9.5px;
   letter-spacing:.06em;text-transform:uppercase;font-style:normal}
 .shotBar button{color:var(--muted);background:transparent;border:0;padding:2px;cursor:pointer;
@@ -359,34 +391,49 @@
   .pageSize{order:2;margin-left:auto}
 }
 
-@media(max-width:900px){
-  .formGrid{grid-template-columns:1fr}
+/* Forms follow the room they have — the nearest container — not the window. */
+@container (max-width:40rem){
+  .formGrid{grid-template-columns:minmax(0,1fr)}
   .formBar{flex-wrap:wrap}
   .danger{margin-left:0}
 }
+.formBar{flex-wrap:wrap}
 
+/* Tablets and phones: a top bar with the brand and a Menu button; the
+   navigation opens as a drawer over the page, with every section and count. */
 @media(max-width:900px){
-  .shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
-  /* Brand on top, the sections scrolling underneath. */
-  .side{height:auto;display:block;overflow:visible;
+  .shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
+  .side{z-index:30;height:auto;display:block;overflow:visible;
     border-right:0;border-bottom:1px solid var(--line)}
-  .brandRow{padding:var(--s4) var(--s4) var(--s3)}
+  .brandRow{padding:var(--s2) var(--s3) var(--s2) var(--s4);min-height:56px}
   .fold{display:none}
-  .nav{display:flex;align-items:center;gap:4px;padding:0 var(--s3) var(--s3);
-    overflow-x:auto;scrollbar-width:none}
-  .nav::-webkit-scrollbar{display:none}
-  /* Without this each group stays a block and its links stack out of view. */
-  .nav>div{display:contents}
-  .group{display:none}
-  .link{white-space:nowrap;padding:8px 12px}
-  .link b{display:none}
+  .menuButton{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;
+    font-family:inherit;font-size:14px;color:var(--text);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+  .menuButton svg{width:16px;height:16px}
+  .menuButton:hover,.menuButton:focus-visible{border-color:var(--rani)}
+  .drawer{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:40;
+    width:min(19rem,86vw);background:var(--panel-2);border-right:1px solid var(--line);
+    box-shadow:24px 0 60px rgba(0,0,0,.5);transform:translateX(-100%);visibility:hidden;
+    transition:transform 200ms ease,visibility 0s linear 200ms}
+  .shell[data-drawer] .drawer{transform:none;visibility:visible;transition:transform 200ms ease}
+  .drawerHead{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+    padding:var(--s3) var(--s3) var(--s3) var(--s5);border-bottom:1px solid var(--line)}
+  .drawerHead .fold{display:grid;width:44px;height:44px}
+  .nav{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 var(--s3) var(--s5)}
+  .link{min-height:44px}
+  /* Below the top bar (z 30), whose stacking context the drawer lives in, and above the page. */
+  .scrim{display:block;position:fixed;inset:0;z-index:25;background:rgba(4,5,7,.6);backdrop-filter:blur(2px)}
+  /* The page header scrolls away; the top bar with Menu stays. */
+  .head{position:static;padding:var(--s3) var(--gutter)}
   .account>span{display:none}
-  .head{padding:var(--s3) var(--s4)}
   .crumb em{display:none}
-  .body{padding:var(--s5) var(--s4)}
-  .tiles{grid-template-columns:repeat(2,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
   .row{grid-template-columns:1fr;gap:5px}
   .status{justify-self:start}
+}
+@media(max-width:900px) and (prefers-reduced-motion:reduce){
+  .drawer,.shell[data-drawer] .drawer{transition:none}
 }
 
 /* ---------- list toolbars ---------- */
@@ -394,9 +441,10 @@
   padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--panel-2)}
 .filters label{display:flex;flex-direction:column;gap:5px;font-family:var(--mono),ui-monospace,monospace;
   font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.filters label{min-width:0;max-width:100%}
 .filters input,.filters select{font-family:inherit;font-size:14px;color:var(--text);
   background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 11px;
-  min-width:150px;transition:border-color 130ms}
+  min-width:min(150px,100%);max-width:100%;transition:border-color 130ms}
 .filters input:focus,.filters select:focus{outline:none;border-color:var(--rani)}
 .filters .grow{flex:1 1 240px}
 .filters .grow input{width:100%}
@@ -432,15 +480,25 @@
 }
 
 /* ---------- outfit editor: form + live SEO panel ---------- */
-/* Two columns on a wide screen, with the panel sticking to the top of the
-   scrolling main column; one column below that, panel after the form. */
-.editorLayout{display:grid;grid-template-columns:minmax(0,900px) minmax(300px,360px);
-  gap:var(--s6);align-items:start}
-@media(max-width:1280px){.editorLayout{grid-template-columns:minmax(0,1fr)}}
-.seoPanel{position:sticky;top:var(--s5);display:grid;gap:var(--s5);max-height:calc(100dvh - 2 * var(--s5));
-  overflow-y:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md);
-  padding:var(--s5)}
-@media(max-width:1280px){.seoPanel{position:static;max-height:none}}
+/* Laid out by the room in the page area (the adminbody container), not the
+   window, so folding the sidebar or zooming the browser re-flows it:
+     narrow      one column, the preview and checklist after the form
+     ≥ 58rem     form + a 18–21rem panel beside it
+     ≥ 72rem     form + a 20–26rem panel
+     ≥ 100rem    form capped at 68rem (inputs never get absurdly long) + a 22–30rem panel
+   The form is a container too, so its fields pair up by the form's own width. */
+.editorLayout{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(var(--s5),2.2vw,var(--s7));align-items:start}
+.editorLayout>form{container:outfitform/inline-size;min-width:0}
+.editorLayout .formGrid,.editorLayout .formBar{max-width:none}
+@container adminbody (min-width:58rem){.editorLayout{grid-template-columns:minmax(0,1fr) minmax(18rem,21rem)}}
+@container adminbody (min-width:72rem){.editorLayout{grid-template-columns:minmax(0,1fr) minmax(20rem,26rem)}}
+@container adminbody (min-width:100rem){.editorLayout{grid-template-columns:minmax(0,68rem) minmax(22rem,30rem)}}
+/* No scroll of its own. Beside the form it sticks below the header; when it
+   is taller than the window, --panel-top (set by SeoPanel) is negative, so it
+   scrolls with the page until its end is in view and then holds there. */
+.seoPanel{display:grid;gap:var(--s5);min-width:0;align-self:start;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:var(--r-md);padding:clamp(var(--s4),1.6vw,var(--s5))}
+@container adminbody (min-width:58rem){.seoPanel{position:sticky;top:var(--panel-top,var(--s5))}}
 .seoPanel h2{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--faint);margin-bottom:var(--s3);display:flex;gap:8px;align-items:baseline}
 .seoPanel h2 span{letter-spacing:.04em;text-transform:none;font-size:11px}
@@ -451,12 +509,12 @@
   font-family:arial,sans-serif;line-height:1.4}
 .serp cite{display:block;font-style:normal;font-size:12px;color:#4d5156;margin-bottom:4px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.serp strong{display:block;font-weight:400;font-size:18px;color:#1a0dab;line-height:1.3;margin-bottom:4px}
-.serp p{font-size:13.5px;color:#4d5156;margin:0}
+.serp strong{display:block;font-weight:400;font-size:18px;color:#1a0dab;line-height:1.3;margin-bottom:4px;overflow-wrap:anywhere}
+.serp p{font-size:13.5px;color:#4d5156;margin:0;overflow-wrap:anywhere}
 .serpMeta{font-size:12px;color:var(--faint);margin-top:var(--s2)}
 
 .checks{list-style:none;padding:0;margin:0;display:grid;gap:6px}
-.checks li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:13.5px;line-height:1.45}
+.checks li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
 .checks i{font-style:normal;font-weight:700;text-align:center}
 .checks small{display:block;color:var(--faint);font-size:12px}
 .check_pass i{color:var(--jade)}
@@ -485,11 +543,12 @@
 .chipsInput .chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text)}
 .chipsInput .chip button{background:none;border:0;color:var(--faint);cursor:pointer;font-size:14px;
   line-height:1;padding:0}
-.field .chipsInput input{flex:1;min-width:180px;border:0;background:none;padding:6px}
+.field .chipsInput input{flex:1;min-width:min(180px,100%);border:0;background:none;padding:6px}
+.chipsInput .chip{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 
 /* A text box with a button beside it: Suggest, Unlock, Generate. */
-.inlineField{display:flex;gap:8px;align-items:flex-start}
-.inlineField>input,.inlineField>textarea{flex:1}
+.inlineField{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.inlineField>input,.inlineField>textarea{flex:1 1 14rem;min-width:0}
 .inlineField>button{flex:none;white-space:nowrap}
 .field input[readonly]{opacity:.7;cursor:not-allowed}
 .linkButton{font:inherit;color:var(--rani-soft);background:none;border:0;padding:0;
@@ -500,14 +559,14 @@
 .occasionPicker{border:0;padding:0;margin:0;min-width:0}
 .occasionPicker legend{font-family:var(--mono),ui-monospace,monospace;font-size:10px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.occasionGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:var(--s3) 0}
+.occasionGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:6px;margin:var(--s3) 0}
 .occasionGrid>div{display:flex;justify-content:space-between;align-items:center;gap:6px;
   border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 9px;font-size:13.5px}
 .occasionGrid label{display:flex;align-items:center;gap:7px;cursor:pointer}
 .occasionGrid input{width:auto}
 .occasionOn{border-color:rgba(224,0,108,.45)!important;background:rgba(224,0,108,.07)}
 .primaryPick{font-family:var(--mono),ui-monospace,monospace;font-size:10px;letter-spacing:.06em;color:var(--muted)}
-.field .occasionAdd{max-width:360px}
+.field .occasionAdd{max-width:min(360px,100%)}
 
 /* ---------- colours, inside a piece row ---------- */
 .colours{position:relative}
@@ -517,7 +576,7 @@
 .colours summary em{color:var(--faint);font-style:normal}
 .colours summary span,.colours label{display:inline-flex;align-items:center;gap:5px}
 .colours i{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.25);flex:none}
-.colours>div{position:absolute;z-index:5;top:calc(100% + 4px);left:0;width:min(420px,80vw);
+.colours>div{position:absolute;z-index:5;top:calc(100% + 4px);left:0;width:min(420px,calc(100vw - 2rem));
   display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;padding:10px;
   background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);
   box-shadow:0 12px 32px rgba(0,0,0,.45)}
@@ -564,3 +623,18 @@
   border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);padding:10px 12px}
 .prompt input:focus{outline:none;border-color:#e0006c}
 .promptBar{display:flex;gap:var(--s3);align-items:center;margin-top:var(--s4)}
+
+/* ---------- touch ---------- */
+/* Fingers need bigger targets than a mouse; nothing changes for a mouse. */
+@media(pointer:coarse){
+  .ghost,.danger,.saveButton,.signout,.newButton{min-height:44px}
+  .shotBar button{min-height:32px;min-width:32px;padding:4px 6px}
+  .chipsInput .chip button{min-width:28px;min-height:28px}
+  .dotPick{min-height:40px}
+  .linkButton{min-height:36px}
+  .rowCheck{min-height:44px}
+}
+
+/* At least 24×24px for every pointer (WCAG 2.2 target size): the text-style controls. */
+.shotBar button,.chipsInput .chip button{min-width:24px;min-height:24px;display:inline-grid;place-items:center}
+.linkButton{min-height:24px}

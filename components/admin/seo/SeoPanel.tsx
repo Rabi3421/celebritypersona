@@ -3,6 +3,7 @@
 import { finalDescription, headline } from "@/lib/outfit-seo";
 import { seoChecks, type SeoCheck } from "@/lib/seo-checks";
 import { site } from "@/lib/site-config";
+import { useEffect, useRef } from "react";
 import styles from "@/app/admin/panel.module.css";
 import { useOutfitSeo } from "./OutfitSeoContext";
 
@@ -16,7 +17,8 @@ import { useOutfitSeo } from "./OutfitSeoContext";
  */
 export function SeoPanel() {
   const { snapshot, owners, outfitId } = useOutfitSeo();
-  if (!snapshot) return <aside className={styles.seoPanel} aria-busy="true" />;
+  const ref = useStickyTop();
+  if (!snapshot) return <aside ref={ref} className={styles.seoPanel} aria-busy="true" />;
 
   const title = headline(snapshot);
   const description = finalDescription(snapshot);
@@ -27,7 +29,7 @@ export function SeoPanel() {
   const failing = critical.filter((check) => !check.ok).length;
 
   return (
-    <aside className={styles.seoPanel} aria-label="Search appearance and SEO checklist">
+    <aside ref={ref} className={styles.seoPanel} aria-label="Search appearance and SEO checklist">
       <section>
         <h2>Google preview</h2>
         <div className={styles.serp}>
@@ -85,4 +87,35 @@ function CheckList({ title, checks }: { title: string; checks: SeoCheck[] }) {
       </ul>
     </>
   );
+}
+
+/**
+ * Where the panel sticks when it sits beside the form (the stylesheet decides
+ * whether it does). Just below the page header when it fits in the window;
+ * when it is taller, a negative offset, so it scrolls with the page until its
+ * last line is in view and then holds — never a scrollbar of its own.
+ */
+function useStickyTop() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const panel = ref.current;
+    if (!panel) return;
+    const header = document.querySelector("header");
+    const gap = 16;
+    const update = () => {
+      const head = header && getComputedStyle(header).position === "sticky" ? header.getBoundingClientRect().height : 0;
+      const top = Math.min(head + gap, window.innerHeight - panel.offsetHeight - gap);
+      panel.style.setProperty("--panel-top", `${Math.round(top)}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(panel);
+    if (header) observer.observe(header);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  return ref;
 }
