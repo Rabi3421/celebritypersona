@@ -61,7 +61,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
       }
     >
       <AdminHeader email={session.email} />
-      <div className={styles.body}>{children}</div>
+      <main className={styles.body} id="admin-main">{children}</main>
     </AdminShell>
     </AdminSession>
   );

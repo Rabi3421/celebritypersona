@@ -41,7 +41,7 @@ export const adminRoutes: AdminRoute[] = [
     label: "Overview",
     icon: "overview",
     group: "Panel",
-    description: "Archive health and what the public site is serving",
+    description: "Shop clicks, traffic, content and what to do next",
   },
   {
     href: "/admin/home",
