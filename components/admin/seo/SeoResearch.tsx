@@ -17,9 +17,11 @@ import {
   serpObservations,
   type Candidate,
   type CandidateRole,
+  type AiReview,
   type SeoReviewDoc,
   type SerpReview,
 } from "@/lib/seo-review/store";
+import { AiResearch } from "./AiResearch";
 import { fillField, useOutfitSeo } from "./OutfitSeoContext";
 import s from "./research.module.css";
 
@@ -140,6 +142,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
   const key = reviewKey(outfitId, slug);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [serp, setSerp] = useState<SerpReview[]>([]);
+  const [aiReviews, setAiReviews] = useState<AiReview[]>([]);
   const [loaded, setLoaded] = useState<{ key: string; revision: number } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [state, setState] = useState<SaveState>({ kind: "idle" });
@@ -167,6 +170,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
       }
       setCandidates(doc?.candidates ?? []);
       setSerp(doc?.serp ?? []);
+      setAiReviews(doc?.aiReviews ?? []);
       setLoaded({ key, revision: doc?.revision ?? 0 });
       setOffer(found);
       setState({ kind: "idle", message: doc ? "Saved research loaded." : undefined });
@@ -199,7 +203,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
   const save = useCallback(async () => {
     if (!key) return;
     setState({ kind: "saving" });
-    const payload = { key, revision: loaded?.key === key ? loaded.revision : 0, candidates, serp };
+    const payload = { key, revision: loaded?.key === key ? loaded.revision : 0, candidates, serp, aiReviews };
     let result = await saveSeoReview(payload);
     if (!result.ok && result.sessionExpired && (await ensureSignedIn({ force: true }))) result = await saveSeoReview(payload);
     if (!result.ok) return setState({ kind: "error", message: result.error, errors: result.errors });
@@ -207,7 +211,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
     setDirty(false);
     setOffer(null);
     setState({ kind: "saved", message: `Saved ${new Date(result.review.updatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}.` });
-  }, [key, loaded, candidates, serp, ensureSignedIn]);
+  }, [key, loaded, candidates, serp, aiReviews, ensureSignedIn]);
 
   const attach = useCallback(async () => {
     if (!offer || outfitId === undefined || dirty) return;
@@ -218,6 +222,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
     if (!result.ok) return setState({ kind: "error", message: result.error });
     setCandidates(result.review.candidates);
     setSerp(result.review.serp);
+    setAiReviews(result.review.aiReviews ?? []);
     setLoaded({ key: result.review.key, revision: result.review.revision });
     setOffer(null);
     setState({ kind: "saved", message: `Attached research prepared under “${offer.slug}”.` });
@@ -238,7 +243,9 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
     movedFrom,
     state,
     offer,
+    aiReviews,
     setCandidates: change<Candidate[]>(setCandidates),
+    setAiReviews: change<AiReview[]>(setAiReviews),
     setSerp: change<SerpReview[]>(setSerp),
     save,
     attach,
@@ -247,7 +254,7 @@ function useResearch(outfitId: number | undefined, slug: string, savedSlug: stri
   };
 }
 
-type Research = ReturnType<typeof useResearch>;
+export type Research = ReturnType<typeof useResearch>;
 type ReviewData = ReturnType<typeof buildReview>;
 
 // ------------------------------------------------------------------ content review
@@ -325,7 +332,7 @@ function FindingCard({ finding, formId }: { finding: Finding; formId: string }) 
   );
 }
 
-function SuggestionBox({ suggestion, formId }: { suggestion: Suggestion; formId: string }) {
+export function SuggestionBox({ suggestion, formId }: { suggestion: Suggestion; formId: string }) {
   const [copied, setCopied] = useState(false);
   const [placed, setPlaced] = useState(false);
   return (
@@ -401,6 +408,7 @@ function KeywordResearch({
   return (
     <div className={s.panel} role="tabpanel">
       <ResearchStatus research={research} />
+      <AiResearch research={research} snapshot={snapshot} reviewContext={reviewContext} review={review} today={today} formId={formId} />
       <fieldset className={s.lock} disabled={research.loading || research.state.kind === "saving"} aria-busy={research.loading}>
       {primary ? (
         <div className={s.block}>

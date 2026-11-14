@@ -135,3 +135,35 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .findingHead{flex-direction:column;gap:2px}
   .candidateHead select{margin-left:0}
 }
+
+/* AI research: download a pack, import a local comparison, tick what to keep. */
+.aiActions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.secondaryButton{font:inherit;font-weight:600;font-size:14.5px;border:1px solid var(--line);border-radius:8px;padding:8px 15px;background:transparent;color:var(--text);cursor:pointer}
+.secondaryButton:hover:not(:disabled){border-color:var(--rani)}
+.warnLine{margin:0;color:var(--amber);font-size:13.5px;overflow-wrap:anywhere}
+.okBox{border:1px solid rgba(79,227,172,.45);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13.5px;overflow-wrap:anywhere}
+.okBox ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.details summary{cursor:pointer;color:var(--muted);font-size:13.5px}
+.details p,.details ul{font-size:13.5px;color:var(--muted);line-height:1.55;margin:8px 0 0;overflow-wrap:anywhere}
+.aiHistory{display:grid;gap:8px;min-width:0}
+.aiHistory > ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.suggestions{display:grid;gap:8px}
+.preview{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:10px;background:var(--panel-2);min-width:0}
+.preview h4{margin:0;font-size:15.5px}
+.preview h5{margin:8px 0 0;font-family:var(--mono),ui-monospace,monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.summaryList{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px;overflow-wrap:anywhere}
+.pickList{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pickList > li{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;padding:9px 11px;display:grid;gap:4px;min-width:0;font-size:14px;overflow-wrap:anywhere}
+.pickList > li[data-decision="verified"],.pickList > li[data-decision="recommended-primary"],.pickList > li[data-decision="agreed-supporting"]{border-left-color:var(--jade)}
+.pickList > li[data-decision="verified-contradiction"],.pickList > li[data-decision="disputed"]{border-left-color:var(--rani)}
+.pickList > li[data-decision="unverified"],.pickList > li[data-decision="single-tool"]{border-left-color:var(--amber)}
+.pickList label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.pickList label input{margin-top:3px;flex:none}
+.pickList small{color:var(--muted);font-size:12.5px;line-height:1.5}
+.inlineRow{font-size:13px;color:var(--muted)}
+.inlineRow select{font:inherit;font-size:13px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.demandCheck{font-size:12.5px;color:var(--muted)}
+.demandCheck a{color:var(--rani-soft)}
+.copyText{font-family:inherit;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);background:rgba(79,227,172,.06);border-radius:6px;padding:6px 8px}
+.sourceList{display:flex;gap:10px;flex-wrap:wrap}
+.sourceList a{color:var(--muted);text-decoration:underline;text-decoration-color:var(--line)}

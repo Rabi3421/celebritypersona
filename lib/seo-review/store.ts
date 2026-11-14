@@ -16,6 +16,7 @@
  */
 
 import { EVIDENCE_SOURCES, evidenceProblems, type Evidence } from "@/lib/seo-review/evidence";
+import { arr, date, obj, optional, str, url, validate } from "@/lib/seo-review/schema";
 
 export const CANDIDATE_ROLES = ["primary", "secondary", "related", "rejected"] as const;
 export type CandidateRole = (typeof CANDIDATE_ROLES)[number];
@@ -57,11 +58,50 @@ export type SeoReviewDoc = {
   createdAt: string;
   updatedAt: string;
   updatedBy: string;
+  /** What the editor accepted and rejected from each imported AI research comparison (newest last). */
+  aiReviews?: AiReview[];
   /** Set when an editor attached research prepared under a slug to this look. */
   attachedFrom?: { key: string; revision: number; at: string; by: string };
 };
 
-export const LIMITS = { candidates: 20, evidence: 10, serp: 3, results: 10, note: 500, keyword: 80 };
+export const LIMITS = { candidates: 20, evidence: 10, serp: 3, results: 10, note: 500, keyword: 80, aiReviews: 5, aiItems: 30, aiText: 500, aiSources: 3, aiRejected: 200 };
+// The AI limits keep a full research save under the 1 MB a Next.js server action accepts by default.
+
+/**
+ * One import of a Claude + Codex comparison (lib/seo-review/reconcile.ts):
+ * the items the editor accepted, with their text and sources kept so the
+ * decision can be re-read later, and the ids they rejected. A record of a
+ * human decision — it changes nothing on the look.
+ */
+export type AiReviewItem = {
+  id: string;
+  kind: "fact" | "keyword" | "recommendation";
+  text: string;
+  decision?: string;
+  field?: string;
+  copy?: string;
+  sources: string[];
+};
+export type AiReview = { importedAt: string; fingerprint: string; comparedFrom: string; accepted: AiReviewItem[]; rejected: string[] };
+
+const aiReviewSchema = obj({
+  importedAt: date(),
+  fingerprint: str(64, { re: /^[0-9a-f]{64}$/ }),
+  comparedFrom: date(),
+  accepted: arr(
+    obj({
+      id: str(90, { min: 1 }),
+      kind: str(20, { enum: ["fact", "keyword", "recommendation"] }),
+      text: str(LIMITS.aiText, { min: 1 }),
+      decision: optional(str(30)),
+      field: optional(str(20, { enum: ["seoTitle", "seoDescription", "primaryKeyword", "faq", "notes", "imageAlt"] })),
+      copy: optional(str(1200)),
+      sources: arr(url(), LIMITS.aiSources),
+    }),
+    LIMITS.aiItems,
+  ),
+  rejected: arr(str(90), LIMITS.aiRejected),
+});
 
 const KEY = /^(outfit:(\d{1,9})|prepared:([a-z0-9]+(?:-[a-z0-9]+)*))$/;
 
@@ -82,7 +122,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
 const oneOf = <T extends string>(list: readonly T[], value: unknown): value is T => typeof value === "string" && (list as readonly string[]).includes(value);
 
-export type ReviewPayload = { key: string; revision: number; candidates: Candidate[]; serp: SerpReview[] };
+export type ReviewPayload = { key: string; revision: number; candidates: Candidate[]; serp: SerpReview[]; aiReviews: AiReview[] };
 
 /** Untrusted input (from the browser) → a clean payload, or every problem in plain words. */
 export function parseReviewPayload(raw: unknown, today: string): { ok: true; value: ReviewPayload } | { ok: false; errors: string[] } {
@@ -163,7 +203,20 @@ export function parseReviewPayload(raw: unknown, today: string): { ok: true; val
     });
   }
 
-  return errors.length ? { ok: false, errors: [...new Set(errors)] } : { ok: true, value: { key, revision, candidates, serp } };
+  const rawAi = input.aiReviews === undefined ? [] : input.aiReviews;
+  const aiReviews: AiReview[] = [];
+  if (!Array.isArray(rawAi)) errors.push("AI research records are malformed.");
+  else {
+    if (rawAi.length > LIMITS.aiReviews) errors.push(`At most ${LIMITS.aiReviews} AI research imports are kept; remove the oldest.`);
+    rawAi.slice(0, LIMITS.aiReviews).forEach((entry, i) => {
+      const problems = validate(entry, aiReviewSchema, `AI research import ${i + 1}`);
+      if (problems.length) errors.push(...problems.slice(0, 5));
+      else if ((entry as AiReview).importedAt > today) errors.push(`AI research import ${i + 1}: the import date is in the future.`);
+      else aiReviews.push(entry as AiReview);
+    });
+  }
+
+  return errors.length ? { ok: false, errors: [...new Set(errors)] } : { ok: true, value: { key, revision, candidates, serp, aiReviews } };
 }
 
 /**
@@ -205,6 +258,9 @@ export type SaveResult =
   | { ok: true; review: SeoReviewDoc }
   | { ok: false; error: string; errors?: string[]; sessionExpired?: boolean; conflict?: boolean };
 
+/** The calendar day in India for an instant, YYYY-MM-DD. */
+export const istDay = (now: Date) => now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
 const EXPIRED = { ok: false as const, error: "Your session expired. Sign in again — your research is still on screen.", sessionExpired: true };
 
 /**
@@ -240,7 +296,9 @@ export async function saveReview({
   looks: LookIndex;
 }): Promise<SaveResult> {
   if (!session) return EXPIRED;
-  const today = now.toISOString().slice(0, 10);
+  // The editor's "today" is India's (the panel dates evidence and imports in IST); in UTC it is
+  // still yesterday until 05:30 IST, which would refuse anything dated today as "in the future".
+  const today = istDay(now);
   const parsed = parseReviewPayload(payload, today);
   if (!parsed.ok) return { ok: false, error: "Nothing was saved. Fix these first:", errors: parsed.errors };
   const target = parseKey(parsed.value.key)!;
@@ -269,6 +327,7 @@ export async function saveReview({
     ...(target.kind === "outfit" ? { outfitId: target.outfitId } : { slug: target.slug }),
     revision: parsed.value.revision + 1,
     candidates: parsed.value.candidates,
+    ...(parsed.value.aiReviews.length ? { aiReviews: parsed.value.aiReviews } : {}),
     serp: parsed.value.serp,
     createdAt: existing?.createdAt ?? now.toISOString(),
     updatedAt: now.toISOString(),
@@ -336,6 +395,7 @@ export async function attachPrepared({
     revision: 1,
     candidates: prepared.candidates,
     serp: prepared.serp,
+    ...(prepared.aiReviews?.length ? { aiReviews: prepared.aiReviews } : {}),
     createdAt: prepared.createdAt,
     updatedAt: now.toISOString(),
     updatedBy: session.email,
