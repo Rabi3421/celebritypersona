@@ -32,6 +32,10 @@ import { ConfirmButton } from "./ConfirmButton";
 import { useRetryAfterSignIn } from "@/components/admin/session/AdminSession";
 import { useFormAutosave } from "@/components/admin/session/useFormAutosave";
 import { readOutfitDraft, type OutfitDraft } from "@/lib/outfit-form-fields";
+import { OutfitResearchImport } from "./OutfitResearchImport";
+import { ImportedDraftSave } from "./ImportedDraftSave";
+import { OutfitResearchEvidence } from "./OutfitResearchEvidence";
+import type { DuplicateLook } from "@/lib/outfit-research";
 
 /** How each status reads in the dropdown, in the order an editor meets them. */
 const STATUS_LABELS: Record<(typeof LINK_STATUSES)[number], string> = {
@@ -85,6 +89,9 @@ export function OutfitForm({
   takenSlugs = [],
   owners,
   seoContext,
+  importCatalog,
+  createToken,
+  baseVersion,
 }: {
   outfit?: Outfit;
   occasions: string[];
@@ -94,6 +101,9 @@ export function OutfitForm({
   owners: KeywordOwner[];
   /** The rest of the site, for the SEO research and review panel. Without it the panel is not shown. */
   seoContext?: SeoSiteContext;
+  importCatalog?: { outfits: DuplicateLook[]; celebrities: { name: string }[]; occasions: { name: string }[]; brands: { name: string }[] };
+  createToken?: string;
+  baseVersion?: string;
 }) {
   const [state, action] = useActionState<OutfitFormState, FormData>(saveOutfit, {});
   // A save that found the session gone asks for the password, then posts again.
@@ -105,7 +115,10 @@ export function OutfitForm({
   const [restored, setRestored] = useState<OutfitDraft | null>(null);
   /** Bumped on restore, to remount the fields with the restored values. */
   const [restoreCount, setRestoreCount] = useState(0);
-  const draft = state.values ?? restored ?? undefined;
+  const [imported, setImported] = useState<OutfitDraft | null>(null);
+  const [importAttempt, setImportAttempt] = useState<number | undefined>(undefined);
+  const draft = imported && state.attempt === importAttempt ? imported : state.values ?? restored ?? imported ?? undefined;
+  const isImported = !outfit && Boolean(draft?.researchImport);
 
   // A save that stood (a live look with warnings) leaves nothing unsaved. A
   // save that redirected clears the draft from the list page instead.
@@ -121,7 +134,15 @@ export function OutfitForm({
 
   return (
     <>
+      {outfit?.researchImport ? <OutfitResearchEvidence provenance={outfit.researchImport} /> : null}
+      {!outfit && importCatalog ? <OutfitResearchImport
+        formId={FORM_ID} outfits={importCatalog.outfits} restorePending={Boolean(autosave.offer && !restored)}
+        onApply={(next) => { setImported(next); setImportAttempt(state.attempt); setRestoreCount((n) => n + 1);
+          requestAnimationFrame(() => document.getElementById(FORM_ID)?.dispatchEvent(new Event("input", { bubbles: true })));
+        }}
+      /> : null}
       <FormError message={errors?.form} />
+      {state.notice ? <p className={styles.notice} role="status">{state.notice}{state.savedOutfitId ? <> <Link href={`/admin/outfits/${state.savedOutfitId}`} target="_blank">Open saved outfit #{state.savedOutfitId}</Link></> : null}</p> : null}
       <ErrorSummary errors={errors} />
 
       {/* Saved, with something still outstanding. A look that is already live
@@ -178,11 +199,13 @@ export function OutfitForm({
       >
         <div className={styles.editorLayout}>
           <form action={action} id={FORM_ID}>
+            {outfit ? <input type="hidden" name="baseVersion" value={draft?.baseVersion ?? baseVersion ?? ""} /> : <input type="hidden" name="createToken" value={draft?.createToken ?? createToken ?? ""} />}
+            {isImported ? <input type="hidden" name="researchImport" value={draft?.researchImport ?? ""} /> : null}
             {outfit ? <input type="hidden" name="id" value={outfit.id} /> : null}
             {/* Named so a successful save can clear this browser's draft. */}
             <input type="hidden" name="draftKey" value={draftKey} />
 
-            <div className={styles.formGrid} key={`fields-${restoreCount}`}>
+            <div className={styles.formGrid} key={`fields-${restoreCount}-${state.attempt ?? 0}`}>
               <KeywordSection
                 primary={draft?.primaryKeyword ?? outfit?.primaryKeyword}
                 secondary={
@@ -197,10 +220,11 @@ export function OutfitForm({
 
               <div className={styles.field}>
                 <label htmlFor="status">Status</label>
-                <select id="status" name="status" defaultValue={status}>
+                <select id="status" name={isImported ? undefined : "status"} defaultValue={isImported ? "draft" : status} disabled={isImported} key={isImported ? "imported" : "manual"}>
                   <option value="draft">Draft — not on the site</option>
                   <option value="published">Published</option>
                 </select>
+                {isImported ? <input type="hidden" name="status" value="draft" /> : null}
                 <small>
                   Save as a draft whenever you like. Publishing needs every
                   critical check in the panel to pass; a look that is already
@@ -279,7 +303,7 @@ export function OutfitForm({
                 placeholder="Instagram / @kayadulohar"
                 errors={errors}
                 wide
-                required
+                required={status === "published"}
               />
 
               <OutfitImageEditor
@@ -401,7 +425,7 @@ export function OutfitForm({
             </div>
 
             <div className={styles.formBar}>
-              <SaveButton>{outfit ? "Save changes" : "Create outfit"}</SaveButton>
+              {isImported && importCatalog ? <ImportedDraftSave known={importCatalog} /> : <SaveButton>{outfit ? "Save changes" : "Create outfit"}</SaveButton>}
               {outfit ? (
                 <Link className={styles.ghost} href={`/admin/preview/${outfit.id}`} target="_blank">
                   Preview ↗

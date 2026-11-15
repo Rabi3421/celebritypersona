@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   outfitOccasions,
@@ -186,7 +185,7 @@ export const outfitItemSchema = z
     name: item.name,
     // Assigned here so every piece written from now on can be named by an
     // outbound click without depending on its position in the array.
-    id: item.id || randomUUID(),
+    id: item.id || crypto.randomUUID(),
     ...buildLink("original", item),
     ...buildLink("swap", item),
     ...(item.wornBrand ? { wornBrand: item.wornBrand } : {}),

@@ -18,6 +18,8 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogTransaction } from "@/lib/db/catalog-transaction";
+import { ensureOutfitRecords } from "@/lib/db/catalog-identity";
 import { assertWritable } from "@/lib/prod-guard";
 import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import { nameSlug } from "@/lib/slugs";
@@ -85,11 +87,12 @@ async function main() {
       { collection: "occasions", documents: occasions },
       { collection: "brands", documents: brands },
     ]);
-    if (newCelebrities.length) await db.collection<Celebrity>("celebrities").insertMany(newCelebrities);
-    if (newOccasions.length) await db.collection<Occasion>("occasions").insertMany(newOccasions);
-    if (newBrands.length) await db.collection<Brand>("brands").insertMany(newBrands);
+    await catalogTransaction(client, db, async (session) => {
+      const current = await db.collection<Outfit>("outfits").find({}, { session }).toArray();
+      for (const outfit of current.filter(isPublished)) await ensureOutfitRecords(db, outfit, session);
+    });
     console.log(
-      `\nCreated ${newCelebrities.length} celebrity, ${newOccasions.length} occasion and ${newBrands.length} brand records.`,
+      "\nBackfill committed against a fresh transactional snapshot. Dry-run IDs/counts were estimates.",
     );
   }
   await client.close();

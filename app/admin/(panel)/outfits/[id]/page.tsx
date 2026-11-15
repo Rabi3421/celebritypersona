@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { OutfitForm } from "@/components/admin/OutfitForm";
+import { outfitVersion } from "@/lib/db/catalog-outfits";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { keywordOwners } from "@/lib/keyword-owners";
 import { outfitSlug } from "@/lib/slugs";
@@ -20,6 +21,7 @@ export default async function EditOutfitPage({
   return (
     <OutfitForm
       outfit={outfit}
+      baseVersion={outfitVersion(outfit)}
       occasions={occasions.map((occasion) => occasion.name)}
       takenSlugs={outfits.filter((item) => item.id !== outfit.id).map(outfitSlug)}
       owners={keywordOwners(outfits)}

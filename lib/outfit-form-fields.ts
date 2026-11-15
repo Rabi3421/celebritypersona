@@ -9,6 +9,10 @@ import { indexedRows, rows, text } from "@/lib/form-data";
 /** Exactly what the form posted, echoed back so a rejected save keeps the
  *  typing. React resets an uncontrolled form after every action. */
 export type OutfitDraft = {
+  createToken?: string;
+  baseVersion?: string;
+  /** Reviewed import envelope, also carried by browser autosave. */
+  researchImport?: string;
   celebrity: string;
   event: string;
   occasion: string;
@@ -89,6 +93,9 @@ export const leadPosition = (form: FormData) =>
 /** Everything the form posted, as the draft that re-renders it. */
 export function readOutfitDraft(form: FormData): OutfitDraft {
   const draft: OutfitDraft = {
+    createToken: text(form, "createToken"),
+    baseVersion: text(form, "baseVersion"),
+    researchImport: text(form, "researchImport"),
     celebrity: text(form, "celebrity"),
     event: text(form, "event"),
     occasion: text(form, "occasion"),

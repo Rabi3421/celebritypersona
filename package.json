@@ -26,7 +26,9 @@
     "backfill:records": "tsx --env-file=.env scripts/backfill-records.ts",
     "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts",
     "seo:index": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/seo-reviews-index.mjs",
-    "seo:research": "tsx scripts/seo-research.ts"
+    "seo:research": "tsx scripts/seo-research.ts",
+    "outfit:research": "tsx scripts/outfit-research.ts",
+    "test:outfit-workflow": "node --import ./tests/register.mjs scripts/verify-outfit-workflow.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",
@@ -35,16 +37,17 @@
     "firebase": "^12.18.0",
     "jose": "^6.2.10",
     "mongodb": "^7.6.0",
-    "next": "16.3.3",
+    "next": "16.4.6",
     "nodemailer": "^9.1.1",
     "posthog-js": "^1.447.3",
     "posthog-node": "^5.63.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
-    "zod": "^4.5.2"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

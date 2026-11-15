@@ -36,6 +36,7 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
@@ -270,18 +271,21 @@ async function main() {
    */
   if (apply && planned.length > 0) {
     await backupDocuments("check-links", planned.map((entry) => entry.before));
-    for (const entry of planned) {
-      await outfits.updateOne(
-        { id: entry.id },
-        {
-          $set: {
-            items: entry.items,
-            // Only a look whose status actually moved is a look that changed.
-            ...(entry.moved ? { contentChangedAt: today() } : {}),
+    await catalogMaintenance(client, db, [{ collection: "outfits", documents: planned.map((entry) => entry.before) }], async (session) => {
+      for (const entry of planned) {
+        await outfits.updateOne(
+          { id: entry.id },
+          {
+            $set: {
+              items: entry.items,
+              // Only a look whose status actually moved is a look that changed.
+              ...(entry.moved ? { contentChangedAt: today() } : {}),
+            },
           },
-        },
-      );
-    }
+          { session },
+        );
+      }
+    });
   }
 
   const counted = Object.entries(tally).filter(([, n]) => n > 0);

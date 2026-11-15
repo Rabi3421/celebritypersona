@@ -35,6 +35,9 @@ export async function getDb(): Promise<Db> {
   return writeBlock ? readOnlyDb(db, writeBlock) : db;
 }
 
+/** Transactions stay in the server process; no credentials leave the app. */
+export async function getMongoClient() { return clientPromise; }
+
 export type AdminUser = {
   email: string;
   passwordHash: string;

@@ -1,0 +1,381 @@
+{
+  "inspectedAt": "2026-11-15T02:00:33.305Z",
+  "summary": {
+    "info": 0,
+    "low": 0,
+    "moderate": 7,
+    "high": 5,
+    "critical": 0,
+    "total": 12
+  },
+  "productionSummary": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 5,
+    "critical": 0,
+    "total": 5
+  },
+  "productionPackages": [
+    "@firebase/firestore",
+    "@firebase/firestore-compat",
+    "@grpc/grpc-js",
+    "firebase",
+    "nodemailer"
+  ],
+  "packages": [
+    {
+      "name": "@firebase/firestore",
+      "severity": "high",
+      "direct": false,
+      "fixAvailable": {
+        "name": "firebase",
+        "version": "9.14.0",
+        "isSemVerMajor": true
+      },
+      "nodes": [
+        {
+          "path": "node_modules/@firebase/firestore",
+          "version": "4.17.1",
+          "devOnly": false,
+          "devOptional": false,
+          "baselineVersion": "4.17.1",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@grpc/grpc-js"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@firebase/firestore-compat",
+      "severity": "high",
+      "direct": false,
+      "fixAvailable": {
+        "name": "firebase",
+        "version": "9.14.0",
+        "isSemVerMajor": true
+      },
+      "nodes": [
+        {
+          "path": "node_modules/@firebase/firestore-compat",
+          "version": "0.4.13",
+          "devOnly": false,
+          "devOptional": false,
+          "baselineVersion": "0.4.13",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@firebase/firestore"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@grpc/grpc-js",
+      "severity": "high",
+      "direct": false,
+      "fixAvailable": {
+        "name": "firebase",
+        "version": "9.14.0",
+        "isSemVerMajor": true
+      },
+      "nodes": [
+        {
+          "path": "node_modules/@grpc/grpc-js",
+          "version": "1.9.16",
+          "devOnly": false,
+          "devOptional": false,
+          "baselineVersion": "1.9.16",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [],
+      "advisories": [
+        {
+          "title": "@grpc/grpc-js: In certain configurations, getAuthContext can return unauthorized certificates as though they were authorized",
+          "url": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
+          "severity": "high",
+          "range": "<1.13.6"
+        },
+        {
+          "title": "@grpc/grpc-js: The server transmits some error messages thrown by method handlers to the client in status messages",
+          "url": "https://github.com/advisories/GHSA-f596-whhp-79r4",
+          "severity": "low",
+          "range": "<1.13.6"
+        }
+      ]
+    },
+    {
+      "name": "@typescript-eslint/eslint-plugin",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@typescript-eslint/parser",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/parser",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@typescript-eslint/type-utils",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/type-utils",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@typescript-eslint/typescript-estree",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "minimatch"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "@typescript-eslint/utils",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/utils",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "firebase",
+      "severity": "high",
+      "direct": true,
+      "fixAvailable": {
+        "name": "firebase",
+        "version": "9.14.0",
+        "isSemVerMajor": true
+      },
+      "nodes": [
+        {
+          "path": "node_modules/firebase",
+          "version": "12.18.0",
+          "devOnly": false,
+          "devOptional": false,
+          "baselineVersion": "12.18.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@firebase/firestore",
+        "@firebase/firestore-compat"
+      ],
+      "advisories": []
+    },
+    {
+      "name": "minimatch",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch",
+          "version": "10.2.6",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "10.2.6",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [],
+      "advisories": [
+        {
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "severity": "moderate",
+          "range": ">=7.0.0 <11.0.1"
+        }
+      ]
+    },
+    {
+      "name": "nodemailer",
+      "severity": "high",
+      "direct": true,
+      "fixAvailable": {
+        "name": "nodemailer",
+        "version": "10.5.0",
+        "isSemVerMajor": true
+      },
+      "nodes": [
+        {
+          "path": "node_modules/nodemailer",
+          "version": "9.1.1",
+          "devOnly": false,
+          "devOptional": false,
+          "baselineVersion": "9.1.1",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [],
+      "advisories": [
+        {
+          "title": "Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure",
+          "url": "https://github.com/advisories/GHSA-6vj9-mwq6-2f5v",
+          "severity": "moderate",
+          "range": ">=5.0.0 <10.0.2"
+        },
+        {
+          "title": "Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS",
+          "url": "https://github.com/advisories/GHSA-8vvx-rff5-p5rq",
+          "severity": "moderate",
+          "range": "<10.0.2"
+        },
+        {
+          "title": "Nodemailer: Quoted local-part can produce malformed envelope recipient through RFC 5322 comment parsing",
+          "url": "https://github.com/advisories/GHSA-g57g-f23g-4646",
+          "severity": "moderate",
+          "range": ">=9.1.0 <10.0.9"
+        },
+        {
+          "title": "Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service",
+          "url": "https://github.com/advisories/GHSA-v53p-9fqp-m79j",
+          "severity": "high",
+          "range": "<=10.0.5"
+        },
+        {
+          "title": "Nodemailer addressparser: O(n^2) on comment-joined addresses enables a remote DoS (reachable via mailparser)",
+          "url": "https://github.com/advisories/GHSA-prgh-xp8r-p3m5",
+          "severity": "high",
+          "range": ">=9.1.0 <=10.0.4"
+        },
+        {
+          "title": "Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing",
+          "url": "https://github.com/advisories/GHSA-39m8-27wv-hr27",
+          "severity": "moderate",
+          "range": ">=3.0.0 <=10.0.9"
+        },
+        {
+          "title": "Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient",
+          "url": "https://github.com/advisories/GHSA-8c8m-p3m8-cjg8",
+          "severity": "moderate",
+          "range": ">=3.0.0 <10.1.4"
+        },
+        {
+          "title": "Nodemailer: A \";\" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient",
+          "url": "https://github.com/advisories/GHSA-m943-m63m-w62w",
+          "severity": "moderate",
+          "range": ">=3.0.0 <10.1.4"
+        },
+        {
+          "title": "Nodemailer: A \">\" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name",
+          "url": "https://github.com/advisories/GHSA-85x2-q946-cp5h",
+          "severity": "moderate",
+          "range": ">=3.0.0 <10.1.4"
+        },
+        {
+          "title": "Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service",
+          "url": "https://github.com/advisories/GHSA-4ffr-jq9g-5ffx",
+          "severity": "moderate",
+          "range": ">=3.0.0 <=10.0.12"
+        },
+        {
+          "title": "Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped",
+          "url": "https://github.com/advisories/GHSA-g73g-hqqh-jr95",
+          "severity": "moderate",
+          "range": ">=3.0.0 <=10.0.12"
+        },
+        {
+          "title": "Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service",
+          "url": "https://github.com/advisories/GHSA-4g23-2xm8-66gc",
+          "severity": "moderate",
+          "range": ">=3.0.0 <=10.0.9"
+        }
+      ]
+    },
+    {
+      "name": "typescript-eslint",
+      "severity": "moderate",
+      "direct": false,
+      "fixAvailable": true,
+      "nodes": [
+        {
+          "path": "node_modules/typescript-eslint",
+          "version": "8.68.0",
+          "devOnly": true,
+          "devOptional": false,
+          "baselineVersion": "8.68.0",
+          "newlyIntroduced": false
+        }
+      ],
+      "inheritedVia": [
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils"
+      ],
+      "advisories": []
+    }
+  ]
+}

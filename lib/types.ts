@@ -317,6 +317,8 @@ export const wornSortKey = (outfit: { items: OutfitItem[] }) => wornPrice(outfit
 export const savingSortKey = (outfit: { items: OutfitItem[] }) => pricing(outfit).savingTotal;
 
 export type Outfit = {
+  /** Evidence and source identity for an explicitly approved research import. */
+  researchImport?: import("@/lib/outfit-research").ImportProvenance;
   id: number;
   celebrity: string;
   event: string;

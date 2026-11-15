@@ -1,0 +1,172 @@
+{
+  "inspectedAt": "2026-11-14T18:14:30.570Z",
+  "atlasHostname": true,
+  "mode": "read-only inspection; no transaction or write attempted",
+  "topology": {
+    "version": "8.0.37",
+    "replicaSet": true,
+    "sharded": false,
+    "sessions": true,
+    "maxWireVersion": 25,
+    "transactionCapableTopology": true
+  },
+  "credentialCanWrite": true,
+  "collections": {
+    "outfits": {
+      "exists": true,
+      "documents": 16,
+      "contentSha256": "f7d12bfc95b5a7173cc948805874a1662bb9ed876197848ae5201871bdca46de",
+      "collectionType": "collection",
+      "options": {
+        "capped": false,
+        "timeseries": false
+      },
+      "indexes": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "id_1",
+          "key": {
+            "id": 1
+          },
+          "unique": true
+        }
+      ],
+      "duplicates": {
+        "id": [],
+        "storedSlug": [],
+        "effectiveSlug": [],
+        "importedPost": []
+      },
+      "missingStoredSlug": 0,
+      "invalidNumericIds": 0,
+      "importedRecords": 0
+    },
+    "celebrities": {
+      "exists": true,
+      "documents": 14,
+      "contentSha256": "3cc95cf4b132904491ba58e473192da5d5d9f16b99f40a47577e0d7c19e45d9d",
+      "collectionType": "collection",
+      "options": {
+        "capped": false,
+        "timeseries": false
+      },
+      "indexes": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "id_1",
+          "key": {
+            "id": 1
+          },
+          "unique": true
+        }
+      ],
+      "duplicates": {
+        "id": [],
+        "normalizedName": []
+      },
+      "collatedNameDuplicates": [],
+      "untrimmedNames": 0,
+      "invalidNumericIds": 0
+    },
+    "occasions": {
+      "exists": true,
+      "documents": 16,
+      "contentSha256": "be72ed41c79f2e4f06ba56b45195bde826ea3e9abde7f0dffdc673d7deb41ce7",
+      "collectionType": "collection",
+      "options": {
+        "capped": false,
+        "timeseries": false
+      },
+      "indexes": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "id_1",
+          "key": {
+            "id": 1
+          },
+          "unique": true
+        }
+      ],
+      "duplicates": {
+        "id": [],
+        "normalizedName": []
+      },
+      "collatedNameDuplicates": [],
+      "untrimmedNames": 0,
+      "invalidNumericIds": 0
+    },
+    "brands": {
+      "exists": true,
+      "documents": 19,
+      "contentSha256": "8e588e3e20840cbfcae6f0cda7906afef2ad971f8c185d4eb2357e2c55d81864",
+      "collectionType": "collection",
+      "options": {
+        "capped": false,
+        "timeseries": false
+      },
+      "indexes": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "unique": true
+        }
+      ],
+      "duplicates": {
+        "id": [],
+        "normalizedName": []
+      },
+      "collatedNameDuplicates": [],
+      "untrimmedNames": 0,
+      "invalidNumericIds": 0
+    },
+    "seoReviews": {
+      "exists": true,
+      "documents": 0,
+      "contentSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "collectionType": "collection",
+      "options": {
+        "capped": false,
+        "timeseries": false
+      },
+      "indexes": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "unique": true
+        },
+        {
+          "name": "key_unique",
+          "key": {
+            "key": 1
+          },
+          "unique": true
+        }
+      ],
+      "duplicates": {
+        "key": []
+      }
+    }
+  }
+}

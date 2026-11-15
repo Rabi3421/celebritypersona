@@ -5,9 +5,10 @@ import { DEV_WRITE_OPT_IN, DevWriteRefused, devWriteBlock, readOnlyDb } from "..
 
 const ATLAS = "mongodb+srv://user:pass@cluster0.example.mongodb.net/";
 
-test("dev write guard: only `next dev` against a non-local database is blocked", () => {
+test("write guard: development and Vercel previews refuse remote writes", () => {
   assert.equal(devWriteBlock({ NODE_ENV: "production", MONGODB_URI: ATLAS }), null, "production is never touched");
-  assert.equal(devWriteBlock({ NODE_ENV: "production", VERCEL_ENV: "preview", MONGODB_URI: ATLAS }), null, "previews are not changed by this");
+  assert.match(devWriteBlock({ NODE_ENV: "production", VERCEL_ENV: "preview", MONGODB_URI: ATLAS }), /all application database writes are switched off/);
+  assert.match(devWriteBlock({ NODE_ENV: "production", VERCEL_ENV: "preview", MONGODB_URI: ATLAS, CP_DEV_PRODUCTION_WRITES: DEV_WRITE_OPT_IN }), /Refused/, "no preview opt-in bypass");
   assert.equal(devWriteBlock({ NODE_ENV: "test", MONGODB_URI: ATLAS }), null);
   assert.match(devWriteBlock({ NODE_ENV: "development", MONGODB_URI: ATLAS }), /writes are switched off/);
   assert.match(devWriteBlock({ NODE_ENV: "development", MONGODB_URI: "" }), /not on this machine/, "unknown counts as production");

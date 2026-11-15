@@ -24,6 +24,7 @@
 
 import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
@@ -119,9 +120,9 @@ async function main() {
   // wholesale, so the whole document is what would need restoring.
   await backupDocuments("migrate-links", all);
 
-  for (const outfit of planned) {
-    await outfits.updateOne({ id: outfit.id }, { $set: { items: outfit.items } });
-  }
+  await catalogMaintenance(client, client.db(process.env.MONGODB_DB), [{ collection: "outfits", documents: all }], async (session) => {
+    for (const outfit of planned) await outfits.updateOne({ id: outfit.id }, { $set: { items: outfit.items } }, { session });
+  });
 
   console.log(
     `Migrated ${planned.length} looks. Every link is 'unverified' until ` +

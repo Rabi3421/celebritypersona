@@ -7,6 +7,7 @@ import { getOccasionViews } from "@/lib/db/content";
 import { createOccasion, deleteOccasion, renameOccasionEverywhere, updateOccasion } from "@/lib/db/mutations";
 import { lines, rows, text } from "@/lib/form-data";
 import { fieldErrors, occasionSchema, type FieldErrors } from "@/lib/validation";
+import { CatalogSaveError, catalogFailure } from "@/lib/db/catalog-errors";
 
 export type OccasionDraft = {
   name: string;
@@ -65,8 +66,13 @@ export async function saveOccasion(
     };
 
   const id = Number(form.get("id"));
-  if (Number.isFinite(id) && id > 0) await updateOccasion(id, parsed.data);
-  else await createOccasion(parsed.data);
+  try {
+    if (Number.isFinite(id) && id > 0) await updateOccasion(id, parsed.data);
+    else await createOccasion(parsed.data);
+  } catch (error) {
+    const failure = catalogFailure(error);
+    return { attempt: (previous.attempt ?? 0) + 1, errors: { [failure instanceof CatalogSaveError ? failure.field : "form"]: failure.message }, values: draft };
+  }
   redirect("/admin/occasions");
 }
 

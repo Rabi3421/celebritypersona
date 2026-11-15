@@ -17,6 +17,7 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { outfitSlug } from "@/lib/slugs";
 import type { Outfit } from "@/lib/types";
@@ -55,9 +56,9 @@ async function main() {
     // before the first update. See scripts/backup.ts.
     await backupDocuments("freeze-slugs", floating);
 
-    for (const outfit of floating) {
-      await collection.updateOne({ id: outfit.id }, { $set: { slug: outfitSlug(outfit) } });
-    }
+    await catalogMaintenance(client, client.db(process.env.MONGODB_DB), [{ collection: "outfits", documents: floating }], async (session) => {
+      for (const outfit of floating) await collection.updateOne({ id: outfit.id }, { $set: { slug: outfitSlug(outfit) } }, { session });
+    });
   }
 
   console.log(

@@ -20,6 +20,9 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
+import { ensureOutfitRecords } from "@/lib/db/catalog-identity";
+import type { Outfit } from "@/lib/types";
 import { assertWritable } from "@/lib/prod-guard";
 import { revalidateSite } from "./revalidate";
 import { backupDocuments } from "./backup";
@@ -52,7 +55,7 @@ const KEPT: { id: number; tag: string; why: string }[] = [
   { id: 28, tag: "Promo tour", why: "Event is “Udta Teer promotional post” — a film promo" },
 ];
 
-type StoredOutfit = { id: number; celebrity: string; event: string; occasion: string };
+type StoredOutfit = Outfit;
 
 function requireUri(): string {
   const uri = process.env.MONGODB_URI;
@@ -117,9 +120,12 @@ async function main() {
 
   if (apply && ready > 0) {
     await backupDocuments("retag-occasions", planned.map((entry) => entry.outfit));
-    for (const { move } of planned) {
-      await outfits.updateOne({ id: move.id }, { $set: { occasion: move.to } });
-    }
+    await catalogMaintenance(client, client.db(process.env.MONGODB_DB), [{ collection: "outfits", documents: planned.map((entry) => entry.outfit) }], async (session) => {
+      for (const { move, outfit } of planned) {
+        const normalized = await ensureOutfitRecords(client.db(process.env.MONGODB_DB), { ...outfit, occasion: move.to }, session);
+        await outfits.updateOne({ id: move.id }, { $set: { occasion: normalized.occasion } }, { session });
+      }
+    });
   }
 
   console.log("KEPT\n");

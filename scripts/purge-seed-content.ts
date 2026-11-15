@@ -26,6 +26,7 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 
@@ -121,11 +122,15 @@ async function main() {
       ...(seedBio ? [seedBio] : []),
     ]);
 
-    const a = await outfits.deleteMany({ id: { $in: SEED_OUTFIT_IDS } });
-    const b = await trending.deleteMany({ term: { $in: SEED_TRENDING_TERMS } });
-    const c = seedBio
-      ? await celebrities.updateOne({ _id: seedBio._id }, { $unset: { bio: "" } })
-      : { modifiedCount: 0 };
+    const { a, b, c } = await catalogMaintenance(client, db, [
+      { collection: "outfits", documents: doomed },
+      { collection: "celebrities", documents: seedBio ? [seedBio] : [] },
+    ], async (session) => {
+      const a = await outfits.deleteMany({ id: { $in: doomed.map((o) => o.id) } }, { session });
+      const b = await trending.deleteMany({ term: { $in: SEED_TRENDING_TERMS } }, { session });
+      const c = seedBio ? await celebrities.updateOne({ _id: seedBio._id }, { $unset: { bio: "" } }, { session }) : { modifiedCount: 0 };
+      return { a, b, c };
+    });
     console.log(
       `\nDeleted ${a.deletedCount} outfits and ${b.deletedCount} trending rows; ` +
         `cleared ${c.modifiedCount} seeded bio.`,

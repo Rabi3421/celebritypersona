@@ -8,8 +8,8 @@
  * reads carry on, so pages still render against real data.
  *
  * Fail-closed: anything that is not clearly a local database counts as
- * production (lib/prod-guard.ts). Production and Vercel builds run with
- * NODE_ENV=production and are never touched by this.
+ * production (lib/prod-guard.ts). Vercel previews also refuse remote writes,
+ * even though they run NODE_ENV=production. Live production remains writable.
  *
  * For local work that should write, point the app at a disposable database:
  *   MONGODB_URI=mongodb://127.0.0.1:27017 MONGODB_DB=cp_dev npx next dev
@@ -26,6 +26,10 @@ export const DEV_WRITE_OPT_IN = "i-know-this-is-prod";
 
 /** Why writes are refused in this process, or null when they are allowed. */
 export function devWriteBlock(env: Env = process.env): string | null {
+  // Vercel previews run NODE_ENV=production. Never let that bypass the guard.
+  if (env.VERCEL_ENV === "preview" && !isLocalDatabase(env.MONGODB_URI)) {
+    return "Refused: Vercel preview is connected to a remote database, so all application database writes are switched off. Use a disposable local database for testing.";
+  }
   if (env.NODE_ENV !== "development") return null;
   if (isLocalDatabase(env.MONGODB_URI)) return null;
   if (env.CP_DEV_PRODUCTION_WRITES === DEV_WRITE_OPT_IN) return null;

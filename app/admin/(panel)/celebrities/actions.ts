@@ -7,6 +7,7 @@ import { getCelebrityViews } from "@/lib/db/content";
 import { createCelebrity, deleteCelebrity, renameCelebrityEverywhere, updateCelebrity } from "@/lib/db/mutations";
 import { lines, text } from "@/lib/form-data";
 import { celebritySchema, fieldErrors, type FieldErrors } from "@/lib/validation";
+import { CatalogSaveError, catalogFailure } from "@/lib/db/catalog-errors";
 
 export type CelebrityDraft = {
   name: string;
@@ -43,8 +44,13 @@ export async function saveCelebrity(
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: draft };
 
   const id = Number(form.get("id"));
-  if (Number.isFinite(id) && id > 0) await updateCelebrity(id, parsed.data);
-  else await createCelebrity(parsed.data);
+  try {
+    if (Number.isFinite(id) && id > 0) await updateCelebrity(id, parsed.data);
+    else await createCelebrity(parsed.data);
+  } catch (error) {
+    const failure = catalogFailure(error);
+    return { errors: { [failure instanceof CatalogSaveError ? failure.field : "form"]: failure.message }, values: draft };
+  }
   redirect("/admin/celebrities");
 }
 

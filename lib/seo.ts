@@ -210,4 +210,5 @@ export function breadcrumbs(id: string, trail: { name: string; path: string }[])
 
 /** Serialises a graph for a single <script type="application/ld+json">. */
 export const jsonLd = (graph: object[]) =>
-  JSON.stringify({ "@context": "https://schema.org", "@graph": graph });
+  // JSON strings are not HTML-safe: an imported title can contain </script>.
+  JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");

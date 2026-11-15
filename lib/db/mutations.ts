@@ -4,18 +4,19 @@ import { revalidatePath } from "next/cache";
 import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
 import { firebaseStorage } from "@/lib/firebase";
-import { getDb } from "@/lib/mongodb";
+import { getDb, getMongoClient } from "@/lib/mongodb";
+import { persistOutfit, type OutfitCommit } from "@/lib/db/catalog-outfits";
+import { persistHubCreate, persistHubEdit, persistHubRename, hubWrite } from "@/lib/db/catalog-hubs";
+import { catalogTransaction } from "@/lib/db/catalog-transaction";
+import type { ImportProvenance } from "@/lib/outfit-research";
 import { storageDeleteAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
-import { sameName } from "@/lib/archive";
 import { budgetBucket, budgetSlug } from "@/lib/budget";
-import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
 import type { InstagramReel } from "@/lib/instagram";
-import { celebritySlug, nameSlug, occasionSlug, outfitSlug } from "@/lib/slugs";
+import { nameSlug, outfitSlug } from "@/lib/slugs";
 import type {
   BudgetPage,
-  HubSeo,
   Brand,
   Celebrity,
   MailDelivery,
@@ -30,7 +31,6 @@ import type {
   OutfitItem,
   PriceReport,
   RequestStatus,
-  SlugRedirect,
   Subscriber,
   SubscriberStatus,
   TrendingSearch,
@@ -61,12 +61,7 @@ function revalidateSite(touched: string[] = []) {
   void pingIndexNow([...ARCHIVE_HUBS, ...touched]).catch(() => {});
 }
 
-/** Totals are always the sum of the pieces, never typed in by hand. A piece
- *  with no swap yet contributes to the worn total but not the swap total. */
-/** The day an editor last had these prices in front of them. The detail page
- *  used to claim "re-checked 2 days ago" on every look, forever. */
-const today = () => new Date().toISOString().slice(0, 10);
-
+/** Totals are always the sum of the pieces, never typed in by hand. */
 export const outfitTotals = (items: OutfitItem[]) => ({
   worn: items.filter(hasWornPrice).reduce((sum, item) => sum + (item.worn ?? 0), 0),
   swap: items.filter(hasSwap).reduce((sum, item) => sum + item.swap, 0),
@@ -90,35 +85,6 @@ async function forgetImages(paths: (string | undefined)[]) {
       }
     }),
   );
-}
-
-async function nextId(collection: string) {
-  const db = await getDb();
-  const [highest] = await db
-    .collection(collection)
-    .find({}, { projection: { id: 1 }, sort: { id: -1 }, limit: 1 })
-    .toArray();
-  return ((highest?.id as number) ?? 0) + 1;
-}
-
-/* ------------------------------------------------------------------- hubs */
-
-/**
- * The update for a hub record's editorial save: what was posted, stamped with
- * the time for the sitemap, and every optional field the editor emptied
- * removed — or the page would keep serving the old title.
- */
-function hubWrite<T extends HubSeo & { intro?: string[]; bio?: string[] }>(input: T) {
-  const cleared = (["seoTitle", "seoDescription", "primaryKeyword"] as const).filter((key) => !input[key]);
-  // An emptied optional arrives as `undefined`; left in $set it would be
-  // written as null, and MongoDB refuses to $set and $unset one path at once.
-  const present = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)) as T;
-  return {
-    $set: { ...present, updatedAt: new Date().toISOString() },
-    ...(cleared.length
-      ? { $unset: Object.fromEntries(cleared.map((key) => [key, "" as const])) as Record<string, ""> }
-      : {}),
-  };
 }
 
 /** A brand page's intro and search fields. The record itself is created when
@@ -149,54 +115,17 @@ export async function saveBudgetPage(cap: number, input: Omit<BudgetPage, "cap">
  * its search fields. The virtual rows in `celebrityViews`/`occasionViews`
  * stay as a safety net for data written outside the panel.
  */
-async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion" | "occasions" | "items">) {
-  const db = await getDb();
-  const celebrities = db.collection<Celebrity>("celebrities");
-  const occasions = db.collection<Occasion>("occasions");
-  const brands = db.collection<Brand>("brands");
-  const noId = { projection: { _id: 0, name: 1 } } as const;
-  const missing = missingRecords(
-    {
-      celebrities: await celebrities.find({}, noId).toArray(),
-      occasions: await occasions.find({}, noId).toArray(),
-      brands: await brands.find({}, noId).toArray(),
+export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">, options: { actor: string; requestKey: string; provenance?: ImportProvenance; approvedRelated?: string }) {
+  const common = { client: await getMongoClient(), db: await getDb(), input, actor: options.actor,
+    afterCommit: ({ next }: OutfitCommit) => {
+      if (options.provenance) revalidatePath("/admin/outfits");
+      else revalidateSite(isPublished(next) ? outfitTouched(next) : []);
     },
-    [outfit],
-  );
-
-  for (const name of missing.celebrities) {
-    await celebrities.insertOne(blankCelebrity(await nextId("celebrities"), name));
-  }
-  for (const name of missing.occasions) {
-    await occasions.insertOne(blankOccasion(await nextId("occasions"), name));
-  }
-  for (const name of missing.brands) {
-    await brands.insertOne(blankBrand(await nextId("brands"), name));
-  }
+  };
+  return options.provenance
+    ? persistOutfit({ ...common, mode: "import", provenance: options.provenance, approvedRelated: options.approvedRelated ?? "" })
+    : persistOutfit({ ...common, mode: "create", requestKey: options.requestKey });
 }
-
-export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) {
-  const db = await getDb();
-  const id = await nextId("outfits");
-  await db.collection<Outfit>("outfits").insertOne({
-    ...input,
-    ...outfitTotals(input.items),
-    pricesCheckedAt: today(),
-    // The day this look joined the archive, and the day its address became a
-    // promise. `isNewLook` counts the New badge from `publishedAt`, and an
-    // edit never moves it. A draft has neither until it is first published.
-    ...(input.status === "published" ? { publishedAt: today(), slugLockedAt: today() } : {}),
-    id,
-  });
-  await ensureArchiveRecords(input);
-  // A new look is the whole reason IndexNow is worth having: name the page
-  // itself, and the two archives it has just joined. A draft has no page to
-  // name, so nothing is announced for one.
-  const created = { ...input, id } as Outfit;
-  revalidateSite(isPublished(created) ? outfitTouched(created) : []);
-  return id;
-}
-
 /** The public pages a single look owns or appears on, for IndexNow. Her
  *  archive and the occasion archive both gain a card, so both changed. */
 function outfitTouched(outfit: Outfit): string[] {
@@ -222,300 +151,70 @@ function outfitTouched(outfit: Outfit): string[] {
  * redirected too; consulted only when a slug matches nothing live, so a name
  * reused later still wins.
  */
-async function rememberSlugMove(kind: SlugRedirect["kind"], from: string, to: string) {
-  if (!from || !to || from === to) return;
-
-  const db = await getDb();
-  const collection = db.collection<SlugRedirect>("redirects");
-
-  // Anything already pointing at the old slug follows it, so a name renamed
-  // twice never leaves a reader on a redirect to a redirect.
-  await collection.updateMany({ kind, to: from }, { $set: { to } });
-  await collection.deleteMany({ kind, from: to });
-  await collection.updateOne(
-    { kind, from },
-    { $set: { kind, from, to, at: new Date().toISOString() } },
-    { upsert: true },
-  );
-}
-
-/**
- * Moves every look filed under one name to another, and remembers the URLs
- * they answered on before.
- *
- * A look's slug falls back to `celebrity-event-date`, so renaming a celebrity
- * silently rewrites the URL of every look she is in. Without this, a rename
- * split the archive in two — the record under the new name holding nothing,
- * the looks under the old name with no record — and broke their links on the
- * way. Matching is case-insensitive, so a rename also merges the variants.
- */
-async function renameAcrossOutfits(
-  field: "celebrity" | "occasion",
-  from: string,
-  to: string,
-): Promise<number> {
-  if (sameName(from, to)) return 0;
-
-  const db = await getDb();
-  const collection = db.collection<Outfit>("outfits");
-  // A look can suit an occasion without it being the primary, so the list
-  // counts too — otherwise a rename leaves the old name behind in it.
-  const affected = (await collection.find({}).toArray()).filter(
-    (outfit) =>
-      sameName(outfit[field], from) ||
-      (field === "occasion" && (outfit.occasions ?? []).some((name) => sameName(name, from))),
-  );
-
-  for (const outfit of affected) {
-    /**
-     * Freeze the URL before touching the name.
-     *
-     * A look with no stored slug falls back to celebrity-event-date, so this
-     * rename used to move its URL as well as the name printed on it — and it
-     * recorded a redirect, which made the move survivable but did not make it
-     * intended. A published look's address is a promise to everyone who linked
-     * to it, and correcting a spelling in somebody's name is not a decision to
-     * move ten pages.
-     *
-     * Writing the slug it already has, in the same update, pins it: the name
-     * changes, the address does not, and there is no redirect to record
-     * because nothing moved. Changing a slug stays an explicit act in the
-     * outfit form, which does record one.
-     */
-    const renamed = (name: string) => (sameName(name, from) ? to : name);
-    await collection.updateOne(
-      { id: outfit.id },
-      {
-        $set: {
-          [field]: renamed(outfit[field]),
-          slug: outfitSlug(outfit),
-          ...(field === "occasion"
-            ? {
-                occasions: outfitOccasions({
-                  occasion: renamed(outfit.occasion),
-                  occasions: (outfit.occasions ?? []).map(renamed),
-                }),
-              }
-            : {}),
-        },
-      },
-    );
-  }
-  return affected.length;
-}
-
-export async function updateOutfit(
-  id: number,
-  input: Omit<Outfit, "id" | "worn" | "swap">,
-) {
-  const db = await getDb();
-  const collection = db.collection<Outfit>("outfits");
-  const previous = await collection.findOne({ id });
-
-  /**
-   * A slug only moves when an editor types a different one.
-   *
-   * The form always posts a slug, prefilled with the address the look already
-   * has, so an ordinary edit re-writes the same value and the URL stays put —
-   * which also freezes a look that had no stored slug of its own at the
-   * address it is already being served on. A genuinely different value is an
-   * explicit act, and that is the one case that records a 301.
-   */
-  // Only an address that was ever served needs a 301. A draft's slug is
-  // free to change: nobody can have linked to a page that never existed.
-  const wasLive = previous ? isPublished(previous) || Boolean(previous.slugLockedAt) : false;
-  if (previous && wasLive) {
-    await rememberSlugMove("outfit", outfitSlug(previous), outfitSlug({ ...previous, ...input }));
-  }
-
-  // A draft going live for the first time: it joins the archive today.
-  const firstPublish =
-    previous?.status === "draft" && input.status === "published"
-      ? {
-          publishedAt: previous.publishedAt ?? today(),
-          slugLockedAt: previous.slugLockedAt ?? today(),
-        }
-      : {};
-
-  // `image` is the single-photo field older documents were saved with. Always
-  // clearing it keeps one look from carrying two competing photo fields. The
-  // search overrides are cleared the same way: a field the editor emptied has
-  // to leave the document, or the page would keep serving the old title.
-  await collection.updateOne(
-    { id },
-    {
-      $set: {
-        ...input,
-        images: input.images ?? [],
-        ...outfitTotals(input.items),
-        ...firstPublish,
-        pricesCheckedAt: today(),
-      },
-      $unset: {
-        image: "",
-        // The badge is derived from `publishedAt` now. Clearing the old
-        // hand-ticked flag as each look is edited keeps one look from
-        // carrying two competing answers to "is this new".
-        isNew: "",
-        ...(input.seoTitle ? {} : { seoTitle: "" }),
-        ...(input.seoDescription ? {} : { seoDescription: "" }),
-        ...(input.primaryKeyword ? {} : { primaryKeyword: "" }),
-        ...(input.secondaryKeywords?.length ? {} : { secondaryKeywords: "" }),
-        ...(input.faqs?.length ? {} : { faqs: "" }),
-        ...(input.leadPieceId ? {} : { leadPieceId: "" }),
-      },
+export async function updateOutfit(id: number, input: Omit<Outfit, "id" | "worn" | "swap">, options: { actor: string; expectedVersion: string; slugUnlocked?: boolean }) {
+  return persistOutfit({ client: await getMongoClient(), db: await getDb(), input, mode: "edit", id, ...options,
+    afterCommit: async ({ previous, next }) => {
+      const kept = new Set(outfitPhotos(next).map((image) => image.path));
+      await forgetImages(previous ? outfitPhotos(previous).map((image) => image.path).filter((path) => !kept.has(path)) : []);
+      revalidateSite([
+        ...(previous && isPublished(previous) ? outfitTouched(previous) : []),
+        ...(isPublished(next) ? outfitTouched(next) : []),
+      ]);
     },
-  );
-
-  await ensureArchiveRecords(input);
-
-  // Photos dropped from the look have no owner left.
-  const kept = new Set((input.images ?? []).map((image) => image.path));
-  await forgetImages(
-    previous
-      ? outfitPhotos(previous).map((image) => image.path).filter((path) => !kept.has(path))
-      : [],
-  );
-
-  // Both URLs when the edit moved the look: the old one so the engines see the
-  // redirect, the new one so they find where it went.
-  // Drafts on both sides of the edit have no public URL to announce.
-  const next = { ...previous, ...input, id } as Outfit;
-  revalidateSite([
-    ...(previous && isPublished(previous) ? outfitTouched(previous) : []),
-    ...(isPublished(next) ? outfitTouched(next) : []),
-  ]);
+  });
 }
-
 export async function deleteOutfit(id: number) {
   const db = await getDb();
-  const collection = db.collection<Outfit>("outfits");
-  const doomed = await collection.findOne(
-    { id },
-    { projection: { image: 1, images: 1 } },
-  );
-  await collection.deleteOne({ id });
+  const doomed = await catalogTransaction(await getMongoClient(), db, async (session) => {
+    const collection = db.collection<Outfit>("outfits");
+    const previous = await collection.findOne({ id }, { session });
+    await collection.deleteOne({ id }, { session });
+    return previous;
+  });
   await forgetImages(doomed ? outfitPhotos(doomed).map((image) => image.path) : []);
   revalidateSite();
 }
-
 /* ------------------------------------------------------------ celebrities */
 
 export async function createCelebrity(input: Omit<Celebrity, "id">) {
-  const db = await getDb();
-  const id = await nextId("celebrities");
-  await db.collection<Celebrity>("celebrities").insertOne({ ...input, id, updatedAt: new Date().toISOString() });
+  const id = await persistHubCreate({ client: await getMongoClient(), db: await getDb(), collection: "celebrities", input });
   revalidateSite();
   return id;
 }
-
 export async function updateCelebrity(id: number, input: Omit<Celebrity, "id">) {
-  const db = await getDb();
-  const collection = db.collection<Celebrity>("celebrities");
-  const previous = await collection.findOne({ id });
-
-  if (previous) {
-    await rememberSlugMove("celebrity", celebritySlug(previous), celebritySlug({ ...previous, ...input }));
-  }
-
-  await collection.updateOne({ id }, hubWrite(input));
-
-  // Her looks are filed under her name, so they have to move with it.
-  if (previous) await renameAcrossOutfits("celebrity", previous.name, input.name);
-
+  await persistHubEdit({ client: await getMongoClient(), db: await getDb(), collection: "celebrities", id, input });
   revalidateSite();
 }
-
-/**
- * Renames a celebrity everywhere the archive mentions her, record or not.
- *
- * The panel lists names the outfits mention that no record covers, so the
- * thing most in need of correcting is usually the one thing no form can edit.
- * Renaming onto a name that already exists merges the two: the looks join it,
- * and the now-duplicate record is removed rather than left orphaned under a
- * name nothing points at.
- */
 export async function renameCelebrityEverywhere(from: string, to: string) {
-  const db = await getDb();
-  const collection = db.collection<Celebrity>("celebrities");
-  const records = await collection.find({}).toArray();
-  const source = records.find((record) => sameName(record.name, from));
-  const target = records.find((record) => sameName(record.name, to));
-
-  if (source && target && source.id !== target.id) {
-    await collection.deleteOne({ id: source.id });
-  } else if (source) {
-    await collection.updateOne({ id: source.id }, { $set: { name: to } });
-  }
-
-  // The archive page is served at a slug built from the name, whether or not a
-  // record backs it — which is exactly the case that had nowhere to record it.
-  await rememberSlugMove("celebrity", nameSlug(from), nameSlug(to));
-
-  const looks = await renameAcrossOutfits("celebrity", from, to);
+  const result = await persistHubRename({ client: await getMongoClient(), db: await getDb(), collection: "celebrities", from, to });
   revalidateSite();
-  return { looks, merged: Boolean(source && target && source.id !== target.id) };
+  return result;
 }
-
-/** The same, for an occasion. */
 export async function renameOccasionEverywhere(from: string, to: string) {
-  const db = await getDb();
-  const collection = db.collection<Occasion>("occasions");
-  const records = await collection.find({}).toArray();
-  const source = records.find((record) => sameName(record.name, from));
-  const target = records.find((record) => sameName(record.name, to));
-
-  if (source && target && source.id !== target.id) {
-    await collection.deleteOne({ id: source.id });
-  } else if (source) {
-    await collection.updateOne({ id: source.id }, { $set: { name: to } });
-  }
-
-  // The archive page is served at a slug built from the name, whether or not a
-  // record backs it — which is exactly the case that had nowhere to record it.
-  await rememberSlugMove("occasion", nameSlug(from), nameSlug(to));
-
-  const looks = await renameAcrossOutfits("occasion", from, to);
+  const result = await persistHubRename({ client: await getMongoClient(), db: await getDb(), collection: "occasions", from, to });
   revalidateSite();
-  return { looks, merged: Boolean(source && target && source.id !== target.id) };
+  return result;
 }
-
 export async function deleteCelebrity(id: number) {
   const db = await getDb();
-  await db.collection<Celebrity>("celebrities").deleteOne({ id });
+  await catalogTransaction(await getMongoClient(), db, async (session) => { await db.collection<Celebrity>("celebrities").deleteOne({ id }, { session }); });
   revalidateSite();
 }
 
 /* -------------------------------------------------------------- occasions */
 
 export async function createOccasion(input: Omit<Occasion, "id">) {
-  const db = await getDb();
-  const id = await nextId("occasions");
-  await db.collection<Occasion>("occasions").insertOne({ ...input, id, updatedAt: new Date().toISOString() });
+  const id = await persistHubCreate({ client: await getMongoClient(), db: await getDb(), collection: "occasions", input });
   revalidateSite();
   return id;
 }
-
 export async function updateOccasion(id: number, input: Omit<Occasion, "id">) {
-  const db = await getDb();
-  const collection = db.collection<Occasion>("occasions");
-  const previous = await collection.findOne({ id });
-
-  if (previous) {
-    await rememberSlugMove("occasion", occasionSlug(previous), occasionSlug({ ...previous, ...input }));
-  }
-
-  await collection.updateOne({ id }, hubWrite(input));
-
-  // The looks carry the occasion's name, so renaming it has to move them too.
-  if (previous) await renameAcrossOutfits("occasion", previous.name, input.name);
-
+  await persistHubEdit({ client: await getMongoClient(), db: await getDb(), collection: "occasions", id, input });
   revalidateSite();
 }
-
 export async function deleteOccasion(id: number) {
   const db = await getDb();
-  await db.collection<Occasion>("occasions").deleteOne({ id });
+  await catalogTransaction(await getMongoClient(), db, async (session) => { await db.collection<Occasion>("occasions").deleteOne({ id }, { session }); });
   revalidateSite();
 }
 

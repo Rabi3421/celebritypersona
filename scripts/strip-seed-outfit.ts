@@ -27,6 +27,7 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
@@ -118,18 +119,21 @@ async function main() {
 
   await backupDocuments("strip-seed-outfit", [outfit]);
 
-  await outfits.updateOne(
-    { id: OUTFIT_ID },
-    {
-      $set: {
-        items: [],
-        // Both are deprecated stored totals nothing rendered should read, but
-        // leaving Rs 4,43,500 on the document invites the next person to.
-        worn: 0,
-        swap: 0,
+  await catalogMaintenance(client, db, [{ collection: "outfits", documents: [outfit] }], async (session) => {
+    await outfits.updateOne(
+      { id: OUTFIT_ID },
+      {
+        $set: {
+          items: [],
+          // Both are deprecated stored totals nothing rendered should read, but
+          // leaving Rs 4,43,500 on the document invites the next person to.
+          worn: 0,
+          swap: 0,
+        },
       },
-    },
-  );
+      { session },
+    );
+  });
 
   console.log(
     "Done. The look keeps its photographs and is now a look with no decode, " +

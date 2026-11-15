@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { isSameOriginAdminRequest } from "@/lib/admin-request";
 import { adminForAction, requireAdmin, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
@@ -12,8 +14,14 @@ import { isPublished, pieceLink, type OutfitItem } from "@/lib/types";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 import { blockingChecks, seoChecks } from "@/lib/seo-checks";
 import { keywordOwners } from "@/lib/keyword-owners";
+import { importApproval } from "@/lib/outfit-import-approval";
+import { CatalogSaveError, catalogFailure } from "@/lib/db/catalog-errors";
+import { outfitVersion } from "@/lib/db/catalog-outfits";
+import { researchDuplicates, type ImportProvenance } from "@/lib/outfit-research";
 
 export type OutfitFormState = {
+  notice?: string;
+  savedOutfitId?: number;
   attempt?: number;
   errors?: FieldErrors;
   values?: OutfitDraft;
@@ -69,6 +77,13 @@ export async function saveOutfit(
   form: FormData,
 ): Promise<OutfitFormState> {
   const admin = await adminForAction();
+  const draft = readOutfitDraft(form);
+  if (!admin) {
+    return { attempt: (previous.attempt ?? 0) + 1, sessionExpired: true, errors: { form: SESSION_EXPIRED_MESSAGE }, values: draft };
+  }
+  if (!isSameOriginAdminRequest(await headers())) {
+    return { attempt: (previous.attempt ?? 0) + 1, errors: { form: "Save refused: open the admin on this site's own origin and try again." }, values: draft };
+  }
 
   // Celebrity and occasion are typed by hand and become archive keys, so they
   // are settled against the names already in use before anything is stored —
@@ -83,18 +98,8 @@ export async function saveOutfit(
 
   // Celebrity and occasion become archive keys, so they are settled against
   // the names already in use.
-  const draft = readOutfitDraft(form);
   draft.celebrity = canonicalName(draft.celebrity, celebrities.map((c) => c.name));
   draft.occasion = canonicalName(draft.occasion, occasions.map((o) => o.name));
-
-  if (!admin) {
-    return {
-      attempt: (previous.attempt ?? 0) + 1,
-      sessionExpired: true,
-      errors: { form: SESSION_EXPIRED_MESSAGE },
-      values: draft,
-    };
-  }
 
   const leadIndex = leadPosition(form);
 
@@ -114,19 +119,19 @@ export async function saveOutfit(
     };
 
   const id = Number(form.get("id"));
-
-  // Two looks sharing a slug would share a URL and a photo folder, and one of
-  // them would become unreachable.
-  const taken = outfitsNow.some(
-    (outfit) => outfit.id !== id && outfitSlug(outfit) === parsed.data.slug,
-  );
-  if (taken) {
-    return {
-      attempt: (previous.attempt ?? 0) + 1,
-      errors: { slug: "Another look already uses this slug" },
-      values: draft,
-    };
+  let provenance: ImportProvenance | undefined;
+  if (draft.researchImport) {
+    try {
+      provenance = importApproval(draft.researchImport, { id, status: parsed.data.status, confirmed: flag(form, "importSaveConfirmed") });
+      if (researchDuplicates(provenance.research, outfitsNow).some((d) => d.blocked)) throw new Error("This Instagram post already has an outfit. Open the existing record; nothing was changed.");
+    } catch (error) {
+      return { attempt: (previous.attempt ?? 0) + 1, errors: { form: error instanceof Error ? error.message : "Invalid import" }, values: draft };
+    }
   }
+
+  // The transaction checks slug/keyword ownership after checking create-token
+  // replay. A retried create must return its original record, even if it now
+  // owns the submitted slug or keyword itself.
 
   const isUpdate = Number.isFinite(id) && id > 0;
   const stored = isUpdate ? outfitsNow.find((outfit) => outfit.id === id) : undefined;
@@ -170,7 +175,7 @@ export async function saveOutfit(
   const alreadyLive = stored ? isPublished(stored) : false;
   const goingLive = outfit.status === "published" && !alreadyLive;
 
-  if (goingLive && blocking.length > 0) {
+  if (isUpdate && goingLive && blocking.length > 0) {
     return fail({
       status: `Not published — ${blocking.length} critical ${blocking.length === 1 ? "check fails" : "checks fail"}. Fix ${blocking.length === 1 ? "it" : "them"}, or save as a draft.`,
       ...Object.fromEntries(
@@ -179,8 +184,19 @@ export async function saveOutfit(
     });
   }
 
+  let commit;
+  try {
+    commit = isUpdate
+      ? await updateOutfit(id, outfit, { actor: admin.email, expectedVersion: draft.baseVersion ?? "", slugUnlocked: flag(form, "slugUnlocked") })
+      : await createOutfit(outfit, { actor: admin.email, requestKey: draft.createToken ?? "", ...(provenance ? { provenance, approvedRelated: text(form, "importRelatedConfirmed") } : {}) });
+  } catch (error) {
+    const failure = error instanceof CatalogSaveError ? error : catalogFailure(error);
+    return fail({ [failure instanceof CatalogSaveError ? failure.field : "form"]: failure.message });
+  }
+  if (commit.replayed) return { attempt: (previous.attempt ?? 0) + 1, values: draft, savedOutfitId: commit.next.id, notice: "This request was already saved. Review the existing outfit; these values were not reapplied and no second outfit was created." };
+  if (isUpdate) draft.baseVersion = outfitVersion(commit.next);
+  if (commit.refreshWarning) return { attempt: (previous.attempt ?? 0) + 1, values: draft, saved: true, savedOutfitId: commit.next.id, notice: "The outfit was saved, but the public refresh could not be confirmed. Review the saved outfit before retrying." };
   if (isUpdate) {
-    await updateOutfit(id, outfit);
     // Held on the form rather than redirected away, so what is still missing
     // is read beside the fields it is about.
     if (outfit.status === "published" && blocking.length > 0) {
@@ -191,8 +207,6 @@ export async function saveOutfit(
         values: draft,
       };
     }
-  } else {
-    await createOutfit(outfit);
   }
   // The list page clears this browser's autosaved copy of the form. Only a key
   // of the shape the form writes is passed on.

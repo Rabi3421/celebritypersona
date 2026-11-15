@@ -1,0 +1,352 @@
+node : (node:29276) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of
+file:///D:/celebritypersona-outfit-import/lib/db/imported-outfits.ts is not specified and it doesn't parse as CommonJS.
+At line:2 char:1
++ node --import ./tests/register.mjs scripts/verify-outfit-workflow.mjs ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:29276) [M...se as CommonJS.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Disposable replica set ready. Application database: cp_outfit_e2e_29276
+(node:24856) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/seo-review/pack.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ pack: allow-list only — planted private values never appear (57.8543ms)
+✔ pack: product links lose tracking, affiliate and fragment parts; redirectors are withheld (3.3487ms)
+✔ pack: free text is cleaned — control, zero-width and bidi characters out, lengths capped (0.4157ms)
+✔ pack: an editor's text cannot break out of its fence in pack.md (3.1994ms)
+✔ pack: the fingerprint covers the look's content only, and is stable (5.9996ms)
+✔ pack: the facts to check name exactly what the look claims, with stable ids (3.0831ms)
+✔ findings: a well-formed file passes (10.3384ms)
+✔ findings: strict schema — unknown fields, prototype keys, bad links and oversize files are refused (6.7706ms)
+✔ findings: meaning — every fact answered, sources for claims, one primary, right pack and pass (4.832ms)
+✔ findings: demand is unknown unless sourced; invented metrics are refused anywhere (8.2562ms)
+✔ compare: agreement alone is not verification; primary sources decide; disputes stay unticked (10.3492ms)
+✔ compare: keywords that do not fit the look, that one tool rejects, or that only one proposes are not ticked (3.6591ms)
+✔ compare: suggested copy that invents prices or names, or stuffs the keyword, is flagged and not ticked (5.3277ms)
+✔ compare: deterministic — the same inputs give byte-identical outputs, with no estimates in them (4.5852ms)
+✔ compare: long passages copied between the two tools raise an independence warning (2.1276ms)
+✔ import: stale or mismatched findings are refused; tampered files are refused (7.8592ms)
+✔ import: every comparison the command produces passes the consistency check (5.1737ms)
+✔ storage: the import record is validated with the research, and older research without it still loads (11.6562ms)
+✔ no network: the pack, checker, comparison and the local command make no requests (2.7972ms)
+✔ storage: 'today' is India's day — evidence and imports dated today save at 01:30 IST (still yesterday in UTC) (1.9797ms)
+✔ storage: the largest research the limits allow still fits one server-action request (1 MB) (7.9004ms)
+(node:30084) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/prod-guard.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ catalog: migration audit sees normalized ambiguities and leaves disposable content unchanged (1156.5722ms)
+✔ catalog: exact six indexes cover null, missing, empty, case and numeric collisions (347.5863ms)
+✔ catalog: maintenance checks its complete source and rolls back later failures (373.0953ms)
+✔ catalog: malformed legacy numeric brand IDs fail closed without orphan records (252.7125ms)
+✔ catalog: ordinary create rolls back all related records and safely retries the same request (330.9186ms)
+✔ catalog: concurrent creates serialize numeric IDs and reuse only matching shared hubs (584.1912ms)
+✔ catalog: concurrent repeated create requests produce one outfit and one effect (428.7461ms)
+✔ catalog: failed edit/publication restores the complete previous outfit and related state (325.3404ms)
+✔ catalog: concurrent edits report a stale version instead of overwriting the winner (268.9455ms)
+✔ catalog: only one concurrent draft can publish with a shared primary keyword (285.7847ms)
+✔ catalog: duplicate slugs never leak hubs and slug redirects roll back with failed edits (339.5701ms)
+✔ catalog: unrelated unique constraints are errors, not silent reuse (250.7387ms)
+✔ catalog: names preserve canonical records, reject ambiguity and distinguish different identities (256.6459ms)
+✔ catalog: standalone hub conflicts and rename failures leave no partial redirects or renamed looks (333.7165ms)
+✔ catalog: missing coordination fails closed and post-commit failures are reported as saved (248.9201ms)
+✔ catalog: legacy fields, image order, evidence and unknown metadata survive an edit (246.4162ms)
+✔ request: week must be a Monday; weeks bounded (3.1696ms)
+✔ range: four IST weeks ending Sunday 15 Nov 24:00 IST (0.3943ms)
+✔ date arithmetic agrees with click-summary.ts (0.5888ms)
+✔ outfits: live uses the site's isPublished; stored = live + draft + other (0.279ms)
+✔ publish dates: unknown is counted, never guessed (0.2815ms)
+✔ pieces and product links are distinct, statuses mutually exclusive, legacy links counted (0.31ms)
+✔ clicks: production by IST week; untagged unclassified; out-of-range not counted (0.2955ms)
+✔ requests, price reports and newsletter: counts only (0.2968ms)
+✔ empty data: zeros everywhere, nothing missing, nothing invented (4.7667ms)
+✔ the response carries no URLs, retailers, piece names, emails or reader text (0.5226ms)
+✔ auth: the catalog route uses the same fail-closed check as the clicks route (1.3457ms)
+(node:18204) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/report/catalog-summary.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ environment tag: production only when Vercel says so (1.9008ms)
+✔ token: fails closed when unset, short, wrong or malformed (1.3763ms)
+✔ dates: real calendar dates only (0.4618ms)
+✔ request: days defaults to 2 and is bounded (1.6837ms)
+✔ IST day boundaries are 18:30 UTC (2.719ms)
+✔ pipeline: read-only, range on the ISO string, grouped by IST day (1.7724ms)
+✔ summary: only env=production is production; untagged is unclassified, never added (1.1282ms)
+✔ summary: an empty range is zeros for every day, not missing days (0.4395ms)
+✔ summary: odd side or affiliate values are reported, not guessed (0.3962ms)
+✔ summary: per-outfit list is capped and says so (26.8379ms)
+(node:31476) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/report/click-summary.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ nothing stored, or anything unreadable, is undecided (1.9122ms)
+✔ accepted and rejected round-trip with a version and timestamp (6.1535ms)
+✔ an answer from another version, or an unknown value, asks again (0.3098ms)
+✔ the storage key is stable (0.2171ms)
+✔ Google Analytics cookies are recognised, and nothing else (1.1613ms)
+✔ PostHog storage keys are recognised; the consent record and saved looks are not (1.1053ms)
+✔ cookie deletion covers the host and every parent domain gtag may have used (0.5269ms)
+(node:23512) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/consent-core.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ write guard: development and Vercel previews refuse remote writes (2.9139ms)
+✔ dev write guard: reads pass through, every write throws before reaching the driver (7.8773ms)
+(node:11680) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/dev-write-guard.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ render loop: before the fix, a saved description re-renders without end; after it, once (2.1409ms)
+✔ edits still publish: changed content always gets through, identical content never does (1.4903ms)
+✔ which DOM changes are edits: only React's own textarea text writes are ignored (0.296ms)
+✔ a real change arriving with the loop's noise is still published (1.3153ms)
+(node:27608) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/form-snapshot-watch.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12084) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/prod-guard.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ mongo: imported drafts are atomic, idempotent and leave existing outfits unchanged (796.9723ms)
+✔ research intake CLI: offline scaffold, strict URL checks, no overwrite (2008.8428ms)
+(node:22220) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/outfit-research.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ research: valid post/reel canonicalization and malicious URLs (36.274ms)
+✔ research: strict bounded JSON, evidence references, dates and unknown facts (62.9452ms)
+✔ research: inaccessible Instagram and unknown dates never receive placeholders (23.5432ms)
+✔ research: original identity and prices require distinct verified evidence (9.2671ms)
+✔ research: selected merge preserves images, unselected edits and repeated imports (2.4902ms)
+✔ research: duplicates distinguish same post, product reuse, similarity and slug conflicts (2.2266ms)
+✔ research: new-draft approval required server-side; previews always refused (2.4419ms)
+✔ research: preview has no persistence or automatic request capability (0.885ms)
+(node:19908) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/outfit-research.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ security: browser mutations reject cross-origin, null and missing origins (48.581ms)
+✔ security: remote import persistence is disabled until approved production opt-in (1.539ms)
+✔ security: imported JSON is bounded before schema work and errors are bounded (66.6048ms)
+✔ security: imported executable markup cannot close the JSON-LD script (0.3758ms)
+✔ security: save authenticates and checks request origin before catalog reads (0.89ms)
+(node:9672) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/admin-request.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ test flag: honoured locally, never on Vercel (1.8992ms)
+✔ server text: credentials, tokens, emails, secrets and every query string are removed (3.3765ms)
+✔ browser text: the same secrets are removed; search words in URLs are removed, other query values survive (2.138ms)
+✔ search queries: q and the usual search parameters are redacted, on our pages and external referrers (1.7296ms)
+✔ other parameters are not mistaken for search queries (0.3933ms)
+✔ server-mode properties: nested exception text and URL keys lose queries and secrets (0.6514ms)
+✔ ordinary error text is left readable (0.302ms)
+✔ gating: only Production with a key, or an explicit local test, enables PostHog (0.302ms)
+✔ the panel, its API and its sign-in page are excluded; public pages are not (0.4301ms)
+✔ sensitive query parameters are redacted whatever their value (0.599ms)
+✔ ordinary parameters survive, including words that merely contain a sensitive word (0.3202ms)
+✔ emails and phone numbers inside ordinary query values are removed (0.4699ms)
+✔ fragments are dropped and emails in paths removed; relative URLs stay relative (0.2814ms)
+✔ free text loses emails but keeps numbers such as error digests (0.1557ms)
+✔ properties: URL-like keys are sanitized, nested text loses emails, other values unchanged (0.4992ms)
+✔ pathOf handles absolute, relative and empty values (0.2524ms)
+✔ exceptions thrown only from browser extensions are noise; ours are not (0.5736ms)
+(node:28480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/posthog/privacy.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10200) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/seo-review/pack.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ research command: init, independent passes in order, challenge, deterministic compare (4664.7333ms)
+(node:27200) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/prod-guard.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ mongo: index check, duplicate detection and index creation on a disposable database (288.2369ms)
+✔ mongo: insert, revision-checked replace, conflict, projection without _id (168.6566ms)
+✔ mongo: concurrent first saves and concurrent edits — exactly one wins, nothing is lost silently (249.2442ms)
+✔ mongo: attaching prepared research moves it to the look and deletes the prepared copy (171.4816ms)
+✔ evidence: Keyword Planner ranges parse in Google's own format; nonsense is refused (5.5053ms)
+✔ evidence: every item needs a source, value, period, market and a real lookup date; 'other' needs a link (0.6875ms)
+✔ evidence: confidence follows the source, and drops for stale lookups and other markets (0.3984ms)
+✔ evidence: no evidence is 'unknown, not zero'; a recorded 0 is evidence; nothing is summed or estimated (0.8734ms)
+✔ intent: outfit, buy, inspiration and news searches are told apart, with the words that decided it (1.028ms)
+✔ relevance: the keyword is checked against this exact look; a wrong garment or colour is a mismatch (1.7521ms)
+✔ overlap: same keyword, a near-identical keyword, and a live title that already covers it (1.1134ms)
+✔ keyword ideas come only from the look's own facts (0.8765ms)
+✔ review: a complete look has no blockers, and readiness is labelled as not a traffic prediction (46.6719ms)
+✔ publishing safeguards: blockers are exactly the existing checklist's failing critical checks (17.1477ms)
+✔ review: never changes the look it reads (2.6014ms)
+✔ review: a keyword that describes a different outfit is a high-priority finding (3.7412ms)
+✔ review: generic AI-sounding writing, keyword stuffing and repeated sentences are flagged (2.4835ms)
+✔ review: writing reused from another look is found and named (1.6853ms)
+✔ review: product identity, link verification and affiliate labelling (3.8438ms)
+✔ review: titles, descriptions and slugs get copy-ready suggestions, never applied automatically (1.5023ms)
+✔ review: a live look's slug is never re-suggested, and moving it is explained (1.277ms)
+✔ review: FAQs are optional, and weak ones are flagged (3.0594ms)
+✔ review: alt text that repeats or is just the keyword is flagged, with per-photo suggestions (1.5491ms)
+✔ review: internal links to hubs that would be noindex are flagged (1.6677ms)
+✔ review: a duplicate title is high priority (0.9174ms)
+✔ legacy: a live look saved before keywords, slugs and publish dates existed is reviewed without errors (1.6659ms)
+✔ site context: other looks carry keywords and text; the look itself is excluded (1.055ms)
+✔ store: keys name a saved look or a prepared slug; anything else is refused (0.5121ms)
+✔ store: payloads are cleaned and validated; every problem is reported (2.0123ms)
+✔ store: manual result-page reviews are validated and summarised as observations, not predictions (1.4282ms)
+✔ authorization: without an admin session nothing is read or written (1.0691ms)
+✔ persistence: saves bump the revision, keep who and when, and refuse stale copies (16.0018ms)
+✔ persistence: research for a prepared (unsaved) look is stored under its slug; a missing look is refused (3.2826ms)
+✔ identity: research cannot be saved under a slug a saved look already owns (0.9985ms)
+✔ identity: a first save never overwrites research another draft saved under the same slug (2.0109ms)
+✔ identity: prepared research attaches only on request, only to the look whose saved slug matches, and moves rather than copies (3.9487ms)
+✔ identity: a saved look's research is keyed by id, so changing its slug cannot move or mix research (0.4341ms)
+✔ suggestions use only the look's own facts: no invented brands, shops, prices or repeated keywords (2.0867ms)
+(node:28944) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/celebritypersona-outfit-import/lib/seo-review/evidence.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ autocomplete: the route makes no outbound request and the form no longer calls it (2.9411ms)
+ℹ tests 143
+ℹ suites 0
+ℹ pass 143
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7466.3009
+
+D:\celebritypersona-outfit-import\tests\ai-research.test.mjs
+  308:3  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+✖ 1 problem (0 errors, 1 warning)
+
+▲ Next.js 16.4.6 (Turbopack)
+✓ Running next.config.ts took 141ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1223ms
+  Running TypeScript ...
+  Finished TypeScript in 2.2s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/53) ...
+  Generating static pages using 7 workers (13/53)
+  Generating static pages using 7 workers (26/53)
+  Generating static pages using 7 workers (39/53)
+✓ Generating static pages using 7 workers (53/53) in 770ms
+  Finalizing page optimization ...
+
+Route (app)                       Revalidate  Expire
+┌ ○ /                                     1h      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /admin
+├ ƒ /admin/brands
+├ ƒ /admin/brands/[id]
+├ ƒ /admin/broadcasts
+├ ƒ /admin/budgets
+├ ƒ /admin/budgets/[cap]
+├ ƒ /admin/celebrities
+├ ƒ /admin/celebrities/[id]
+├ ƒ /admin/celebrities/new
+├ ƒ /admin/home
+├ ƒ /admin/login
+├ ƒ /admin/occasions
+├ ƒ /admin/occasions/[id]
+├ ƒ /admin/occasions/new
+├ ƒ /admin/outfits
+├ ƒ /admin/outfits/[id]
+├ ƒ /admin/outfits/new
+├ ƒ /admin/preview/[id]
+├ ƒ /admin/reports
+├ ƒ /admin/requests
+├ ƒ /admin/revenue
+├ ƒ /admin/settings
+├ ƒ /admin/subscribers
+├ ƒ /admin/trending
+├ ƒ /admin/trending/[term]
+├ ƒ /admin/trending/new
+├ ○ /affiliate-disclosure
+├ ƒ /api/admin/session
+├ ƒ /api/admin/suggest
+├ ƒ /api/admin/upload
+├ ƒ /api/cron/mail
+├ ƒ /api/internal/report/catalog
+├ ƒ /api/internal/report/clicks
+├ ƒ /api/revalidate
+├ ○ /api/search-index                     1h      1y
+├ ƒ /api/subscribe/confirm
+├ ƒ /api/unsubscribe
+├ ○ /apple-icon.png
+├ ○ /authors/rabi                         1h      1y
+├ ○ /brands                               1h      1y
+├ ● /brands/[slug]
+├ ƒ /budget
+├   /budget/[bucket]
+│ ├ ● /budget/under-3000                  1h      1y
+│ ├ ● /budget/under-5000                  1h      1y
+│ ├ ● /budget/under-10000                 1h      1y
+│ └ ● /budget/under-25000                 1h      1y
+├ ○ /celebrities                          1h      1y
+├ ● /celebrities/[slug]
+├ ○ /contact
+├ ○ /cookies
+├ ○ /corrections
+├ ○ /dmca
+├ ƒ /go/[pieceId]
+├ ○ /how-we-work
+├ ○ /icon.png
+├ ƒ /indexnow-key.txt
+├ ○ /llms.txt                             1h      1y
+├ ○ /occasions                            1h      1y
+├ ● /occasions/[slug]
+├ ○ /outfits                              1h      1y
+├ ● /outfits/[slug]
+├ ○ /photo-credits
+├ ○ /privacy
+├ ƒ /report-a-price
+├ ○ /robots.txt
+├ ○ /saved
+├ ƒ /search
+├ ○ /sitemap.xml                          1h      1y
+├ ○ /terms
+└ ○ /trending                             1h      1y
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+▲ Next.js 16.4.6
+- Local:         http://127.0.0.1:3097
+- Network:       http://127.0.0.1:3097
+✓ Ready in 156ms
+✓ Running next.config.ts took 155ms
+
+Running 2 tests using 1 worker
+
+(node:27820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of
+file:///D:/celebritypersona-outfit-import/scripts/outfit-research.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\celebritypersona-outfit-import\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+`x-forwarded-host` header with value `127.0.0.1:3097` does not match `origin` header with value `evil.example` from a
+forwarded Server Actions request. Aborting the action.
+⨯ Error: Invalid Server Actions request.
+    at ignore-listed frames {
+  digest: '3642066027'
+}
+  ok 1 tests\browser\outfit-import.spec.mjs:10:1 › review import, preserve edits, validate, save one draft and reject repeated post (8.6s)
+  ok 2 tests\browser\outfit-import.spec.mjs:152:1 › ordinary create, publish rollback and retry, replay and stale edit in Chrome (9.1s)
+
+  2 passed (19.0s)
+Local verification complete; only synthetic disposable databases were used.
+Stopped disposable services. Temporary MongoDB files: C:\Users\rabin\AppData\Local\Temp\cp-outfit-verification-28gIGp

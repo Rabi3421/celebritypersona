@@ -27,6 +27,7 @@
  */
 
 import { MongoClient } from "mongodb";
+import { catalogMaintenance } from "@/lib/db/catalog-maintenance";
 import { assertWritable } from "@/lib/prod-guard";
 import { suggestPhotoAlt } from "@/lib/photo-alt";
 import { outfitSlug } from "@/lib/slugs";
@@ -163,9 +164,9 @@ async function main() {
     // Every look, not only the ones changing, so the backup is a complete
     // picture of the collection as it stood. See scripts/backup.ts.
     await backupDocuments("backfill-seo", outfits);
-    for (const { outfit, set } of changing) {
-      if (Object.keys(set).length) await collection.updateOne({ id: outfit.id }, { $set: set });
-    }
+    await catalogMaintenance(client, client.db(process.env.MONGODB_DB), [{ collection: "outfits", documents: changing.map((entry) => entry.outfit) }], async (session) => {
+      for (const { outfit, set } of changing) if (Object.keys(set).length) await collection.updateOne({ id: outfit.id }, { $set: set }, { session });
+    });
     console.log(`Wrote ${changing.length} looks.`);
   }
   await client.close();

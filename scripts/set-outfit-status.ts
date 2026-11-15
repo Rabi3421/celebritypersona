@@ -10,6 +10,9 @@
  */
 
 import { MongoClient } from "mongodb";
+import { persistOutfit, outfitVersion } from "@/lib/db/catalog-outfits";
+import { outfitSlug } from "@/lib/slugs";
+import { outfitPhotos } from "@/lib/types";
 import { assertWritable } from "@/lib/prod-guard";
 import { isPublished, type Outfit, type OutfitStatus } from "@/lib/types";
 import { revalidateSite } from "./revalidate";
@@ -48,7 +51,10 @@ async function main() {
     return;
   }
   await backupDocuments(`outfit-status-${id}`, [outfit]);
-  await collection.updateOne({ id }, { $set: { status } });
+  await persistOutfit({ client, db: client.db(process.env.MONGODB_DB), mode: "edit", id,
+    actor: "approved-maintenance", expectedVersion: outfitVersion(outfit),
+    input: { ...outfit, status, slug: outfitSlug(outfit), images: outfitPhotos(outfit) },
+  });
   console.log("Written.");
   await client.close();
   await revalidateSite();

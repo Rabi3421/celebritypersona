@@ -1,5 +1,6 @@
 import type { Brand, Celebrity, Occasion, Outfit } from "@/lib/types";
 import { outfitOccasions } from "@/lib/types";
+import { archiveIdentity } from "@/lib/archive-name";
 
 /**
  * Names the outfits use — celebrities, occasions and labels — that have no
@@ -22,9 +23,9 @@ export function missingRecords(
   outfits: Pick<Outfit, "celebrity" | "occasion" | "occasions" | "items">[],
 ): { celebrities: string[]; occasions: string[]; brands: string[] } {
   const missing = (known: { name: string }[], names: string[]) => {
-    const seen = new Set(known.map((record) => record.name.trim().toLowerCase()));
+    const seen = new Set(known.map((record) => archiveIdentity(record.name)));
     return names.filter((name) => {
-      const key = name.trim().toLowerCase();
+      const key = archiveIdentity(name);
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
