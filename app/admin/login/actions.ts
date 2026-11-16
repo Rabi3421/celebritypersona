@@ -44,16 +44,24 @@ async function attemptSignIn(formData: FormData): Promise<Attempt> {
     return { ok: false, error: "Enter your email and password." };
   }
 
-  const verified = await verifyCredentials(email, password);
-  if (!verified) {
-    recordFailure(key);
-    // Deliberately vague: never reveal which half was wrong.
-    return { ok: false, error: "Those details do not match." };
-  }
+  try {
+    const verified = await verifyCredentials(email, password);
+    if (!verified) {
+      recordFailure(key);
+      // Deliberately vague: never reveal which half was wrong.
+      return { ok: false, error: "Those details do not match." };
+    }
 
-  clearAttempts(key);
-  await startSession(verified);
-  return { ok: true, email: verified };
+    await startSession(verified);
+    clearAttempts(key);
+    return { ok: true, email: verified };
+  } catch (error) {
+    // Missing/unreachable databases, refused Preview writes, or unavailable
+    // signing configuration must never grant a session or crash the form.
+    recordFailure(key);
+    console.error("Admin sign-in unavailable", { name: error instanceof Error ? error.name : "UnknownError" });
+    return { ok: false, error: "Sign-in is unavailable in this environment. Try again later." };
+  }
 }
 
 export async function signIn(

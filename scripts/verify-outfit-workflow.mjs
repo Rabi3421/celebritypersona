@@ -10,6 +10,7 @@ import { MongoClient } from "mongodb";
 import { IMPORT_INDEXES } from "../lib/db/imported-outfits.ts";
 
 const args = process.argv.slice(2);
+const authOnly = args.includes("--auth-only");
 for (const name of [".env", ".env.local", ".env.production", ".env.production.local"]) if (existsSync(name)) throw new Error(`Use an isolated worktree without ${name}; verification never loads application credentials`);
 const pos = args.indexOf("--mongod");
 if (pos < 0 || !args[pos + 1]) throw new Error("Pass --mongod C:/path/to/mongod.exe (local MongoDB binary)");
@@ -36,6 +37,7 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const mongo = start(binary, ["--dbpath", scratch, "--bind_ip", "127.0.0.1", "--port", "27139", "--replSet", "cp_outfit_test", "--logpath", join(scratch, "mongod.log")], { stdio: "ignore" });
 let client;
 let server;
+let owned = false;
 try {
   for (let i = 0; i < 80; i++) {
     try {
@@ -47,10 +49,17 @@ try {
   // Refuse to use a pre-existing server: this process must own the listening instance.
   const status = await client.db("admin").command({ serverStatus: 1 });
   if (status.pid !== mongo.pid) throw new Error("Port 27139 belongs to another MongoDB instance; refusing to use it");
+  owned = true;
   await client.db("admin").command({ replSetInitiate: { _id: "cp_outfit_test", members: [{ _id: 0, host: "127.0.0.1:27139" }] } });
   await client.close();
   client = await new MongoClient(uri, { serverSelectionTimeoutMS: 30000 }).connect();
-  await client.db("admin").command({ ping: 1 });
+  const hello = await client.db("admin").command({ hello: 1 });
+  const actual = await client.db("admin").command({ serverStatus: 1 });
+  if (actual.pid !== mongo.pid || hello.setName !== "cp_outfit_test" || !hello.isWritablePrimary ||
+    hello.hosts?.length !== 1 || hello.hosts[0] !== "127.0.0.1:27139" || dbName !== `cp_outfit_e2e_${process.pid}`) {
+    throw new Error("Disposable connection target/database readiness check failed; refusing test writes");
+  }
+  console.log(`Verified owned local target 127.0.0.1:27139, replica set ${hello.setName}, application database ${dbName}; no production credentials inherited.`);
   await client.db(dbName).collection("siteContent").insertOne({ key: "home", value: {
     swapSteps: [{ n: "01", title: "Synthetic test step", body: "Disposable verification fixture" }],
     trustPoints: [{ n: "01", title: "Synthetic test note", body: "Disposable verification fixture" }],
@@ -58,25 +67,32 @@ try {
   } });
   console.log(`Disposable replica set ready. Application database: ${dbName}`);
   if (!args.includes("--browser-only")) {
-    await run(process.execPath, ["--import", "./tests/register.mjs", "--test", "tests/*.test.mjs"]);
+    await run(process.execPath, ["--import", "./tests/register.mjs", "--test", ...(authOnly ? ["tests/admin-login.test.mjs", "tests/dev-write-guard.test.mjs"] : ["tests/*.test.mjs"])]);
     await run(process.execPath, ["node_modules/eslint/bin/eslint.js", "."]);
     await run(process.execPath, ["node_modules/next/dist/bin/next", "build"]);
     await run(process.execPath, ["node_modules/typescript/bin/tsc", "--noEmit"]);
   }
   const db = client.db(dbName);
-  for (const { collection, key, ...spec } of IMPORT_INDEXES) await db.collection(collection).createIndex(key, { ...spec, unique: true });
-  await db.collection("catalogWriteState").insertOne({ _id: "catalog", version: 0 });
-  await db.collection("outfits").insertOne({ id: 40, celebrity: "Existing Synthetic", event: "Existing fixture", occasion: "Party", date: "2026-01-01", slug: "existing-synthetic-look", status: "published", worn: 100, swap: 0, items: [{ name: "Dress", worn: 100 }] });
+  if (!authOnly) {
+    for (const { collection, key, ...spec } of IMPORT_INDEXES) await db.collection(collection).createIndex(key, { ...spec, unique: true });
+    await db.collection("catalogWriteState").insertOne({ _id: "catalog", version: 0 });
+    await db.collection("outfits").insertOne({ id: 40, celebrity: "Existing Synthetic", event: "Existing fixture", occasion: "Party", date: "2026-01-01", slug: "existing-synthetic-look", status: "published", worn: 100, swap: 0, items: [{ name: "Dress", worn: 100 }] });
+  }
   server = start(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3097"]);
   for (let i = 0; i < 100; i++) {
     try { if ((await fetch("http://127.0.0.1:3097/admin/login")).ok) break; } catch { /* startup */ }
     await pause(300);
   }
-  await run(process.execPath, ["node_modules/@playwright/test/cli.js", "test"]);
+  await run(process.execPath, ["node_modules/@playwright/test/cli.js", "test", ...(authOnly ? ["admin-login.spec.mjs"] : [])]);
+  if (authOnly) {
+    const catalog = await db.listCollections({ name: { $in: ["outfits", "celebrities", "occasions", "brands", "catalogWriteState"] } }, { nameOnly: true }).toArray();
+    if (catalog.length) throw new Error("Authentication-only verification unexpectedly created catalog collections");
+    console.log("Authentication-only verification created no catalog indexes, records or coordination document.");
+  }
   console.log("Local verification complete; only synthetic disposable databases were used.");
 } finally {
   if (server) { server.kill(); await once(server, "exit").catch(() => {}); }
-  if (client) { await client.db(dbName).dropDatabase().catch(() => {}); await client.close(); }
+  if (client) { if (owned) await client.db(dbName).dropDatabase().catch(() => {}); await client.close(); }
   mongo.kill();
   console.log(`Stopped disposable services. Temporary MongoDB files: ${scratch}`);
 }
