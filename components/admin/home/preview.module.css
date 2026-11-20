@@ -1,0 +1,8 @@
+/* Inside the Homepage Studio's preview frame. The sections themselves are styled
+   by the public homepage's own stylesheet; this only undoes the scroll-reveal
+   (which waits for scrolling that never happens in a fixed-height frame) and
+   styles the explanatory note. */
+.root{padding:1px 0 24px;display:flow-root}
+.root :global(.rv){opacity:1;transform:none;transition:none}
+.notice{margin:16px auto;max-width:min(92%,720px);padding:10px 14px;border:1px dashed #b9b2a6;border-radius:8px;
+  background:#fffdf8;color:#3a3d45;font:500 14px/1.5 var(--body),system-ui,sans-serif}

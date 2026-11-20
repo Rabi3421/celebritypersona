@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { MIN_WEDDING_LOOKS } from "@/lib/thresholds";
 import type { HomeContent } from "@/lib/types";
+import { CampaignBand } from "./CampaignBand";
 
 /**
  * Editorial copy from the panel, with the one number in it filled in from the
@@ -20,21 +20,5 @@ export function Campaign({
   looks: number;
 }) {
   if (looks < MIN_WEDDING_LOOKS) return null;
-
-  return (
-    <section className="sec">
-      <div className="camp rv">
-        <div className="in">
-          <p className="eb">{campaign.eyebrow}</p>
-          <h2>{campaign.title}</h2>
-          <p>
-            {looks} {looks === 1 ? "look" : "looks"} {campaign.body}
-          </p>
-          <Link className="btn" href={campaign.href}>
-            <span>{campaign.cta}</span>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
+  return <CampaignBand campaign={campaign} looks={looks} />;
 }
