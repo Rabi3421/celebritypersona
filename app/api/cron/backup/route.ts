@@ -8,7 +8,7 @@ import { encryptBackup, exportDatabase } from "@/lib/backup/run";
  *
  * MongoDB Atlas's free tier keeps no backups, so this does. It reads the whole database with
  * the read-only `cp-backup` user (MONGODB_BACKUP_URI), encrypts it to the backup public key and
- * stores it in the private Vercel Blob store (BLOB_READ_WRITE_TOKEN). Then, and only then, it
+ * stores it in the private Vercel Blob store "celebritypersona-backups" (BLOB_STORE_ID, OIDC). Then, and only then, it
  * deletes backups older than 30 days, always keeping the newest 7.
  *
  * It fails closed: no CRON_SECRET → 503, wrong secret → 401, outside Production → 404. Any
@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
 
   const uri = process.env.MONGODB_BACKUP_URI;
   if (!uri) throw new Error("Nightly backup failed: MONGODB_BACKUP_URI is not set.");
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Nightly backup failed: BLOB_READ_WRITE_TOKEN is not set (connect the Blob store to the project).");
+  // Connecting the store sets BLOB_STORE_ID; @vercel/blob then signs in with the function's
+  // short-lived Vercel OIDC token (project setting, enabled). A read-write token also works.
+  if (!process.env.BLOB_STORE_ID && !process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Nightly backup failed: no Blob store connected (BLOB_STORE_ID is not set).");
 
   const started = Date.now();
   try {
