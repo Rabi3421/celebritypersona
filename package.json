@@ -26,7 +26,8 @@
     "backfill:records": "tsx --env-file=.env scripts/backfill-records.ts",
     "outfit:status": "tsx --env-file=.env scripts/set-outfit-status.ts",
     "seo:index": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/seo-reviews-index.mjs",
-    "seo:research": "tsx scripts/seo-research.ts"
+    "seo:research": "tsx scripts/seo-research.ts",
+    "storage:check": "tsx --env-file=.env.local scripts/storage-check.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

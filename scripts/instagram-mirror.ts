@@ -22,7 +22,7 @@
 import { deleteObject, getDownloadURL, listAll, ref, uploadBytes } from "firebase/storage";
 import { MongoClient } from "mongodb";
 import { fetchInstagramReels, type InstagramReel } from "@/lib/instagram";
-import { firebaseStorage } from "@/lib/firebase";
+import { uploaderStorage } from "@/lib/firebase";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 
@@ -66,7 +66,7 @@ async function main() {
     process.exit(1);
   }
 
-  const storage = firebaseStorage();
+  const storage = await uploaderStorage();
   const mirrored: InstagramReel[] = [];
 
   for (const source of sources) {

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
-import { firebaseStorage } from "@/lib/firebase";
+import { uploaderStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
 import { storageDeleteAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
@@ -84,9 +84,9 @@ async function forgetImages(paths: (string | undefined)[]) {
   await Promise.all(
     paths.filter(Boolean).map(async (path) => {
       try {
-        await deleteObject(ref(firebaseStorage(), path as string));
+        await deleteObject(ref(await uploaderStorage(), path as string));
       } catch {
-        // Already gone, or the rules do not allow deletes. Nothing to do.
+        // Already gone, or the uploader could not sign in. Nothing to do.
       }
     }),
   );

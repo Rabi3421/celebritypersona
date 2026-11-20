@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { readSession } from "@/lib/auth/session";
 import { nameSlug } from "@/lib/slugs";
-import { firebaseStorage } from "@/lib/firebase";
+import { uploaderStorage } from "@/lib/firebase";
 import { storageDeleteAllowed, storagePrefix } from "@/lib/db-guard";
 
 /** Images only, and small enough that a stray upload cannot fill the bucket. */
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
   try {
     const path = named(actual);
-    const handle = ref(firebaseStorage(), path);
+    const handle = ref(await uploaderStorage(), path);
     await uploadBytes(handle, bytes, { contentType: actual });
     const url = await getDownloadURL(handle);
     return NextResponse.json({ url, path });
@@ -134,7 +134,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await deleteObject(ref(firebaseStorage(), path));
+    await deleteObject(ref(await uploaderStorage(), path));
     return NextResponse.json({ path });
   } catch (error) {
     console.error("Admin image delete failed", error instanceof Error ? error.name : "UnknownError");
