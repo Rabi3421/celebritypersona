@@ -35,13 +35,23 @@ export type LookJob = {
   error?: string;
   /** The draft outfit the runner created. */
   outfitId?: number;
+  /** Where each fact came from, and what the editor still has to check. */
+  findings?: {
+    evidence: { claim: string; sources: string[]; confidence: "confirmed" | "likely" | "unverified" }[];
+    checks: string[];
+    /** Which AI tools produced it, e.g. ["claude"]. */
+    by: string[];
+  };
 };
+
+/** A job the runner claimed this long ago and never finished is offered again. */
+export const STALE_RUNNING_MS = 45 * 60 * 1000;
 
 /** At most this many buying links: the look's pieces, not a shopping list. */
 export const MAX_BUY_URLS = 6;
 
 /** Query parameters that only track the visit; they never change the page. */
-const TRACKING = /^(utm_|fbclid$|gclid$|igsh$|igshid$|si$|mc_|_branch|ref$|ref_src$|srsltid$)/i;
+const TRACKING = /^(utm_|fbclid$|gclid$|igsh$|igshid$|si$|mc_|_branch|ref$|ref_src$|srsltid$|_pos$|_sid$|_ss$|_psq$|_fid$)/i;
 
 /** Drops tracking parameters and the fragment, so a link is stored as itself. */
 export function cleanUrl(raw: string): string {

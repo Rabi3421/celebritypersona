@@ -3,7 +3,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { uploaderStorage } from "@/lib/firebase";
 import { getDb } from "@/lib/mongodb";
 import { storageDeleteAllowed } from "@/lib/db-guard";
-import { canCancel, INBOX_PHOTO, type LookJob, type NewLookJob } from "@/lib/look-jobs";
+import { canCancel, INBOX_PHOTO, STALE_RUNNING_MS, type LookJob, type NewLookJob } from "@/lib/look-jobs";
 
 /**
  * The queue behind "New look from links". One document per job in
@@ -55,4 +55,40 @@ export async function removeLookJob(id: string): Promise<boolean> {
     }
   }
   return true;
+}
+
+/**
+ * For the runner: takes the oldest waiting job (or one a runner claimed long
+ * ago and never finished) and marks it running, atomically, so two runners
+ * can never research the same look.
+ */
+export async function claimLookJob(now = new Date()): Promise<LookJob | null> {
+  const at = now.toISOString();
+  const stale = new Date(now.getTime() - STALE_RUNNING_MS).toISOString();
+  return (await jobs()).findOneAndUpdate(
+    { $or: [{ status: "queued" }, { status: "running", startedAt: { $lt: stale } }] },
+    { $set: { status: "running", startedAt: at, updatedAt: at }, $unset: { error: "" } },
+    { sort: { createdAt: 1 }, returnDocument: "after", projection: { _id: 0 } },
+  );
+}
+
+/** The job, if it is still running — the editor may have cancelled it meanwhile. */
+export async function runningLookJob(id: string): Promise<LookJob | null> {
+  return (await jobs()).findOne({ id, status: "running" }, { projection: { _id: 0 } });
+}
+
+export async function failLookJob(id: string, error: string) {
+  const now = new Date().toISOString();
+  await (await jobs()).updateOne(
+    { id, status: "running" },
+    { $set: { status: "failed", error: error.slice(0, 500), updatedAt: now, finishedAt: now } },
+  );
+}
+
+export async function draftedLookJob(id: string, outfitId: number, findings: NonNullable<LookJob["findings"]>) {
+  const now = new Date().toISOString();
+  await (await jobs()).updateOne(
+    { id },
+    { $set: { status: "drafted", outfitId, findings, updatedAt: now, finishedAt: now } },
+  );
 }

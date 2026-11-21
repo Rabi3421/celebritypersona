@@ -117,7 +117,7 @@ export function LookFromLinksForm({ jobId }: { jobId: string }) {
           />
 
           <div className={`${styles.field} ${styles.wide}`}>
-            <span>The photo</span>
+            <label htmlFor="look-photo">The photo</label>
             <label
               className={`${local.drop} ${over ? local.dropOver : ""}`}
               onDragOver={(event) => {
@@ -132,6 +132,7 @@ export function LookFromLinksForm({ jobId }: { jobId: string }) {
               }}
             >
               <input
+                id="look-photo"
                 className={styles.srOnly}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"

@@ -1,8 +1,10 @@
-.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s3);
-  min-height:150px;padding:var(--s5);text-align:center;cursor:pointer;font-size:14px;color:var(--muted);
+/* Doubled so it outranks the panel's `.field label` caption style (mono, caps, 10px). */
+.drop.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s3);
+  min-height:150px;padding:var(--s5);margin:0;text-align:center;cursor:pointer;
+  font-family:inherit;font-size:14.5px;letter-spacing:normal;text-transform:none;color:var(--muted);
   background:var(--panel-2);border:1.5px dashed var(--line);border-radius:var(--r-md);
   transition:border-color 130ms,background 130ms}
-.drop:hover,.dropOver{border-color:var(--rani);color:var(--text)}
+.drop.drop:hover,.drop.dropOver{border-color:var(--rani);color:var(--text)}
 .drop:focus-within{outline:2px solid var(--rani);outline-offset:2px}
 .preview{display:block;max-height:240px;max-width:100%;width:auto;border-radius:var(--r-sm)}
 .hint{display:block;margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.5}

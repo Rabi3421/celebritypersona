@@ -51,6 +51,11 @@ test("buying links lose tracking tags and fragments but keep what selects the pr
     cleanUrl("https://shop.example.com/p/dress?variant=42&utm_source=ig&utm_medium=x&fbclid=abc&gclid=1#reviews"),
     "https://shop.example.com/p/dress?variant=42",
   );
+  // Shopify's on-site search tags.
+  assert.equal(
+    cleanUrl("https://labelkaleido.com/products/ruby-red-gown?_pos=6&_sid=3ba8465f0&_ss=r"),
+    "https://labelkaleido.com/products/ruby-red-gown",
+  );
   assert.deepEqual(splitUrls(" https://a.example/x \n\nhttps://b.example/y, https://c.example/z "), [
     "https://a.example/x",
     "https://b.example/y",
