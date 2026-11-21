@@ -48,9 +48,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) return reply(422, { problems: researchProblems(parsed.error) });
 
   try {
-    const outfitId = await createDraftFromResearch(job, parsed.data);
+    const { id: outfitId, photo } = await createDraftFromResearch(job, parsed.data);
     const by = Array.isArray(body.by) ? body.by.filter((name): name is string => typeof name === "string").slice(0, 4) : [];
-    await draftedLookJob(id, outfitId, { evidence: parsed.data.evidence, checks: parsed.data.checks, by });
+    await draftedLookJob(id, outfitId, { evidence: parsed.data.evidence, checks: parsed.data.checks, by }, photo);
     return reply(200, { status: "drafted", outfitId });
   } catch (error) {
     if (error instanceof DraftRefused) return reply(422, { problems: [error.message] });

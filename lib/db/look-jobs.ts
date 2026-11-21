@@ -85,10 +85,17 @@ export async function failLookJob(id: string, error: string) {
   );
 }
 
-export async function draftedLookJob(id: string, outfitId: number, findings: NonNullable<LookJob["findings"]>) {
+/** Marks a job drafted. `photo` is where the draft filed the job's photo: the
+ *  inbox copy is gone by then, so the queue's thumbnail follows it. */
+export async function draftedLookJob(
+  id: string,
+  outfitId: number,
+  findings: NonNullable<LookJob["findings"]>,
+  photo?: { url: string; path: string },
+) {
   const now = new Date().toISOString();
   await (await jobs()).updateOne(
     { id },
-    { $set: { status: "drafted", outfitId, findings, updatedAt: now, finishedAt: now } },
+    { $set: { status: "drafted", outfitId, findings, ...(photo ? { photo } : {}), updatedAt: now, finishedAt: now } },
   );
 }

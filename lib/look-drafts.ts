@@ -36,8 +36,12 @@ async function filePhoto(job: LookJob, slug: string) {
  * the same `createOutfit` as the editor's own form. Returns the new outfit id.
  * Throws DraftRefused (with every problem named) when the result would not be
  * accepted by the editor's form either; nothing is stored in that case.
+ * Also returns where the photo now lives, so the job can point at it.
  */
-export async function createDraftFromResearch(job: LookJob, research: LookResearch): Promise<number> {
+export async function createDraftFromResearch(
+  job: LookJob,
+  research: LookResearch,
+): Promise<{ id: number; photo?: { url: string; path: string } }> {
   const [occasions, celebrities, outfits] = await Promise.all([getOccasionViews(), getCelebrityViews(), getAllOutfits()]);
   const occasionNames = occasions.map((occasion) => occasion.name);
 
@@ -73,7 +77,7 @@ export async function createDraftFromResearch(job: LookJob, research: LookResear
         // The inbox copy is untidy if it stays, never harmful.
       }
     }
-    return id;
+    return { id, ...(photo ? { photo: { url: photo.url, path: photo.path } } : {}) };
   } catch (error) {
     if (photo) await deleteObject(ref(await uploaderStorage(), photo.path)).catch(() => {});
     throw error;
