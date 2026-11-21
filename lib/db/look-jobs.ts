@@ -99,3 +99,13 @@ export async function draftedLookJob(
     { $set: { status: "drafted", outfitId, findings, ...(photo ? { photo } : {}), updatedAt: now, finishedAt: now } },
   );
 }
+
+/** Jobs that finished (drafted or failed) since `since`, for the Slack alerts. */
+export async function finishedLookJobs(since: Date): Promise<LookJob[]> {
+  return (await jobs())
+    .find(
+      { status: { $in: ["drafted", "failed"] }, finishedAt: { $gte: since.toISOString() } },
+      { sort: { finishedAt: 1 }, limit: 50, projection: { _id: 0 } },
+    )
+    .toArray();
+}

@@ -32,6 +32,17 @@ export default async function OutfitPreview({ params }: { params: Promise<{ id: 
         Preview · {live ? "this look is live" : outfit.status === "draft" ? "draft — not on the site" : "not live: it needs a swap or a confirmed price"}
         {" · "}
         <a href={`/admin/outfits/${outfit.id}`}>Back to the editor</a>
+        {" · "}
+        <a href={`/api/admin/share-image/${outfit.id}?kind=card`} target="_blank" rel="noreferrer">
+          Share card
+        </a>
+        {" · "}
+        <a href={`/api/admin/share-image/${outfit.id}?kind=pin`} target="_blank" rel="noreferrer">
+          Pinterest pin
+        </a>
+        {" ("}
+        <a href={`/api/admin/share-image/${outfit.id}?kind=pin&download=1`}>download</a>
+        {")"}
       </p>
       <Nav active="outfits" />
       <OutfitDetail outfit={outfit} heading={headline(outfit)} sameCelebrity={[]} sameOccasion={[]} />

@@ -6,6 +6,9 @@
  *     npm run looks:runner -- --try <instagram link> <buying link> [photo file]
  *                                     research one look and save the result to a
  *                                     file, without the site: to judge quality
+ *     npm run looks:runner -- --check <research file>
+ *                                     run only the Codex cross-check on a saved
+ *                                     research file (e.g. a --try result)
  *
  * Runs on the editor's own computer because that is where Claude Code is
  * signed in to the editor's Claude subscription. For each job it:
@@ -16,17 +19,23 @@
  *      (no shell, no file writing), following docs/look-research/prompt.md;
  *   4. checks the JSON it returns against the same rules the site uses, and
  *      asks Claude to fix it once if it does not pass;
- *   5. sends it to the site, which validates it again and saves a DRAFT.
+ *   5. has Codex (signed in to the editor's ChatGPT plan) check every fact
+ *      separately, with its own web search and read-only access to the folder
+ *      (docs/look-research/check-prompt.md); what it disputes becomes a check
+ *      for the editor and loses its confidence (lib/look-crosscheck.ts);
+ *   6. sends it to the site, which validates it again and saves a DRAFT.
  * Nothing it does can publish a look.
  *
  * Settings (optional):
  *   LOOKS_SITE_URL      default https://www.celebritypersona.com
  *   LOOKS_RUNNER_TOKEN  default: read from %USERPROFILE%\.celebritypersona-monitor\looks-runner-token
+ *   --no-codex          skip the Codex cross-check (the draft says it was skipped)
  */
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { CROSSCHECK_JSON_SCHEMA, crosscheckSchema, mergeCrosscheck, withCheck } from "@/lib/look-crosscheck";
 import { extractJson, researchProblems, researchSchema, type LookResearch } from "@/lib/look-research";
 import type { LookJob } from "@/lib/look-jobs";
 import { PIECE_CATEGORIES, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
@@ -39,6 +48,9 @@ const IDLE_MS = 60_000;
 /** One look's research; past this the run is stopped and the job marked failed. */
 const CLAUDE_TIMEOUT_MS = 25 * 60_000;
 const PROMPT = join(process.cwd(), "docs", "look-research", "prompt.md");
+const CHECK_PROMPT = join(process.cwd(), "docs", "look-research", "check-prompt.md");
+const CODEX_TIMEOUT_MS = 15 * 60_000;
+const USE_CODEX = !process.argv.includes("--no-codex");
 const REPO = process.cwd().split("\\").join("/");
 
 /**
@@ -48,6 +60,12 @@ const REPO = process.cwd().split("\\").join("/");
 const CLAUDE = (() => {
   const exe = join(process.env.APPDATA ?? "", "npm", "node_modules", "@anthropic-ai", "claude-code", "bin", "claude.exe");
   return process.platform === "win32" && existsSync(exe) ? exe : "claude";
+})();
+
+/** Codex's own script, run with this Node rather than through its .cmd shim. */
+const CODEX = (() => {
+  const js = join(process.env.APPDATA ?? "", "npm", "node_modules", "@openai", "codex", "bin", "codex.js");
+  return process.platform === "win32" && existsSync(js) ? { cmd: process.execPath, pre: [js] } : { cmd: "codex", pre: [] as string[] };
 })();
 
 /**
@@ -70,7 +88,7 @@ function token(): string {
   return value;
 }
 
-const TOKEN = process.argv.includes("--try") ? "" : token();
+const TOKEN = process.argv.includes("--try") || process.argv.includes("--check") ? "" : token();
 const stamp = () => new Date().toLocaleTimeString("en-IN", { hour12: false });
 const log = (message: string) => console.log(`${stamp()}  ${message}`);
 
@@ -123,6 +141,70 @@ function claude(cwd: string, prompt: string, resume?: string): Promise<{ result:
     });
     child.stdin.end(prompt);
   });
+}
+
+/**
+ * Runs Codex in `cwd` as the cross-checker: web search on, a read-only sandbox
+ * (it can read the folder, never change anything), and a fixed reply shape.
+ * The prompt travels on stdin. Returns its reply, or throws.
+ */
+function codex(cwd: string, prompt: string): Promise<string> {
+  writeFileSync(join(cwd, "crosscheck.schema.json"), JSON.stringify(CROSSCHECK_JSON_SCHEMA));
+  const out = join(cwd, "crosscheck.reply.json");
+  const args = [
+    ...CODEX.pre,
+    "--search",
+    "exec",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--sandbox", "read-only",
+    "--color", "never",
+    "--output-schema", "crosscheck.schema.json",
+    "--output-last-message", out,
+    "-",
+  ];
+  return new Promise((resolve, reject) => {
+    const child = spawn(CODEX.cmd, args, { cwd, windowsHide: true });
+    let tail = "";
+    const keep = (chunk: Buffer) => (tail = (tail + chunk).slice(-2000));
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`Codex did not finish within ${CODEX_TIMEOUT_MS / 60000} minutes.`));
+    }, CODEX_TIMEOUT_MS);
+    child.stdout.on("data", keep);
+    child.stderr.on("data", keep);
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (code === 0 && existsSync(out)) resolve(readFileSync(out, "utf8"));
+      else reject(new Error(`Codex exited ${code}: ${tail.trim().split(/\r?\n/).slice(-2).join(" ").slice(0, 300)}`));
+    });
+    child.stdin.end(prompt);
+  });
+}
+
+/**
+ * Codex checks Claude's facts. Never fails the job: if Codex cannot run, the
+ * draft goes ahead as Claude's alone and says so in its checks.
+ */
+async function crosscheck(dir: string, research: LookResearch): Promise<{ research: LookResearch; by: string[] }> {
+  if (!USE_CODEX) return { research: withCheck(research, "The Codex cross-check was skipped for this look; check the facts by hand."), by: ["claude"] };
+  writeFileSync(join(dir, "research.json"), JSON.stringify(research, null, 2));
+  log("  Codex is cross-checking the facts (usually 3–8 minutes)…");
+  try {
+    const parsed = crosscheckSchema.safeParse(extractJson(await codex(dir, readFileSync(CHECK_PROMPT, "utf8"))));
+    if (!parsed.success) throw new Error("its reply was not in the expected shape");
+    const merged = mergeCrosscheck(research, parsed.data);
+    log(`  Codex agreed with ${merged.agreed}, disputed ${merged.disputed}, and raised ${parsed.data.problems.length} other point(s).`);
+    return { research: merged.research, by: ["claude", "codex"] };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    log(`  Codex could not cross-check (${reason}); going ahead with Claude's research.`);
+    return { research: withCheck(research, `The Codex cross-check did not run (${reason.slice(0, 150)}); check the facts by hand.`), by: ["claude"] };
+  }
 }
 
 /** Parses and checks a reply; returns the research or the problems. */
@@ -178,20 +260,23 @@ async function research(job: LookJob, context: Context, tryOut?: { photoFile?: s
       result = check(second.result);
     }
     if (!result.research) throw new Error(`Research did not pass the checks: ${result.problems!.join("; ")}`);
+    const checked = await crosscheck(dir, result.research);
 
     if (tryOut) {
-      writeFileSync(tryOut.outFile, JSON.stringify(result.research, null, 2));
-      log(`  ✓ Research passed the checks. Saved to ${tryOut.outFile}`);
+      writeFileSync(tryOut.outFile, JSON.stringify(checked.research, null, 2));
+      log(`  ✓ Research passed the checks (${checked.by.join(" + ")}). Saved to ${tryOut.outFile}`);
       return;
     }
 
-    let response = await site(`/api/runner/looks/${job.id}`, { research: result.research, by: ["claude"] });
+    let response = await site(`/api/runner/looks/${job.id}`, { research: checked.research, by: checked.by });
     if (response.status === 422) {
       const { problems } = (await response.json()) as { problems: string[] };
       log(`  The site refused the draft (${problems.join("; ")}); asking Claude once…`);
       const fixed = check((await claude(dir, fixPrompt(problems), session)).result);
       if (!fixed.research) throw new Error(`The site refused the draft: ${problems.join("; ")}`);
-      response = await site(`/api/runner/looks/${job.id}`, { research: fixed.research, by: ["claude"] });
+      // The fix only touches what the site refused; Codex's checks still apply.
+      const kept = { ...fixed.research, checks: [...new Set([...checked.research.checks, ...fixed.research.checks])].slice(0, 20) };
+      response = await site(`/api/runner/looks/${job.id}`, { research: kept, by: checked.by });
     }
     if (response.status === 409) {
       log("  The job was cancelled while it was being researched; nothing saved.");
@@ -214,7 +299,27 @@ async function tryOne() {
   await research(job, { celebrities: [], occasions: [], takenSlugs: [], keywordsInUse: [] }, { photoFile, outFile });
 }
 
+async function checkOne() {
+  const file = process.argv[process.argv.indexOf("--check") + 1];
+  if (!file || !existsSync(file)) throw new Error("Usage: npm run looks:runner -- --check <research file>");
+  const parsed = researchSchema.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  if (!parsed.success) throw new Error(`That file is not valid research: ${researchProblems(parsed.error).join("; ")}`);
+  const dir = mkdtempSync(join(tmpdir(), "cp-check-"));
+  try {
+    const buyUrls = parsed.data.items.flatMap((item) => (item.wornUrl ? [item.wornUrl] : []));
+    writeFileSync(join(dir, "job.json"), JSON.stringify({ instagramUrl: null, buyUrls, note: null }, null, 2));
+    writeFileSync(join(dir, "products.json"), "[]");
+    const checked = await crosscheck(dir, parsed.data);
+    const outFile = file.replace(/.json$/, "") + ".checked.json";
+    writeFileSync(outFile, JSON.stringify(checked.research, null, 2));
+    log(`Saved to ${outFile}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 async function main() {
+  if (process.argv.includes("--check")) return checkOne();
   if (process.argv.includes("--try")) return tryOne();
   log(`Look research runner → ${SITE}${ONCE ? " (one job)" : " (Ctrl+C to stop)"}`);
   for (;;) {

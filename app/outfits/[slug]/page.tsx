@@ -9,6 +9,7 @@ import { hasOccasion, sameName } from "@/lib/archive";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { hasSubstance, outfitPhotos } from "@/lib/types";
 import { articleDates, finalDescription, headline } from "@/lib/outfit-seo";
+import { shareVersion } from "@/lib/share-text";
 import { outfitAlt } from "@/components/site/Thumb";
 import { getCelebrities, getOutfitBySlug, getPublishedOutfits, movedOutfitSlug } from "@/lib/db/content";
 import { breadcrumbs, imageObject, jsonLd, pageMetadata } from "@/lib/seo";
@@ -56,8 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     path,
     type: "article",
-    // Cover first, so og:image and og:image:alt are the cover and its alt.
-    images: photos.map((photo, index) => ({ url: photo.url, alt: outfitAlt(outfit, index) })),
+    // The share card first (the real cover photo beside the name and prices,
+    // drawn to the 1200×630 link previews use), then the photos themselves.
+    images: [
+      ...(photos.length ? [{ url: `${path}/card.png?v=${shareVersion(outfit)}`, alt: outfitAlt(outfit, 0) }] : []),
+      ...photos.map((photo, index) => ({ url: photo.url, alt: outfitAlt(outfit, index) })),
+    ],
     publishedTime: dates.published,
     modifiedTime: dates.modified,
     // A look with no swap, no notes and no piece notes is a brand's product
