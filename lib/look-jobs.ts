@@ -92,15 +92,15 @@ export const splitUrls = (raw: string) =>
     .map((part) => part.trim())
     .filter(Boolean);
 
-/** Only paths the upload route writes for this page: inbox/<job>/<job>-1-<hex8>.<ext>,
- *  under dev/ when development or a preview wrote it. */
+/** Only paths the upload route writes for this page: inbox/<upload>/<upload>-1-<hex8>.<ext>,
+ *  where <upload> is the form's own random id; under dev/ when development or a
+ *  preview wrote it. */
 export const INBOX_PHOTO = /^(?:dev\/)?inbox\/([a-z0-9]{12})\/\1-1-[0-9a-f]{8}\.(jpg|png|webp|avif)$/;
 
 const FIREBASE_URL = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[a-z0-9.-]+\/o\/[^?#]+\?alt=media&token=[0-9a-f-]{36}$/;
 
 export const newLookJobSchema = z
   .object({
-    id: z.string().regex(/^[a-z0-9]{12}$/, "Reload the page and try again."),
     instagramUrl: z
       .string()
       .trim()
@@ -127,8 +127,10 @@ export const newLookJobSchema = z
   })
   .superRefine((value, ctx) => {
     if (!value.photoPath && !value.photoUrl) return;
-    const match = value.photoPath.match(INBOX_PHOTO);
-    if (!match || match[1] !== value.id || !FIREBASE_URL.test(value.photoUrl)) {
+    // The download URL must name this very file (Firebase encodes the path's
+    // slashes as %2F), so a path cannot be paired with someone else's photo.
+    const encoded = encodeURIComponent(value.photoPath);
+    if (!INBOX_PHOTO.test(value.photoPath) || !FIREBASE_URL.test(value.photoUrl) || !value.photoUrl.includes(`/o/${encoded}?`)) {
       ctx.addIssue({ code: "custom", path: ["photo"], message: "That photo did not upload properly. Remove it and drop it in again." });
     }
   })
@@ -137,9 +139,9 @@ export const newLookJobSchema = z
     ...(photoPath ? { photo: { path: photoPath, url: photoUrl } } : {}),
   }));
 
-export type NewLookJob = z.output<typeof newLookJobSchema>;
+export type NewLookJob = z.output<typeof newLookJobSchema> & { id: string };
 
-/** A fresh job id: 12 lowercase letters and digits. */
+/** A fresh job or upload id: 12 lowercase letters and digits. */
 export function newLookJobId(random: (bytes: number) => Uint8Array): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
   return [...random(12)].map((byte) => alphabet[byte % alphabet.length]).join("");

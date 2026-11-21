@@ -16,7 +16,6 @@ const PHOTO_PATH = `inbox/${ID}/${ID}-1-0a1b2c3d.webp`;
 const PHOTO_URL = `https://firebasestorage.googleapis.com/v0/b/celebritypersona-918fc.firebasestorage.app/o/inbox%2F${ID}%2F${ID}-1-0a1b2c3d.webp?alt=media&token=12345678-1234-1234-1234-123456789abc`;
 
 const form = (over = {}) => ({
-  id: ID,
   instagramUrl: "https://www.instagram.com/p/DAbc123xyz/",
   buyUrls: "https://www.example-shop.com/dress-1",
   note: "",
@@ -68,7 +67,6 @@ test("a valid form becomes a job; duplicates collapse and the note is optional",
     form({ buyUrls: "https://shop.example.com/a?utm_source=x\nhttps://shop.example.com/a", note: "  " }),
   );
   assert.deepEqual(parsed, {
-    id: ID,
     instagramUrl: "https://www.instagram.com/p/DAbc123xyz/",
     buyUrls: ["https://shop.example.com/a"],
     note: undefined,
@@ -83,14 +81,15 @@ test("the form refuses bad buying links, too many links and a missing post", () 
   assert.deepEqual(issues({ instagramUrl: "" }), ["instagramUrl"]);
 });
 
-test("only a photo this page uploaded for this job is accepted", () => {
+test("only a photo this page uploaded is accepted, and its URL must name that very file", () => {
   assert.deepEqual(newLookJobSchema.parse(form({ photoPath: PHOTO_PATH, photoUrl: PHOTO_URL })).photo, {
     path: PHOTO_PATH,
     url: PHOTO_URL,
   });
   const photoIssue = (over) =>
     newLookJobSchema.safeParse(form(over)).error?.issues.some((issue) => issue.path[0] === "photo") ?? false;
-  assert.ok(photoIssue({ photoPath: `inbox/zzzzzzzzzzzz/zzzzzzzzzzzz-1-0a1b2c3d.webp`, photoUrl: PHOTO_URL }), "another job's photo");
+  assert.ok(photoIssue({ photoPath: `inbox/zzzzzzzzzzzz/zzzzzzzzzzzz-1-0a1b2c3d.webp`, photoUrl: PHOTO_URL }), "a URL for a different file");
+  assert.ok(photoIssue({ photoPath: `inbox/abc123def456/zzzzzzzzzzzz-1-0a1b2c3d.webp`, photoUrl: PHOTO_URL }), "a folder and file name that disagree");
   assert.ok(photoIssue({ photoPath: `outfits/some-look/some-look-1-0a1b2c3d.webp`, photoUrl: PHOTO_URL }), "a live outfit's photo");
   assert.ok(photoIssue({ photoPath: PHOTO_PATH, photoUrl: "https://evil.example/x.webp" }), "a foreign URL");
   assert.ok(photoIssue({ photoPath: PHOTO_PATH, photoUrl: "" }), "a path without a URL");

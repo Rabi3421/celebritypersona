@@ -1,9 +1,8 @@
-import { randomBytes } from "node:crypto";
 import Link from "next/link";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { LookFromLinksForm } from "@/components/admin/LookFromLinksForm";
 import { listLookJobs } from "@/lib/db/look-jobs";
-import { canCancel, newLookJobId, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
+import { canCancel, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
 import styles from "@/app/admin/panel.module.css";
 import local from "@/components/admin/look-jobs.module.css";
 import { cancelLookJobAction, removeLookJobAction } from "./actions";
@@ -137,7 +136,8 @@ export default async function LookFromLinksPage({
         </div>
       ) : null}
 
-      <LookFromLinksForm jobId={newLookJobId((size) => randomBytes(size))} />
+      {/* Keyed by the job just queued, so the next look starts with an empty form. */}
+      <LookFromLinksForm key={queued ?? "new"} />
 
       <section className={styles.section}>
         <div className={styles.sectionHead}>
