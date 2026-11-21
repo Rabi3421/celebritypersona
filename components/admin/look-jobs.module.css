@@ -33,3 +33,16 @@
   .thumb{width:52px;height:62px}
   .jobActions{grid-column:1/-1;flex-direction:row;justify-content:flex-end;align-items:center}
 }
+
+.findings{margin-top:var(--s2);font-size:13px;color:var(--muted)}
+.findings summary{cursor:pointer;color:var(--amber);font-size:13px}
+.checks{margin:var(--s2) 0 var(--s2) var(--s5);color:var(--text);line-height:1.55}
+.checks li{margin-bottom:4px}
+.evidence{list-style:none;margin:var(--s2) 0 0;padding:0;line-height:1.5}
+.evidence li{margin-bottom:4px}
+.evidence a{margin-left:3px;font-size:12px}
+.c_confirmed,.c_likely,.c_unverified{font-family:var(--mono),ui-monospace,monospace;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+.c_confirmed{color:var(--jade)}
+.c_likely{color:var(--amber)}
+.c_unverified{color:var(--rani-soft)}

@@ -45,6 +45,36 @@ function JobRow({ job }: { job: LookJob }) {
         </div>
         {job.note ? <div className={local.jobMeta}>“{job.note}”</div> : null}
         {job.error ? <div className={local.jobError}>{job.error}</div> : null}
+        {job.findings ? (
+          <details className={local.findings} open={job.status === "drafted"}>
+            <summary>
+              {job.findings.checks.length
+                ? `${job.findings.checks.length} thing${job.findings.checks.length === 1 ? "" : "s"} to check before publishing`
+                : "Nothing flagged"}{" "}
+              · {job.findings.evidence.length} sourced facts
+              {job.findings.by.length ? ` · researched by ${job.findings.by.join(" + ")}` : ""}
+            </summary>
+            {job.findings.checks.length ? (
+              <ol className={local.checks}>
+                {job.findings.checks.map((check) => (
+                  <li key={check}>{check}</li>
+                ))}
+              </ol>
+            ) : null}
+            <ul className={local.evidence}>
+              {job.findings.evidence.map((item) => (
+                <li key={item.claim}>
+                  <span className={local[`c_${item.confidence}`]}>{item.confidence}</span> {item.claim}{" "}
+                  {item.sources.map((source, index) => (
+                    <a href={source} key={source} rel="noreferrer" target="_blank">
+                      [{index + 1}]
+                    </a>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </div>
       <div className={local.jobActions}>
         <span className={`${local.badge} ${local[job.status]}`}>{STATUS_LABEL[job.status]}</span>

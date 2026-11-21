@@ -30,6 +30,7 @@ import { join } from "node:path";
 import { extractJson, researchProblems, researchSchema, type LookResearch } from "@/lib/look-research";
 import type { LookJob } from "@/lib/look-jobs";
 import { PIECE_CATEGORIES, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
+import { readProducts } from "./shop-reader";
 
 const SITE = (process.env.LOOKS_SITE_URL ?? "https://www.celebritypersona.com").replace(/\/$/, "");
 const TOKEN_FILE = join(homedir(), ".celebritypersona-monitor", "looks-runner-token");
@@ -38,6 +39,25 @@ const IDLE_MS = 60_000;
 /** One look's research; past this the run is stopped and the job marked failed. */
 const CLAUDE_TIMEOUT_MS = 25 * 60_000;
 const PROMPT = join(process.cwd(), "docs", "look-research", "prompt.md");
+const REPO = process.cwd().split("\\").join("/");
+
+/**
+ * Claude Code's own program. npm installs it as claude.exe behind a .cmd shim;
+ * starting the program itself avoids a shell, so no argument is ever re-parsed.
+ */
+const CLAUDE = (() => {
+  const exe = join(process.env.APPDATA ?? "", "npm", "node_modules", "@anthropic-ai", "claude-code", "bin", "claude.exe");
+  return process.platform === "win32" && existsSync(exe) ? exe : "claude";
+})();
+
+/**
+ * The one command Claude may run: `./shop <product link>`, which reads a product
+ * page with this computer's Chrome (scripts/shop-reader.ts) and prints what it
+ * says. Claude Code runs commands in Git Bash, hence a POSIX script.
+ */
+const SHOP_SCRIPT = `#!/bin/sh
+exec node "${REPO}/node_modules/tsx/dist/cli.mjs" "${REPO}/scripts/shop-reader.ts" product "$1"
+`;
 
 type Context = { celebrities: string[]; occasions: string[]; takenSlugs: string[]; keywordsInUse: string[] };
 
@@ -69,15 +89,16 @@ function claude(cwd: string, prompt: string, resume?: string): Promise<{ result:
   const args = [
     "-p",
     "--output-format", "json",
-    "--allowedTools", "WebSearch,WebFetch,Read",
-    "--disallowedTools", "Bash,Write,Edit,NotebookEdit",
+    // Only the shop reader may be run; no other command, no file writing.
+    "--allowedTools", "WebSearch,WebFetch,Read,Bash(./shop:*)",
+    "--disallowedTools", "Write,Edit,NotebookEdit",
     "--max-turns", "80",
     ...(resume ? ["--resume", resume] : []),
   ];
   return new Promise((resolve, reject) => {
-    // shell: npm installs claude as a .cmd/.ps1 shim on Windows. Every argument
-    // above is a fixed word; the prompt travels on stdin, never the command line.
-    const child = spawn("claude", args, { cwd, shell: true, windowsHide: true });
+    // No shell: the arguments reach Claude exactly as written above, and the
+    // prompt travels on stdin, never the command line.
+    const child = spawn(CLAUDE, args, { cwd, windowsHide: true });
     let out = "";
     let err = "";
     const timer = setTimeout(() => {
@@ -126,6 +147,13 @@ async function research(job: LookJob, context: Context, tryOut?: { photoFile?: s
   try {
     writeFileSync(join(dir, "job.json"), JSON.stringify({ instagramUrl: job.instagramUrl, buyUrls: job.buyUrls, note: job.note ?? null }, null, 2));
     writeFileSync(join(dir, "context.json"), JSON.stringify(context, null, 2));
+    writeFileSync(join(dir, "shop"), SHOP_SCRIPT, { mode: 0o755 });
+    log(`  Reading ${job.buyUrls.length} buying link(s) with Chrome…`);
+    const products = await readProducts(job.buyUrls);
+    for (const product of products) {
+      log(`    ${product.ok ? `✓ ${product.name} — ${product.currency ?? ""} ${product.price}${product.inStock === false ? " (out of stock)" : ""}` : `✗ ${product.problem}`}`);
+    }
+    writeFileSync(join(dir, "products.json"), JSON.stringify(products, (key, value) => (key === "image" ? undefined : value), 2));
     if (tryOut?.photoFile) {
       const ext = tryOut.photoFile.split(".").pop() ?? "jpg";
       writeFileSync(join(dir, `photo.${ext}`), readFileSync(tryOut.photoFile));

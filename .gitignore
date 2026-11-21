@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local scratch scripts, never committed
 /.scratch/
+
+# Local research try-outs (npm run looks:runner -- --try)
+look-try-*.json
