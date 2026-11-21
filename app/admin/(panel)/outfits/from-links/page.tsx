@@ -1,0 +1,133 @@
+import { randomBytes } from "node:crypto";
+import Link from "next/link";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
+import { LookFromLinksForm } from "@/components/admin/LookFromLinksForm";
+import { listLookJobs } from "@/lib/db/look-jobs";
+import { canCancel, newLookJobId, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
+import styles from "@/app/admin/panel.module.css";
+import local from "@/components/admin/look-jobs.module.css";
+import { cancelLookJobAction, removeLookJobAction } from "./actions";
+
+/** Always the queue as it stands; a cached list would hide the runner's progress. */
+export const dynamic = "force-dynamic";
+
+const when = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const host = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};
+
+function JobRow({ job }: { job: LookJob }) {
+  return (
+    <li className={local.job}>
+      {job.photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={local.thumb} src={job.photo.url} alt="" />
+      ) : (
+        <span className={`${local.thumb} ${local.thumbEmpty}`}>no photo</span>
+      )}
+      <div className={local.jobMain}>
+        <a href={job.instagramUrl} target="_blank" rel="noreferrer">
+          {job.instagramUrl.replace("https://www.", "")}
+        </a>
+        <div className={local.jobMeta}>
+          {job.buyUrls.map(host).join(" · ")} · added {when.format(new Date(job.createdAt))}
+        </div>
+        {job.note ? <div className={local.jobMeta}>“{job.note}”</div> : null}
+        {job.error ? <div className={local.jobError}>{job.error}</div> : null}
+      </div>
+      <div className={local.jobActions}>
+        <span className={`${local.badge} ${local[job.status]}`}>{STATUS_LABEL[job.status]}</span>
+        {job.status === "drafted" && job.outfitId ? (
+          <Link href={`/admin/preview/${job.outfitId}`}>Review draft →</Link>
+        ) : null}
+        {canCancel(job.status) ? (
+          <form action={cancelLookJobAction}>
+            <input type="hidden" name="id" value={job.id} />
+            <ConfirmButton
+              className={styles.ghost}
+              title="Cancel this research?"
+              message="The runner skips it, or stops before saving a draft if it has already started."
+              confirmLabel="Cancel research"
+              pendingLabel="Cancelling…"
+            >
+              Cancel
+            </ConfirmButton>
+          </form>
+        ) : (
+          <form action={removeLookJobAction}>
+            <input type="hidden" name="id" value={job.id} />
+            <ConfirmButton
+              className={styles.ghost}
+              title="Remove from this list?"
+              message={
+                job.outfitId
+                  ? "Only the job is removed. The draft outfit and its photo stay."
+                  : "The job and its uploaded photo are removed."
+              }
+              confirmLabel="Remove"
+              pendingLabel="Removing…"
+            >
+              Remove
+            </ConfirmButton>
+          </form>
+        )}
+      </div>
+    </li>
+  );
+}
+
+export default async function LookFromLinksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ queued?: string }>;
+}) {
+  const [{ queued }, jobs] = await Promise.all([searchParams, listLookJobs()]);
+  const waiting = jobs.filter((job) => job.status === "queued").length;
+
+  return (
+    <>
+      {queued ? (
+        <div className={styles.notice} role="status">
+          <strong>Research queued.</strong>
+          <p>
+            The runner on your computer picks it up and saves a draft outfit; you review it before anything is
+            published. Add the next look whenever you like.
+          </p>
+        </div>
+      ) : null}
+
+      <LookFromLinksForm jobId={newLookJobId((size) => randomBytes(size))} />
+
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2>Research queue</h2>
+          <p className={local.jobMeta}>
+            {waiting
+              ? `${waiting} waiting. Jobs run while the runner is on: npm run looks:runner`
+              : "Jobs run while the runner on your computer is on."}
+          </p>
+        </div>
+        {jobs.length ? (
+          <ul className={local.jobs}>
+            {jobs.map((job) => (
+              <JobRow job={job} key={job.id} />
+            ))}
+          </ul>
+        ) : (
+          <div className={styles.empty}>No looks queued yet. Paste the first one above.</div>
+        )}
+      </section>
+    </>
+  );
+}

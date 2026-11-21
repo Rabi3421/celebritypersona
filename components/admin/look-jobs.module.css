@@ -1,0 +1,33 @@
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s3);
+  min-height:150px;padding:var(--s5);text-align:center;cursor:pointer;font-size:14px;color:var(--muted);
+  background:var(--panel-2);border:1.5px dashed var(--line);border-radius:var(--r-md);
+  transition:border-color 130ms,background 130ms}
+.drop:hover,.dropOver{border-color:var(--rani);color:var(--text)}
+.drop:focus-within{outline:2px solid var(--rani);outline-offset:2px}
+.preview{display:block;max-height:240px;max-width:100%;width:auto;border-radius:var(--r-sm)}
+.hint{display:block;margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.5}
+
+.jobs{display:grid;gap:var(--s3);max-width:900px}
+.job{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:var(--s4);align-items:center;
+  padding:var(--s3) var(--s4);background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-md)}
+.thumb{width:64px;height:76px;object-fit:cover;border-radius:var(--r-sm);background:var(--panel)}
+.thumbEmpty{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+.jobMain{min-width:0;font-size:13.5px;line-height:1.55}
+.jobMain a{color:var(--text);overflow-wrap:anywhere}
+.jobMeta{color:var(--muted);font-size:12.5px}
+.jobError{color:var(--rani-soft);font-size:12.5px}
+.jobActions{display:flex;flex-direction:column;align-items:flex-end;gap:var(--s2)}
+.jobActions form{margin:0}
+.badge{font-family:var(--mono),ui-monospace,monospace;font-size:11px;padding:4px 10px;
+  border-radius:var(--r-pill);border:1px solid var(--line);white-space:nowrap}
+.queued{color:var(--muted)}
+.running{color:var(--amber);border-color:rgba(231,189,112,.42)}
+.drafted{color:var(--jade);border-color:rgba(79,227,172,.42)}
+.failed{color:var(--rani-soft);border-color:var(--rani)}
+.cancelled{color:var(--muted);text-decoration:line-through}
+
+@media (max-width:560px){
+  .job{grid-template-columns:52px minmax(0,1fr)}
+  .thumb{width:52px;height:62px}
+  .jobActions{grid-column:1/-1;flex-direction:row;justify-content:flex-end;align-items:center}
+}

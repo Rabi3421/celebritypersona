@@ -136,9 +136,14 @@ export default async function AdminOutfits({
             ? `${paged.total} of ${outfits.length} looks match.`
             : `${paged.total} decoded looks, newest first.`}
         </p>
-        <Link className={styles.newButton} href="/admin/outfits/new">
-          New outfit
-        </Link>
+        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link className={styles.ghost} href="/admin/outfits/new">
+            New outfit by hand
+          </Link>
+          <Link className={styles.newButton} href="/admin/outfits/from-links">
+            New look from links
+          </Link>
+        </span>
       </div>
 
       <ListFilters
