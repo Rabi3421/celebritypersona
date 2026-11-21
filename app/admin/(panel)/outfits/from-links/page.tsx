@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { LookFromLinksForm } from "@/components/admin/LookFromLinksForm";
+import { getAllOutfits } from "@/lib/db/content";
 import { listLookJobs } from "@/lib/db/look-jobs";
 import { canCancel, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
 import styles from "@/app/admin/panel.module.css";
@@ -121,7 +122,12 @@ export default async function LookFromLinksPage({
 }: {
   searchParams: Promise<{ queued?: string }>;
 }) {
-  const [{ queued }, jobs] = await Promise.all([searchParams, listLookJobs()]);
+  const [{ queued }, allJobs, outfits] = await Promise.all([searchParams, listLookJobs(), getAllOutfits()]);
+  // A job's work is done once the editor publishes its draft: it leaves the
+  // queue. (The job record stays, so the research behind a look is kept.)
+  const published = new Set(outfits.filter((outfit) => outfit.status === "published").map((outfit) => outfit.id));
+  const jobs = allJobs.filter((job) => !(job.outfitId && published.has(job.outfitId)));
+  const done = allJobs.length - jobs.length;
   const waiting = jobs.filter((job) => job.status === "queued").length;
 
   return (
@@ -155,8 +161,15 @@ export default async function LookFromLinksPage({
             ))}
           </ul>
         ) : (
-          <div className={styles.empty}>No looks queued yet. Paste the first one above.</div>
+          <div className={styles.empty}>
+            {done ? "Nothing waiting or to review. Paste the next look above." : "No looks queued yet. Paste the first one above."}
+          </div>
         )}
+        {done ? (
+          <p className={local.jobMeta} style={{ marginTop: 12 }}>
+            {done} researched look{done === 1 ? " is" : "s are"} published and no longer listed here.
+          </p>
+        ) : null}
       </section>
     </>
   );

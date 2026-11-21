@@ -946,3 +946,18 @@ export async function saveHomeContent(value: HomeContent) {
     .updateOne({ key: "home" }, { $set: { key: "home", value } }, { upsert: true });
   revalidateSite();
 }
+
+/**
+ * Moves a look between draft and published without touching anything else,
+ * through `updateOutfit`, so going live stamps `publishedAt` and locks the slug
+ * exactly as a save from the editor does. Returns the stored look, or null.
+ */
+export async function setOutfitStatus(id: number, status: "draft" | "published"): Promise<Outfit | null> {
+  const db = await getDb();
+  const stored = await db.collection<Outfit>("outfits").findOne({ id }, { projection: { _id: 0 } });
+  if (!stored) return null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _id, worn, swap, ...rest } = stored;
+  await updateOutfit(id, { ...rest, status });
+  return stored;
+}

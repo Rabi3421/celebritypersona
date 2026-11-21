@@ -8,7 +8,8 @@ import { Pagination } from "@/components/admin/Pagination";
 import { paginate, readPerPage } from "@/lib/pagination";
 import { allOption, anyFilter, carry, listPath, matchesQuery, matchesValue } from "@/lib/admin-filters";
 import { uncreditedPhotos } from "@/lib/photo-credit";
-import { removeOutfit } from "./actions";
+import { changeOutfitStatus, removeOutfit } from "./actions";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { isPublished, outfitPhotos, pricing, type Outfit } from "@/lib/types";
 import { needsPriceReview, priceFreshness } from "@/lib/freshness";
@@ -30,6 +31,8 @@ type Query = {
   celebrity?: string;
   state?: string;
   sort?: string;
+  /** Set when a Publish from the list was refused: "<id>|<what failed>". */
+  statusProblem?: string;
 };
 
 const FILTER_KEYS = ["q", "occasion", "celebrity", "state", "sort"];
@@ -130,6 +133,19 @@ export default async function AdminOutfits({
   return (
     <>
       <ClearSavedDraft draftKey={query.draftSaved} />
+      {query.statusProblem ? (
+        <div className={styles.notice} role="alert">
+          <strong>
+            Not published —{" "}
+            {outfits.find((outfit) => String(outfit.id) === query.statusProblem?.split("|")[0])?.celebrity ?? "that look"}{" "}
+            fails a critical check.
+          </strong>
+          <p>
+            {query.statusProblem.split("|").slice(1).join("|")}. Open it with Edit to fix it; it stays a draft until
+            then.
+          </p>
+        </div>
+      ) : null}
       <div className={styles.listTop}>
         <p>
           {active
@@ -276,6 +292,30 @@ export default async function AdminOutfits({
                       <td className={styles.num}>
                         <span className={styles.rowActions}>
                           <Link href={`/admin/outfits/${outfit.id}`}>Edit</Link>
+                          <form action={changeOutfitStatus} style={{ display: "contents" }}>
+                            <input type="hidden" name="id" value={outfit.id} />
+                            <input type="hidden" name="returnTo" value={returnTo} />
+                            {outfit.status === "draft" ? (
+                              <>
+                                <input type="hidden" name="status" value="published" />
+                                <button type="submit" title="Runs the SEO checks first; nothing changes if one fails">
+                                  Publish
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <input type="hidden" name="status" value="draft" />
+                                <ConfirmButton
+                                  title="Unpublish this look?"
+                                  message={`${outfit.celebrity} — ${outfit.event} goes back to draft: its page, listings and sitemap entry disappear until you publish it again.`}
+                                  confirmLabel="Unpublish"
+                                  pendingLabel="Unpublishing…"
+                                >
+                                  Unpublish
+                                </ConfirmButton>
+                              </>
+                            )}
+                          </form>
                           <Link href={`/outfits/${outfitSlug(outfit)}`} target="_blank">
                             View ↗
                           </Link>

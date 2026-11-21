@@ -3,12 +3,12 @@
 import { redirect } from "next/navigation";
 import { adminForAction, requireAdmin, SESSION_EXPIRED_MESSAGE } from "@/lib/auth/admin";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
-import { createOutfit, deleteOutfit, updateOutfit } from "@/lib/db/mutations";
+import { createOutfit, deleteOutfit, setOutfitStatus, updateOutfit } from "@/lib/db/mutations";
 import { csv, flag, lines, text } from "@/lib/form-data";
 import { leadPosition, readOutfitDraft, type OutfitDraft } from "@/lib/outfit-form-fields";
 import { canonicalName } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
-import { isPublished, pieceLink, type OutfitItem } from "@/lib/types";
+import { isPublished, outfitPhotos, pieceLink, type OutfitItem } from "@/lib/types";
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 import { blockingChecks, seoChecks } from "@/lib/seo-checks";
 import { keywordOwners } from "@/lib/keyword-owners";
@@ -213,4 +213,39 @@ export async function removeOutfit(form: FormData) {
   // never send the admin somewhere else.
   const back = text(form, "returnTo");
   redirect(back.startsWith("/admin/outfits") ? back : "/admin/outfits");
+}
+
+/**
+ * Publish or unpublish a look from the list, without opening the editor.
+ *
+ * Publishing runs the same critical SEO checks as the editor's save; when any
+ * fails nothing changes and the list names what to fix. Unpublishing returns
+ * the look to draft (its address keeps its 301 history, as on any edit).
+ */
+export async function changeOutfitStatus(form: FormData) {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  const status = text(form, "status") === "published" ? "published" : "draft";
+  const raw = text(form, "returnTo");
+  const back = new URL(raw.startsWith("/admin/outfits") ? raw : "/admin/outfits", "http://admin.local");
+  back.searchParams.delete("statusProblem");
+
+  if (status === "published") {
+    const outfits = await getAllOutfits();
+    const stored = outfits.find((outfit) => outfit.id === id);
+    if (!stored) redirect(back.pathname + back.search);
+    const blocking = blockingChecks(
+      seoChecks(
+        { ...stored, slug: outfitSlug(stored), images: outfitPhotos(stored), leadChosen: Boolean(stored.leadPieceId) },
+        { id, owners: keywordOwners(outfits) },
+      ),
+    );
+    if (blocking.length) {
+      const reasons = blocking.map((check) => `${check.label}${check.detail ? ` — ${check.detail}` : ""}`).join(" · ");
+      back.searchParams.set("statusProblem", `${id}|${reasons}`.slice(0, 600));
+      redirect(back.pathname + back.search);
+    }
+  }
+  await setOutfitStatus(id, status);
+  redirect(back.pathname + back.search);
 }
