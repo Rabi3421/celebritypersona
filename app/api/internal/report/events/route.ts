@@ -3,6 +3,7 @@ import { list } from "@vercel/blob";
 import { PREFIX } from "@/lib/backup/core";
 import { getAllOutfits } from "@/lib/db/content";
 import { finishedLookJobs } from "@/lib/db/look-jobs";
+import { suggestionsSince } from "@/lib/db/look-suggestions";
 import { reportTokenValid } from "@/lib/report/report-auth";
 import { EVENTS_WINDOW_HOURS, latestBackup, summariseLookJobs, type SiteEvents } from "@/lib/report/site-events";
 
@@ -48,8 +49,14 @@ export async function GET(request: Request) {
   }
   try {
     const since = new Date(Date.now() - EVENTS_WINDOW_HOURS * 3_600_000);
-    const [jobs, outfits, backup] = await Promise.all([finishedLookJobs(since), getAllOutfits(), backupState()]);
-    const body: SiteEvents = { version: 1, generatedAt: new Date().toISOString(), lookJobs: summariseLookJobs(jobs, outfits), backup };
+    const [jobs, outfits, backup, scouted] = await Promise.all([finishedLookJobs(since), getAllOutfits(), backupState(), suggestionsSince(since)]);
+    const body: SiteEvents = {
+      version: 1,
+      generatedAt: new Date().toISOString(),
+      lookJobs: summariseLookJobs(jobs, outfits),
+      suggestions: scouted.map(({ id, batch, celebrity, event, why, score, status }) => ({ id, batch, celebrity, event, why, score, status })),
+      backup,
+    };
     return NextResponse.json(body, { headers: HEADERS });
   } catch (error) {
     console.error("Site events failed", error instanceof Error ? error.name : "Unknown");

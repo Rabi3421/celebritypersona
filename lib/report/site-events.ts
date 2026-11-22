@@ -24,6 +24,8 @@ export type SiteEvents = {
     by: string[];
     error: string | null;
   }[];
+  /** The scout's suggestions from the last 72 hours, still waiting or already decided. */
+  suggestions?: { id: string; batch: string; celebrity: string; event: string; why: string; score: number; status: string }[];
   /** `latestAt` null means no backup exists at all; `error` means the store could not be read. */
   backup: { latestAt: string | null; count: number } | { error: string };
 };

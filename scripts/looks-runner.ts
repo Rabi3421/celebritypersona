@@ -6,6 +6,9 @@
  *     npm run looks:runner -- --try <instagram link> <buying link> [photo file]
  *                                     research one look and save the result to a
  *                                     file, without the site: to judge quality
+ *     npm run looks:runner -- --scout  run the morning trend scout now
+ *                                     (otherwise it runs once a day after 08:00 IST
+ *                                     while the runner is open)
  *     npm run looks:runner -- --check <research file>
  *                                     run only the Codex cross-check on a saved
  *                                     research file (e.g. a --try result)
@@ -39,6 +42,8 @@ import { CROSSCHECK_JSON_SCHEMA, crosscheckSchema, mergeCrosscheck, withCheck } 
 import { extractJson, researchProblems, researchSchema, type LookResearch } from "@/lib/look-research";
 import type { LookJob } from "@/lib/look-jobs";
 import { PIECE_CATEGORIES, PIECE_COLOUR_NAMES } from "@/lib/taxonomy";
+import { istToday } from "@/lib/dates";
+import { cleanCandidates } from "@/lib/look-suggestions";
 import { readProducts } from "./shop-reader";
 
 const SITE = (process.env.LOOKS_SITE_URL ?? "https://www.celebritypersona.com").replace(/\/$/, "");
@@ -88,7 +93,7 @@ function token(): string {
   return value;
 }
 
-const TOKEN = process.argv.includes("--try") || process.argv.includes("--check") ? "" : token();
+const TOKEN = ["--try", "--check", "--scout-try"].some((flag) => process.argv.includes(flag)) ? "" : token();
 const stamp = () => new Date().toLocaleTimeString("en-IN", { hour12: false });
 const log = (message: string) => console.log(`${stamp()}  ${message}`);
 
@@ -318,11 +323,88 @@ async function checkOne() {
   }
 }
 
+// ------------------------------------------------------------------ morning scout
+
+const SCOUT_PROMPT = join(process.cwd(), "docs", "look-research", "scout-prompt.md");
+const SCOUT_STATE = join(homedir(), ".celebritypersona-monitor", "looks-scout-state.json");
+/** The scout runs once a day, from this hour (IST) on, while the runner is open. */
+const SCOUT_HOUR_IST = 8;
+/** After a failed scout, wait this long before trying again the same day. */
+const SCOUT_RETRY_MS = 2 * 60 * 60_000;
+
+type ScoutState = { lastDay?: string; failedAt?: number };
+const readScoutState = (): ScoutState => {
+  try {
+    return JSON.parse(readFileSync(SCOUT_STATE, "utf8")) as ScoutState;
+  } catch {
+    return {};
+  }
+};
+const istHour = () => Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", hour12: false }).format(new Date()));
+
+/**
+ * Asks Claude for the last 48 hours' Indian celebrity fashion moments worth
+ * decoding and sends them to the site as today's suggestions. Starts no
+ * research: the editor queues the ones they want.
+ */
+async function scout(tryOnly = false) {
+  let context: { today: string; coveredPosts: string[]; celebrities: string[] } = { today: istToday(), coveredPosts: [], celebrities: [] };
+  if (!tryOnly) {
+    const contextResponse = await fetch(`${SITE}/api/runner/looks/suggestions`, { headers: { authorization: `Bearer ${TOKEN}` } });
+    if (!contextResponse.ok) throw new Error(`The site answered ${contextResponse.status} for the scout's context.`);
+    context = (await contextResponse.json()) as typeof context;
+  }
+  const dir = mkdtempSync(join(tmpdir(), "cp-scout-"));
+  try {
+    writeFileSync(join(dir, "context.json"), JSON.stringify({ coveredPosts: context.coveredPosts, celebrities: context.celebrities }, null, 2));
+    const prompt = readFileSync(SCOUT_PROMPT, "utf8").replace("{{TODAY}}", context.today);
+    log("Scout: Claude is looking for this morning's looks (usually 5–15 minutes)…");
+    const reply = await claude(dir, prompt);
+    const raw = extractJson(reply.result) as { candidates?: unknown };
+    if (tryOnly) {
+      const cleaned = cleanCandidates(Array.isArray(raw?.candidates) ? raw.candidates : [], []);
+      const outFile = join(process.cwd(), `look-scout-${Date.now()}.json`);
+      writeFileSync(outFile, JSON.stringify({ raw, ...cleaned }, null, 2));
+      log(`Scout (try): ${cleaned.kept.length} kept, ${cleaned.dropped.length} left out. Saved to ${outFile}; nothing sent to the site.`);
+      return cleaned.kept.length;
+    }
+    const response = await fetch(`${SITE}/api/runner/looks/suggestions`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+      body: JSON.stringify({ candidates: Array.isArray(raw?.candidates) ? raw.candidates : [] }),
+    });
+    if (!response.ok) throw new Error(`The site refused the suggestions (${response.status}).`);
+    const { saved, dropped } = (await response.json()) as { saved: number; dropped: string[] };
+    log(`Scout: ${saved} suggestion(s) saved${dropped.length ? `; left out: ${dropped.join("; ")}` : ""}. Queue them at ${SITE}/admin/outfits/from-links`);
+    return saved;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Runs the scout once a day after SCOUT_HOUR_IST; never stops the runner. */
+async function maybeScout() {
+  const state = readScoutState();
+  const today = istToday();
+  if (state.lastDay === today || istHour() < SCOUT_HOUR_IST) return;
+  if (state.failedAt && Date.now() - state.failedAt < SCOUT_RETRY_MS) return;
+  try {
+    await scout();
+    writeFileSync(SCOUT_STATE, JSON.stringify({ lastDay: today }));
+  } catch (error) {
+    log(`Scout failed: ${error instanceof Error ? error.message : String(error)} (will try again in 2 hours)`);
+    writeFileSync(SCOUT_STATE, JSON.stringify({ ...state, failedAt: Date.now() }));
+  }
+}
+
 async function main() {
+  if (process.argv.includes("--scout-try")) return void (await scout(true));
+  if (process.argv.includes("--scout")) return void (await scout());
   if (process.argv.includes("--check")) return checkOne();
   if (process.argv.includes("--try")) return tryOne();
   log(`Look research runner → ${SITE}${ONCE ? " (one job)" : " (Ctrl+C to stop)"}`);
   for (;;) {
+    if (!ONCE) await maybeScout();
     const response = await site("/api/runner/looks/claim");
     if (response.status === 204) {
       if (ONCE) return log("Nothing waiting.");

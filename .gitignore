@@ -45,3 +45,4 @@ next-env.d.ts
 
 # Local research try-outs (npm run looks:runner -- --try)
 look-try-*.json
+look-scout-*.json

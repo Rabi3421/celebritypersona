@@ -6,7 +6,52 @@ import { listLookJobs } from "@/lib/db/look-jobs";
 import { canCancel, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
 import styles from "@/app/admin/panel.module.css";
 import local from "@/components/admin/look-jobs.module.css";
-import { cancelLookJobAction, removeLookJobAction } from "./actions";
+import { listSuggestions } from "@/lib/db/look-suggestions";
+import type { LookSuggestion } from "@/lib/look-suggestions";
+import { cancelLookJobAction, dismissSuggestionAction, queueSuggestionAction, removeLookJobAction } from "./actions";
+
+function SuggestionRow({ suggestion }: { suggestion: LookSuggestion }) {
+  return (
+    <li className={local.job} id={`suggestion-${suggestion.id}`}>
+      <span className={`${local.thumb} ${local.thumbEmpty}`}>{suggestion.score}/10</span>
+      <div className={local.jobMain}>
+        <strong>
+          {suggestion.celebrity} · {suggestion.event}
+        </strong>
+        <div className={local.jobMeta}>
+          {suggestion.date} · {suggestion.why}
+        </div>
+        <div className={local.jobMeta}>
+          <a href={suggestion.instagramUrl} target="_blank" rel="noreferrer">
+            Instagram post ↗
+          </a>
+          {suggestion.buyUrls.map((url) => (
+            <span key={url}>
+              {" · "}
+              <a href={url} target="_blank" rel="noreferrer">
+                {host(url)} ↗
+              </a>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className={local.jobActions}>
+        <form action={queueSuggestionAction}>
+          <input type="hidden" name="id" value={suggestion.id} />
+          <button type="submit" className={styles.newButton}>
+            Queue research
+          </button>
+        </form>
+        <form action={dismissSuggestionAction}>
+          <input type="hidden" name="id" value={suggestion.id} />
+          <button type="submit" className={styles.ghost}>
+            Dismiss
+          </button>
+        </form>
+      </div>
+    </li>
+  );
+}
 
 /** Always the queue as it stands; a cached list would hide the runner's progress. */
 export const dynamic = "force-dynamic";
@@ -122,7 +167,14 @@ export default async function LookFromLinksPage({
 }: {
   searchParams: Promise<{ queued?: string }>;
 }) {
-  const [{ queued }, allJobs, outfits] = await Promise.all([searchParams, listLookJobs(), getAllOutfits()]);
+  const [{ queued }, allJobs, outfits, allSuggestions] = await Promise.all([
+    searchParams,
+    listLookJobs(),
+    getAllOutfits(),
+    listSuggestions(),
+  ]);
+  // Only what still waits for a decision, newest batch first.
+  const suggestions = allSuggestions.filter((suggestion) => suggestion.status === "suggested");
   // A job's work is done once the editor publishes its draft: it leaves the
   // queue. (The job record stays, so the research behind a look is kept.)
   const published = new Set(outfits.filter((outfit) => outfit.status === "published").map((outfit) => outfit.id));
@@ -140,6 +192,22 @@ export default async function LookFromLinksPage({
             published. Add the next look whenever you like.
           </p>
         </div>
+      ) : null}
+
+      {suggestions.length ? (
+        <section className={styles.section} id="suggestions">
+          <div className={styles.sectionHead}>
+            <h2>Suggested by the morning scout</h2>
+            <p className={local.jobMeta}>
+              Recent celebrity looks worth decoding, found by Claude each morning. Nothing is researched until you queue it.
+            </p>
+          </div>
+          <ul className={local.jobs}>
+            {suggestions.map((suggestion) => (
+              <SuggestionRow suggestion={suggestion} key={suggestion.id} />
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {/* Keyed by the job just queued, so the next look starts with an empty form. */}

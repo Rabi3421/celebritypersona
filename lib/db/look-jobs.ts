@@ -125,3 +125,8 @@ export async function setCheckCleared(jobId: string, check: string, cleared: boo
   await collection.updateOne({ id: jobId }, { $set: { "findings.cleared": next, updatedAt: new Date().toISOString() } });
   return true;
 }
+
+/** Every Instagram post a job was ever queued for, so the scout skips them. */
+export async function queuedPosts(): Promise<string[]> {
+  return (await jobs()).distinct("instagramUrl");
+}
