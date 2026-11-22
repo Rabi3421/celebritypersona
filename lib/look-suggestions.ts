@@ -62,7 +62,8 @@ export const scoutCandidateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   instagramUrl: z.string().trim().max(500),
   buyUrls: z.array(z.string().trim().max(2000)).max(MAX_BUY_URLS),
-  why: z.string().trim().min(10).max(300),
+  // A long reason is shortened, not a reason to throw a good look away.
+  why: z.string().trim().min(10).max(1000).transform((value) => (value.length > 300 ? `${value.slice(0, 299).trimEnd()}…` : value)),
   score: z.number().min(1).max(10),
   sources: z.array(httpsUrl).max(5).default([]),
 });
