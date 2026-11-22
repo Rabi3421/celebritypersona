@@ -3,6 +3,7 @@
 .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; color: var(--ash); padding: var(--s4) 0; white-space: nowrap; overflow-x: auto; }
 .crumb a:hover { color: var(--rani); }
 .crumb i { font-style: normal; margin: 0 6px; color: var(--line); }
+@media (max-width: 560px) { .crumbHere { display: none; } }
 /* The photo column is sized by the height it has to fit into (see .frame
    below), so the track is capped the same way rather than left at 1fr — a 1fr
    track would keep the old width and open a void between the picture and the

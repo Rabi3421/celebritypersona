@@ -1,4 +1,5 @@
 "use client";
+import { useHydrated } from "@/lib/use-hydrated";
 import Image from "next/image";
 import Link from "next/link";
 import {useMemo,useState} from "react";
@@ -58,7 +59,11 @@ function defaultEventDate(nextDate?:string){
 
 export function OccasionDetail({occasion,outfits,related}:{occasion:OccasionView;outfits:Outfit[];related:OccasionView[]}){
   const stats=occasion.stats;
-  const [eventDate,setEventDate]=useState(()=>defaultEventDate(occasion.nextDate));
+  // The default date counts from today, so it is chosen only in the browser
+  // (see useHydrated); the server's copy says "Choose a date".
+  const hydrated=useHydrated();
+  const [picked,setEventDate]=useState<string|null>(null);
+  const eventDate=picked??(hydrated?defaultEventDate(occasion.nextDate):"");
   const [budget,setBudget]=useState<number|null>(null);const [sort,setSort]=useState<SortMode>("new");const saved=useSavedList("looks");
   const verdict=useMemo(()=>deliveryVerdict(eventDate),[eventDate]);
   const results=useMemo(()=>outfits.filter((outfit)=>!budget||swapSortKey(outfit)<=budget).sort((a,b)=>sort==="saving"?savingSortKey(b)-savingSortKey(a):sort==="cheap"?swapSortKey(a)-swapSortKey(b):b.date.localeCompare(a.date)),[budget,outfits,sort]);

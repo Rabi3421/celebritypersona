@@ -61,5 +61,7 @@
   .shell { padding: 0 var(--s5); }
   .grid { grid-template-columns: 1fr; }
   .form input { padding-right: var(--s5); }
+  /* The button drops below the box here, so centre the icon on the box (about 58px tall), not the form. */
+  .form span { top: 29px; }
   .form button { position: static; transform: none; display: block; width: 100%; margin-top: var(--s3); }
 }

@@ -252,6 +252,11 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
           <main className={styles.results}>
             <div className={styles.toolbar}>
               <p className={styles.count}><b>{results.length}</b> looks</p>
+              {/* Phones: in the toolbar rather than floating over the cards; the
+                  count shows only when filters are actually on. */}
+              <button className={styles.mobileFilterButton} type="button" onClick={() => setFiltersOpen(true)}>
+                Filters{activeFilterCount > 0 ? <em>{activeFilterCount}</em> : null}
+              </button>
               <div className={styles.viewToggle} role="group" aria-label="Grid density">
                 <button type="button" aria-pressed={!dense} title="Comfortable" onClick={() => setDense(false)}>▤</button>
                 <button type="button" aria-pressed={dense} title="Compact" onClick={() => setDense(true)}>▦</button>
@@ -313,9 +318,6 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
         </div>
       </div>
 
-      <button className={styles.mobileFilterButton} type="button" onClick={() => setFiltersOpen(true)}>
-        ⚙ Filters <em>{activeFilterCount}</em>
-      </button>
 
       {(quickView || filtersOpen) && <button className={styles.scrim} type="button" aria-label="Close overlay" onClick={() => { setQuickView(null); setFiltersOpen(false); }} />}
       {quickView && (

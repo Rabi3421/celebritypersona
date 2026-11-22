@@ -50,8 +50,12 @@ button{font-family:inherit}
   transition:transform 220ms ease-out,opacity 200ms ease}
 
 /* ────────── REVEAL SYSTEM ────────── */
-.rv{opacity:0;transform:translateY(26px);
-  transition:opacity var(--vslow) var(--ease),transform var(--vslow) var(--ease)}
+/* Content is visible by default. Only once ScrollEffects is running (it sets
+   html.rv-on, after showing whatever is already on screen) does content below
+   the fold wait to glide in. Without the script, or before it loads on a slow
+   phone, nothing is ever hidden — and Google's renderer sees every section. */
+.rv{transition:opacity var(--vslow) var(--ease),transform var(--vslow) var(--ease)}
+.rv-on .rv:not(.in){opacity:0;transform:translateY(26px)}
 .rv.in{opacity:1;transform:none}
 .rv-d1{transition-delay:70ms}.rv-d2{transition-delay:140ms}
 .rv-d3{transition-delay:210ms}.rv-d4{transition-delay:280ms}
@@ -565,7 +569,13 @@ button.reel{padding:0;border:0;font:inherit;color:inherit;text-align:left;cursor
   .sform{min-width:0;flex-direction:column}
   .camp{padding:var(--s8) var(--s5)}
   body{padding-bottom:64px}
-  .consent{bottom:calc(64px + var(--s3) + env(safe-area-inset-bottom));padding:var(--s4)}
+  /* Phones: a compact bar above the tab bar, so the page's headline stays in
+     view; the two answers share one row, equal in size. */
+  .consent{bottom:calc(64px + var(--s2) + env(safe-area-inset-bottom));left:var(--s3);right:var(--s3);
+    padding:var(--s3) var(--s4);gap:var(--s2)}
+  .consent p{font-size:13px;line-height:1.45}
+  .consent-actions{flex-wrap:nowrap}
+  .consent .consent-choice{flex:1;padding:10px 8px;font-size:13.5px;justify-content:center}
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:90;
     background:var(--paper);border-top:1px solid var(--line);height:64px;padding-bottom:env(safe-area-inset-bottom)}
   .tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;

@@ -1,4 +1,5 @@
 "use client";
+import { useHydrated } from "@/lib/use-hydrated";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,9 +29,11 @@ const longDate = new Intl.DateTimeFormat("en-IN", { day:"numeric", month:"short"
 
 function formatDay(value: string | null) { return value ? longDate.format(new Date(`${value}T00:00:00`)) : null; }
 
-/** "3 days ago" only once there is a day to count from. */
-function agoLabel(value: string | null) {
+/** "3 days ago" only once there is a day to count from, and only in the
+ *  browser: the cached page was rendered on another day (see useHydrated). */
+function agoLabel(value: string | null, hydrated = true) {
   if (!value) return "No looks yet";
+  if (!hydrated) return `Updated ${formatDay(value)}`;
   const days = Math.round((Date.now() - Date.parse(`${value}T00:00:00`)) / 86_400_000);
   if (days <= 0) return "Updated today";
   if (days === 1) return "Updated yesterday";
@@ -39,6 +42,7 @@ function agoLabel(value: string | null) {
 
 export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: CelebrityView; outfits: Outfit[]; similar: CelebrityView[] }) {
   // Both lists live in the browser, shared with the header badge and /saved.
+  const hydrated = useHydrated();
   const saved = useSavedList("looks");
   const followed = useSavedList("people");
   const [occasion, setOccasion] = useState<string | null>(null);
@@ -97,7 +101,7 @@ export function CelebrityProfile({ celebrity, outfits, similar }: { celebrity: C
               {/* "Updated 3 days ago" is the right thing to read and the wrong
                   thing to parse, so the day it counts from rides along in the
                   `datetime` attribute. Same for the re-check date below. */}
-              <h1>{celebrity.name} outfits</h1><p className={styles.subtitle}>Style archive · {stats.lastDecoded ? <time dateTime={stats.lastDecoded}>{agoLabel(stats.lastDecoded)}</time> : agoLabel(stats.lastDecoded)}</p>
+              <h1>{celebrity.name} outfits</h1><p className={styles.subtitle}>Style archive · {stats.lastDecoded ? <time dateTime={stats.lastDecoded}>{agoLabel(stats.lastDecoded, hydrated)}</time> : agoLabel(stats.lastDecoded)}</p>
               {bio.map((paragraph) => <p className={styles.bio} key={paragraph}>{paragraph}</p>)}
               <p className={styles.byline}>Written by <Link href="/authors/rabi"><b>Rabi</b></Link>{checked ? <> · Prices re-checked <b><time dateTime={stats.lastChecked ?? undefined}>{checked}</time></b></> : null} · <Link href={`/report-a-price?piece=${encodeURIComponent(celebrity.name)}`}>Report a correction</Link></p>
               <div className={styles.heroStats}>

@@ -45,9 +45,14 @@ export function ScrollEffects() {
       },
       { threshold: 0.14, rootMargin: "0px 0px -40px 0px" },
     );
-    document
-      .querySelectorAll(".rv, .titem, .stat")
-      .forEach((el) => reveal.observe(el));
+    // What is already on screen stays shown; only what is below the fold is
+    // hidden (via html.rv-on, see home.css) and glides in on scroll.
+    const reveals = Array.from(document.querySelectorAll(".rv, .titem, .stat"));
+    for (const el of reveals) {
+      if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add("in");
+      else reveal.observe(el);
+    }
+    document.documentElement.classList.add("rv-on");
 
     const onTileKey = (event: KeyboardEvent) => {
       if (event.key !== "Enter") return;
@@ -66,6 +71,7 @@ export function ScrollEffects() {
     return () => {
       window.removeEventListener("scroll", onScroll);
       reveal.disconnect();
+      document.documentElement.classList.remove("rv-on");
       tiles.forEach((tile) => tile.removeEventListener("keydown", onTileKey));
     };
   }, []);

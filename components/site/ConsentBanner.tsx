@@ -47,10 +47,9 @@ export function ConsentBanner() {
   return (
     <section className="consent" role="region" aria-label="Analytics choices">
       <p>
-        <b>Can we count your visit?</b> If you accept, we use Google Analytics and PostHog to see which
-        looks and pages people use and to catch errors on the site. Nothing is loaded until you choose, and
-        you can change your mind any time from the footer. <Link href="/privacy">Privacy</Link> ·{" "}
-        <Link href="/cookies">Cookies</Link>
+        <b>Can we count your visit?</b> Only if you accept do we load Google Analytics and PostHog, to see
+        which looks people read and to catch errors. Change it any time in the footer.{" "}
+        <Link href="/privacy">Privacy</Link> · <Link href="/cookies">Cookies</Link>
       </p>
       {reopened && consent !== "undecided" ? (
         <p className="consent-now">Analytics is currently {consent === "accepted" ? "on" : "off"}.</p>

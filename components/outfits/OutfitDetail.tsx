@@ -273,8 +273,10 @@ export function OutfitDetail({
               schema always claimed, which also gives every look on the site a
               crumb-level link to its celebrity hub. `.crumb a` carries only a
               hover colour, so at rest it looks exactly as it did. */}
-          <Link href={`/celebrities/${nameSlug(outfit.celebrity)}`}>{outfit.celebrity}</Link><i>›</i>
-          <span>{outfit.event}</span>
+          <Link href={`/celebrities/${nameSlug(outfit.celebrity)}`}>{outfit.celebrity}</Link>
+          {/* The look itself: hidden on phones, where it was clipped mid-word; the
+              heading right below names it. */}
+          <span className={styles.crumbHere}><i>›</i>{outfit.event}</span>
         </nav>
 
         <div className={styles.split}>
