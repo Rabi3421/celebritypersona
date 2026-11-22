@@ -89,3 +89,35 @@ export async function shareImage(outfit: Outfit, kind: ShareKind, headers: Recor
     { width, height, headers },
   );
 }
+
+/**
+ * The look's main preview image for Google Discover and Search: 1200×675, the
+ * whole real photo centred on a blurred, darkened copy of itself. No text and
+ * no logo, as Discover's guidance asks; nothing is generated or altered.
+ * Returns JPEG bytes, or null when the look has no usable photo.
+ */
+export async function coverJpeg(outfit: Outfit): Promise<Buffer | null> {
+  const url = outfitPhotos(outfit)[0]?.url;
+  if (!url) return null;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) return null;
+    const source = sharp(Buffer.from(await response.arrayBuffer())).rotate();
+    const [backdrop, front] = await Promise.all([
+      source.clone().resize(1200, 675, { fit: "cover" }).blur(40).modulate({ brightness: 0.72 }).toBuffer(),
+      source.clone().resize(1200, 675, { fit: "inside" }).toBuffer(),
+    ]);
+    return await sharp(backdrop)
+      .composite([{ input: front, gravity: "centre" }])
+      .jpeg({ quality: 84, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
+/** The text card as JPEG: a quarter of the PNG's size, which chat apps prefer. */
+export async function cardJpeg(outfit: Outfit): Promise<Buffer> {
+  const png = Buffer.from(await (await shareImage(outfit, "card", {})).arrayBuffer());
+  return sharp(png).jpeg({ quality: 86, mozjpeg: true }).toBuffer();
+}

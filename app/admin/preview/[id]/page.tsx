@@ -4,6 +4,8 @@ import { Footer } from "@/components/site/Footer";
 import { Nav } from "@/components/site/Nav";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getAllOutfits } from "@/lib/db/content";
+import { lookJobForOutfit } from "@/lib/db/look-jobs";
+import { ResearchChecks } from "@/components/admin/ResearchChecks";
 import { headline } from "@/lib/outfit-seo";
 import { isPublished } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
@@ -25,7 +27,7 @@ export default async function OutfitPreview({ params }: { params: Promise<{ id: 
   const outfit = (await getAllOutfits()).find((item) => String(item.id) === id);
   if (!outfit) notFound();
 
-  const live = isPublished(outfit);
+  const [live, job] = [isPublished(outfit), await lookJobForOutfit(outfit.id)];
   return (
     <>
       <p className={styles.previewBanner} role="status">
@@ -44,6 +46,7 @@ export default async function OutfitPreview({ params }: { params: Promise<{ id: 
         <a href={`/api/admin/share-image/${outfit.id}?kind=pin&download=1`}>download</a>
         {")"}
       </p>
+      {job ? <ResearchChecks job={job} outfitId={outfit.id} /> : null}
       <Nav active="outfits" />
       <OutfitDetail outfit={outfit} heading={headline(outfit)} sameCelebrity={[]} sameOccasion={[]} />
       <Footer />

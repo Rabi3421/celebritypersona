@@ -109,3 +109,19 @@ export async function finishedLookJobs(since: Date): Promise<LookJob[]> {
     )
     .toArray();
 }
+
+/** The research job behind an outfit, if it was made from one. */
+export async function lookJobForOutfit(outfitId: number): Promise<LookJob | null> {
+  return (await jobs()).findOne({ outfitId }, { sort: { finishedAt: -1 }, projection: { _id: 0 } });
+}
+
+/** Marks one of a job's checks as confirmed by the editor, or opens it again. */
+export async function setCheckCleared(jobId: string, check: string, cleared: boolean, by: string) {
+  const collection = await jobs();
+  const job = await collection.findOne({ id: jobId }, { projection: { _id: 0 } });
+  if (!job?.findings?.checks.includes(check)) return false;
+  const rest = (job.findings.cleared ?? []).filter((item) => item.check !== check);
+  const next = cleared ? [...rest, { check, by, at: new Date().toISOString() }] : rest;
+  await collection.updateOne({ id: jobId }, { $set: { "findings.cleared": next, updatedAt: new Date().toISOString() } });
+  return true;
+}

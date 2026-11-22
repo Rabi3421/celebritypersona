@@ -138,11 +138,10 @@ export default async function AdminOutfits({
           <strong>
             Not published —{" "}
             {outfits.find((outfit) => String(outfit.id) === query.statusProblem?.split("|")[0])?.celebrity ?? "that look"}{" "}
-            fails a critical check.
+            is not ready to go live.
           </strong>
           <p>
-            {query.statusProblem.split("|").slice(1).join("|")}. Open it with Edit to fix it; it stays a draft until
-            then.
+            {query.statusProblem.split("|").slice(1).join("|")}. Fix it in the editor or on its preview page; it stays a draft until then.
           </p>
         </div>
       ) : null}

@@ -32,6 +32,8 @@ export type SeoInput = {
   absoluteTitle?: boolean;
   /** Photos of the thing this page is about, best first. */
   images?: { url: string; alt?: string }[];
+  /** A different image for X and chat-app previews (twitter:image); defaults to `images`. */
+  socialImage?: string;
   type?: "website" | "article" | "profile";
   /** Set false for pages that exist for readers but not for the index. */
   index?: boolean;
@@ -103,6 +105,7 @@ export function pageMetadata({
   path,
   absoluteTitle,
   images,
+  socialImage,
   type = "website",
   index = true,
   publishedTime,
@@ -158,7 +161,7 @@ export function pageMetadata({
       card: "summary_large_image",
       title,
       description: snippet,
-      images: cards.map((card) => card.url),
+      images: socialImage ? [socialImage] : cards.map((card) => card.url),
     },
   };
 }

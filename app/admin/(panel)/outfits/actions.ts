@@ -12,6 +12,8 @@ import { isPublished, outfitPhotos, pieceLink, type OutfitItem } from "@/lib/typ
 import { fieldErrors, outfitSchema, type FieldErrors } from "@/lib/validation";
 import { blockingChecks, seoChecks } from "@/lib/seo-checks";
 import { keywordOwners } from "@/lib/keyword-owners";
+import { lookJobForOutfit } from "@/lib/db/look-jobs";
+import { reviewProblem } from "@/lib/look-jobs";
 
 export type OutfitFormState = {
   attempt?: number;
@@ -179,6 +181,12 @@ export async function saveOutfit(
     });
   }
 
+  // A look made from research also needs every research check confirmed.
+  if (goingLive && isUpdate) {
+    const problem = reviewProblem(await lookJobForOutfit(id));
+    if (problem) return fail({ status: `Not published — ${problem} (/admin/preview/${id}). Or save as a draft.` });
+  }
+
   if (isUpdate) {
     await updateOutfit(id, outfit);
     // Held on the form rather than redirected away, so what is still missing
@@ -240,6 +248,11 @@ export async function changeOutfitStatus(form: FormData) {
         { id, owners: keywordOwners(outfits) },
       ),
     );
+    const problem = reviewProblem(await lookJobForOutfit(id));
+    if (problem) {
+      back.searchParams.set("statusProblem", `${id}|${problem}`);
+      redirect(back.pathname + back.search);
+    }
     if (blocking.length) {
       const reasons = blocking.map((check) => `${check.label}${check.detail ? ` — ${check.detail}` : ""}`).join(" · ");
       back.searchParams.set("statusProblem", `${id}|${reasons}`.slice(0, 600));

@@ -41,8 +41,28 @@ export type LookJob = {
     checks: string[];
     /** Which AI tools produced it, e.g. ["claude"]. */
     by: string[];
+    /** Checks the editor has confirmed, by their exact text; see `openChecks`. */
+    cleared?: { check: string; by: string; at: string }[];
   };
 };
+
+/**
+ * The research checks still waiting for the editor. A look made from research
+ * cannot go live while any is open: Google expects a person to fact-check
+ * AI-assisted pages before they are published, and these are exactly the
+ * points the research could not settle or Codex disputed.
+ */
+export function openChecks(job: Pick<LookJob, "findings"> | null | undefined): string[] {
+  if (!job?.findings) return [];
+  const done = new Set((job.findings.cleared ?? []).map((item) => item.check));
+  return job.findings.checks.filter((check) => !done.has(check));
+}
+
+/** The sentence Publish answers with when checks are open, or null. */
+export function reviewProblem(job: Pick<LookJob, "findings"> | null | undefined): string | null {
+  const open = openChecks(job).length;
+  return open ? `${open} research check${open === 1 ? " is" : "s are"} still open. Confirm each one on the preview page first` : null;
+}
 
 /** A job the runner claimed this long ago and never finished is offered again. */
 export const STALE_RUNNING_MS = 45 * 60 * 1000;

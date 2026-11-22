@@ -57,10 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     path,
     type: "article",
-    // The share card first (the real cover photo beside the name and prices,
-    // drawn to the 1200×630 link previews use), then the photos themselves.
+    // First the cover: the whole real photo at 1200×675 with no text, which is
+    // what Discover asks for. Then the photos themselves. X and chat apps get
+    // the card with the name and prices instead (socialImage).
+    ...(photos.length ? { socialImage: `${path}/card.jpg?v=${shareVersion(outfit)}` } : {}),
     images: [
-      ...(photos.length ? [{ url: `${path}/card.png?v=${shareVersion(outfit)}`, alt: outfitAlt(outfit, 0) }] : []),
+      ...(photos.length ? [{ url: `${path}/cover.jpg?v=${shareVersion(outfit)}`, alt: outfitAlt(outfit, 0) }] : []),
       ...photos.map((photo, index) => ({ url: photo.url, alt: outfitAlt(outfit, index) })),
     ],
     publishedTime: dates.published,

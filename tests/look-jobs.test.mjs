@@ -7,6 +7,8 @@ import {
   instagramPostUrl,
   newLookJobId,
   newLookJobSchema,
+  openChecks,
+  reviewProblem,
   splitUrls,
 } from "@/lib/look-jobs";
 import { findAdminRoute } from "@/lib/admin-nav";
@@ -108,4 +110,17 @@ test("the page has its own title, and outfit edit pages keep theirs", () => {
   assert.equal(findAdminRoute("/admin/outfits/from-links")?.label, "New look from links");
   assert.equal(findAdminRoute("/admin/outfits/12")?.label, "Edit outfit");
   assert.equal(findAdminRoute("/admin/outfits/new")?.label, "New outfit");
+});
+
+test("a researched look cannot go live until the editor confirms every check", () => {
+  const job = { findings: { evidence: [], by: ["claude", "codex"], checks: ["Confirm the swap price", "Confirm the date"] } };
+  assert.deepEqual(openChecks(job), ["Confirm the swap price", "Confirm the date"]);
+  assert.match(reviewProblem(job), /^2 research checks are still open/);
+  const one = { findings: { ...job.findings, cleared: [{ check: "Confirm the date", by: "editor@example.com", at: "2026-11-22T10:00:00Z" }] } };
+  assert.deepEqual(openChecks(one), ["Confirm the swap price"]);
+  assert.match(reviewProblem(one), /^1 research check is still open/);
+  const all = { findings: { ...job.findings, cleared: job.findings.checks.map((check) => ({ check, by: "e", at: "x" })) } };
+  assert.equal(reviewProblem(all), null);
+  assert.equal(reviewProblem(null), null, "a look made by hand has no research checks");
+  assert.equal(reviewProblem({ findings: { evidence: [], by: [], checks: [] } }), null);
 });
