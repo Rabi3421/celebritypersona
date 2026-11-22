@@ -26,6 +26,15 @@ export async function listLookJobs(limit = 50): Promise<LookJob[]> {
   return (await jobs()).find({}, { sort: { createdAt: -1 }, limit, projection: { _id: 0 } }).toArray();
 }
 
+export async function getLookJob(id: string): Promise<LookJob | null> {
+  return (await jobs()).findOne({ id }, { projection: { _id: 0 } });
+}
+
+/** Drops a finished job's record only, leaving any photo it names in place (for a retry, which reuses it). */
+export async function forgetLookJob(id: string): Promise<void> {
+  await (await jobs()).deleteOne({ id, status: { $in: ["failed", "cancelled"] } });
+}
+
 /** Stops a job the runner has not finished. A finished job is left alone. */
 export async function cancelLookJob(id: string): Promise<boolean> {
   const now = new Date().toISOString();

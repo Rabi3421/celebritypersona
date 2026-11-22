@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
-import { cancelLookJob, createLookJob, removeLookJob } from "@/lib/db/look-jobs";
+import { cancelLookJob, createLookJob, forgetLookJob, getLookJob, removeLookJob } from "@/lib/db/look-jobs";
 import { getSuggestion, setSuggestionStatus } from "@/lib/db/look-suggestions";
 import { text } from "@/lib/form-data";
 import { newLookJobId, newLookJobSchema } from "@/lib/look-jobs";
@@ -64,6 +64,30 @@ export async function cancelLookJobAction(form: FormData) {
   await cancelLookJob(text(form, "id"));
   revalidatePath(PAGE);
   redirect(PAGE);
+}
+
+/**
+ * Runs a failed or cancelled look again: a fresh job with the same links (a
+ * new id, so its result is announced like any other), and the old one removed.
+ */
+export async function retryLookJobAction(form: FormData) {
+  const session = await requireAdmin();
+  const job = await getLookJob(text(form, "id"));
+  if (!job || (job.status !== "failed" && job.status !== "cancelled")) redirect(PAGE);
+  const parsed = newLookJobSchema.safeParse({
+    instagramUrl: job.instagramUrl,
+    buyUrls: job.buyUrls.join("\n"),
+    note: job.note ?? "",
+    photoPath: job.photo?.path ?? "",
+    photoUrl: job.photo?.url ?? "",
+  });
+  if (!parsed.success) redirect(PAGE);
+  const id = newLookJobId((size) => randomBytes(size));
+  await createLookJob({ ...parsed.data, id }, session.email);
+  // The photo now belongs to the new job: drop the old record without deleting it.
+  await forgetLookJob(job.id);
+  revalidatePath(PAGE);
+  redirect(`${PAGE}?queued=${id}`);
 }
 
 export async function removeLookJobAction(form: FormData) {

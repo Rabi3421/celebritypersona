@@ -1,57 +1,22 @@
 import Link from "next/link";
+import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { LookFromLinksForm } from "@/components/admin/LookFromLinksForm";
 import { getAllOutfits } from "@/lib/db/content";
 import { listLookJobs } from "@/lib/db/look-jobs";
-import { canCancel, STATUS_LABEL, type LookJob } from "@/lib/look-jobs";
+import { listSuggestions } from "@/lib/db/look-suggestions";
+import { canCancel, openChecks, type LookJob } from "@/lib/look-jobs";
+import type { LookSuggestion } from "@/lib/look-suggestions";
+import type { Outfit } from "@/lib/types";
 import styles from "@/app/admin/panel.module.css";
 import local from "@/components/admin/look-jobs.module.css";
-import { listSuggestions } from "@/lib/db/look-suggestions";
-import type { LookSuggestion } from "@/lib/look-suggestions";
-import { cancelLookJobAction, dismissSuggestionAction, queueSuggestionAction, removeLookJobAction } from "./actions";
-
-function SuggestionRow({ suggestion }: { suggestion: LookSuggestion }) {
-  return (
-    <li className={local.job} id={`suggestion-${suggestion.id}`}>
-      <span className={`${local.thumb} ${local.thumbEmpty}`}>{suggestion.score}/10</span>
-      <div className={local.jobMain}>
-        <strong>
-          {suggestion.celebrity} · {suggestion.event}
-        </strong>
-        <div className={local.jobMeta}>
-          {suggestion.date} · {suggestion.why}
-        </div>
-        <div className={local.jobMeta}>
-          <a href={suggestion.instagramUrl} target="_blank" rel="noreferrer">
-            Instagram post ↗
-          </a>
-          {suggestion.buyUrls.map((url) => (
-            <span key={url}>
-              {" · "}
-              <a href={url} target="_blank" rel="noreferrer">
-                {host(url)} ↗
-              </a>
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className={local.jobActions}>
-        <form action={queueSuggestionAction}>
-          <input type="hidden" name="id" value={suggestion.id} />
-          <button type="submit" className={styles.newButton}>
-            Queue research
-          </button>
-        </form>
-        <form action={dismissSuggestionAction}>
-          <input type="hidden" name="id" value={suggestion.id} />
-          <button type="submit" className={styles.ghost}>
-            Dismiss
-          </button>
-        </form>
-      </div>
-    </li>
-  );
-}
+import {
+  cancelLookJobAction,
+  dismissSuggestionAction,
+  queueSuggestionAction,
+  removeLookJobAction,
+  retryLookJobAction,
+} from "./actions";
 
 /** Always the queue as it stands; a cached list would hide the runner's progress. */
 export const dynamic = "force-dynamic";
@@ -60,9 +25,10 @@ const when = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
   day: "numeric",
   month: "short",
-  hour: "2-digit",
+  hour: "numeric",
   minute: "2-digit",
 });
+const day = new Intl.DateTimeFormat("en-IN", { timeZone: "UTC", day: "numeric", month: "short" });
 
 const host = (url: string) => {
   try {
@@ -72,46 +38,153 @@ const host = (url: string) => {
   }
 };
 
-function JobRow({ job }: { job: LookJob }) {
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+const byLabel = (by: string[]) => by.map((name) => name.charAt(0).toUpperCase() + name.slice(1)).join(" + ");
+
+/** Long addresses inside research text become short links named by their site. */
+function Linked({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/[^\s)]+[^\s).,;:'"])/g);
   return (
-    <li className={local.job}>
-      {job.photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={local.thumb} src={job.photo.url} alt="" />
-      ) : (
-        <span className={`${local.thumb} ${local.thumbEmpty}`}>no photo</span>
+    <>
+      {parts.map((part, index) =>
+        index % 2 ? (
+          <a key={index} href={part} target="_blank" rel="noreferrer" className={local.inlineLink}>
+            {host(part)} ↗
+          </a>
+        ) : (
+          part
+        ),
       )}
-      <div className={local.jobMain}>
-        <a href={job.instagramUrl} target="_blank" rel="noreferrer">
-          {job.instagramUrl.replace("https://www.", "")}
+    </>
+  );
+}
+
+/** What a job is about, before and after research: the draft's names, else the scout's note, else the post. */
+function jobTitle(job: LookJob, outfit?: Outfit): { title: string; sub?: string } {
+  if (outfit) return { title: outfit.celebrity, sub: outfit.event };
+  const scout = job.note?.match(/^Scout: (.+?), (.+?)(?: \(\d{4}-\d{2}-\d{2}\))?\.?$/);
+  if (scout) return { title: scout[1], sub: scout[2] };
+  const post = job.instagramUrl.match(/instagram\.com\/(?:[^/]+\/)?(p|reel)\/([^/?#]+)/);
+  return { title: post ? `Instagram ${post[1] === "reel" ? "reel" : "post"} ${post[2]}` : "Instagram post", sub: job.note };
+}
+
+function Thumb({ src, label }: { src?: string; label: string }) {
+  return src ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={local.thumb} src={src} alt="" />
+  ) : (
+    <span className={`${local.thumb} ${local.thumbEmpty}`} aria-hidden="true">
+      {label
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((word) => word.charAt(0))
+        .join("")
+        .toUpperCase()}
+    </span>
+  );
+}
+
+function Links({ job }: { job: Pick<LookJob, "instagramUrl" | "buyUrls"> }) {
+  return (
+    <div className={local.links}>
+      <a href={job.instagramUrl} target="_blank" rel="noreferrer">
+        Instagram ↗
+      </a>
+      {job.buyUrls.map((url) => (
+        <a key={url} href={url} target="_blank" rel="noreferrer">
+          {host(url)} ↗
         </a>
-        <div className={local.jobMeta}>
-          {job.buyUrls.map(host).join(" · ")} · added {when.format(new Date(job.createdAt))}
+      ))}
+    </div>
+  );
+}
+
+function RemoveButton({ job, label = "Remove" }: { job: LookJob; label?: string }) {
+  return (
+    <form action={removeLookJobAction}>
+      <input type="hidden" name="id" value={job.id} />
+      <ConfirmButton
+        className={local.textButton}
+        title="Remove from this list?"
+        message={job.outfitId ? "Only the job is removed. The draft outfit and its photo stay." : "The job and its uploaded photo are removed."}
+        confirmLabel="Remove"
+        pendingLabel="Removing…"
+      >
+        {label}
+      </ConfirmButton>
+    </form>
+  );
+}
+
+/** A draft waiting for the editor: who, how much is left to check, one clear way in. */
+function ReviewCard({ job, outfit }: { job: LookJob; outfit?: Outfit }) {
+  const { title, sub } = jobTitle(job, outfit);
+  const checks = job.findings?.checks ?? [];
+  const open = openChecks(job);
+  const evidence = job.findings?.evidence ?? [];
+  const confirmed = evidence.filter((item) => item.confidence === "confirmed").length;
+  const photo = outfit?.images?.[0]?.url ?? outfit?.image?.url ?? job.photo?.url;
+  const href = job.outfitId ? `/admin/preview/${job.outfitId}` : null;
+  return (
+    <li className={local.card}>
+      <Thumb src={photo} label={title} />
+      <div className={local.body}>
+        <h3 className={local.title}>
+          {title}
+          {sub ? <span> · {sub}</span> : null}
+        </h3>
+        <p className={local.meta}>
+          {job.findings?.by.length ? `Researched by ${byLabel(job.findings.by)} · ` : ""}
+          ready {when.format(new Date(job.finishedAt ?? job.updatedAt))}
+        </p>
+        <div className={local.chips}>
+          {checks.length ? (
+            open.length ? (
+              <span className={`${local.chip} ${local.chipWarn}`}>
+                {open.length === checks.length
+                  ? `${plural(checks.length, "check")} to do`
+                  : `${open.length} of ${plural(checks.length, "check")} left`}
+              </span>
+            ) : (
+              <span className={`${local.chip} ${local.chipOk}`}>All checks done</span>
+            )
+          ) : (
+            <span className={`${local.chip} ${local.chipOk}`}>Nothing flagged</span>
+          )}
+          {photo ? null : <span className={local.chip}>Needs the real photo</span>}
+          {evidence.length ? (
+            <span className={local.chip}>
+              {plural(evidence.length, "sourced fact")} · {confirmed} confirmed
+            </span>
+          ) : null}
         </div>
-        {job.note ? <div className={local.jobMeta}>“{job.note}”</div> : null}
-        {job.error ? <div className={local.jobError}>{job.error}</div> : null}
-        {job.findings ? (
-          <details className={local.findings} open={job.status === "drafted"}>
-            <summary>
-              {job.findings.checks.length
-                ? `${job.findings.checks.length} thing${job.findings.checks.length === 1 ? "" : "s"} to check before publishing`
-                : "Nothing flagged"}{" "}
-              · {job.findings.evidence.length} sourced facts
-              {job.findings.by.length ? ` · researched by ${job.findings.by.join(" + ")}` : ""}
-            </summary>
-            {job.findings.checks.length ? (
-              <ol className={local.checks}>
-                {job.findings.checks.map((check) => (
-                  <li key={check}>{check}</li>
-                ))}
-              </ol>
-            ) : null}
+        {checks.length && open.length < checks.length ? (
+          <div className={local.progress} aria-hidden="true">
+            <span style={{ width: `${((checks.length - open.length) / checks.length) * 100}%` }} />
+          </div>
+        ) : null}
+        {open.length ? (
+          <details className={local.more}>
+            <summary>What to check ({open.length})</summary>
+            <ol className={local.checks}>
+              {open.map((check) => (
+                <li key={check}>
+                  <Linked text={check} />
+                </li>
+              ))}
+            </ol>
+            <p className={local.hint}>You tick these off on the review page; Publish unlocks when all are done.</p>
+          </details>
+        ) : null}
+        {evidence.length ? (
+          <details className={local.more}>
+            <summary>Sourced facts ({evidence.length})</summary>
             <ul className={local.evidence}>
-              {job.findings.evidence.map((item) => (
+              {evidence.map((item) => (
                 <li key={item.claim}>
                   <span className={local[`c_${item.confidence}`]}>{item.confidence}</span> {item.claim}{" "}
                   {item.sources.map((source, index) => (
-                    <a href={source} key={source} rel="noreferrer" target="_blank">
+                    <a href={source} key={source} rel="noreferrer" target="_blank" title={host(source)}>
                       [{index + 1}]
                     </a>
                   ))}
@@ -120,17 +193,45 @@ function JobRow({ job }: { job: LookJob }) {
             </ul>
           </details>
         ) : null}
+        <Links job={job} />
       </div>
-      <div className={local.jobActions}>
-        <span className={`${local.badge} ${local[job.status]}`}>{STATUS_LABEL[job.status]}</span>
-        {job.status === "drafted" && job.outfitId ? (
-          <Link href={`/admin/preview/${job.outfitId}`}>Review draft →</Link>
+      <div className={local.actions}>
+        {href ? (
+          <Link href={href} className={`${styles.newButton} ${local.primary}`}>
+            Review draft →
+          </Link>
         ) : null}
+        <RemoveButton job={job} label="Remove from list" />
+      </div>
+    </li>
+  );
+}
+
+/** Waiting for, or with, the runner. */
+function ProgressCard({ job }: { job: LookJob }) {
+  const { title, sub } = jobTitle(job);
+  const running = job.status === "running";
+  return (
+    <li className={`${local.card} ${local.compact}`}>
+      <span className={`${local.dot} ${running ? local.dotLive : ""}`} aria-hidden="true" />
+      <div className={local.body}>
+        <h3 className={local.title}>
+          {title}
+          {sub ? <span> · {sub}</span> : null}
+        </h3>
+        <p className={local.meta}>
+          {running
+            ? `Researching since ${when.format(new Date(job.startedAt ?? job.updatedAt))} · usually 5–10 minutes`
+            : `Waiting for the runner · added ${when.format(new Date(job.createdAt))}`}
+        </p>
+        <Links job={job} />
+      </div>
+      <div className={local.actions}>
         {canCancel(job.status) ? (
           <form action={cancelLookJobAction}>
             <input type="hidden" name="id" value={job.id} />
             <ConfirmButton
-              className={styles.ghost}
+              className={local.textButton}
               title="Cancel this research?"
               message="The runner skips it, or stops before saving a draft if it has already started."
               confirmLabel="Cancel research"
@@ -139,26 +240,101 @@ function JobRow({ job }: { job: LookJob }) {
               Cancel
             </ConfirmButton>
           </form>
-        ) : (
-          <form action={removeLookJobAction}>
-            <input type="hidden" name="id" value={job.id} />
-            <ConfirmButton
-              className={styles.ghost}
-              title="Remove from this list?"
-              message={
-                job.outfitId
-                  ? "Only the job is removed. The draft outfit and its photo stay."
-                  : "The job and its uploaded photo are removed."
-              }
-              confirmLabel="Remove"
-              pendingLabel="Removing…"
-            >
-              Remove
-            </ConfirmButton>
-          </form>
-        )}
+        ) : null}
       </div>
     </li>
+  );
+}
+
+/** Failed or cancelled: say why, offer to run it again. */
+function ProblemCard({ job }: { job: LookJob }) {
+  const { title, sub } = jobTitle(job);
+  return (
+    <li className={`${local.card} ${local.compact}`}>
+      <span className={`${local.dot} ${job.status === "failed" ? local.dotBad : ""}`} aria-hidden="true" />
+      <div className={local.body}>
+        <h3 className={local.title}>
+          {title}
+          {sub ? <span> · {sub}</span> : null}
+        </h3>
+        <p className={job.status === "failed" ? local.error : local.meta}>
+          {job.status === "failed" ? <Linked text={job.error ?? "No reason recorded."} /> : "Cancelled"}
+          {" · "}
+          {when.format(new Date(job.finishedAt ?? job.updatedAt))}
+        </p>
+        <Links job={job} />
+      </div>
+      <div className={local.actions}>
+        <form action={retryLookJobAction}>
+          <input type="hidden" name="id" value={job.id} />
+          <button type="submit" className={styles.ghost}>
+            Try again
+          </button>
+        </form>
+        <RemoveButton job={job} />
+      </div>
+    </li>
+  );
+}
+
+function SuggestionCard({ suggestion }: { suggestion: LookSuggestion }) {
+  return (
+    <li className={local.card} id={`suggestion-${suggestion.id}`}>
+      <span className={`${local.thumb} ${local.score}`}>
+        <b>{suggestion.score}</b>
+        <small>/10</small>
+      </span>
+      <div className={local.body}>
+        <h3 className={local.title}>
+          {suggestion.celebrity}
+          <span> · {suggestion.event}</span>
+        </h3>
+        <p className={local.meta}>Worn {day.format(new Date(`${suggestion.date}T00:00:00Z`))}</p>
+        <p className={local.why}>{suggestion.why}</p>
+        <Links job={suggestion} />
+      </div>
+      <div className={local.actions}>
+        <form action={queueSuggestionAction}>
+          <input type="hidden" name="id" value={suggestion.id} />
+          <button type="submit" className={`${styles.newButton} ${local.primary}`}>
+            Research this look
+          </button>
+        </form>
+        <form action={dismissSuggestionAction}>
+          <input type="hidden" name="id" value={suggestion.id} />
+          <button type="submit" className={local.textButton}>
+            Not this one
+          </button>
+        </form>
+      </div>
+    </li>
+  );
+}
+
+function Section({
+  id,
+  title,
+  note,
+  count,
+  children,
+}: {
+  id: string;
+  title: string;
+  note?: string;
+  count?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={local.section} id={id} aria-labelledby={`${id}-title`}>
+      <div className={local.sectionHead}>
+        <h2 id={`${id}-title`}>
+          {title}
+          {count ? <span className={local.count}>{count}</span> : null}
+        </h2>
+        {note ? <p>{note}</p> : null}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -173,72 +349,123 @@ export default async function LookFromLinksPage({
     getAllOutfits(),
     listSuggestions(),
   ]);
-  // Only what still waits for a decision, newest batch first.
   const suggestions = allSuggestions.filter((suggestion) => suggestion.status === "suggested");
+  const byId = new Map(outfits.map((outfit) => [outfit.id, outfit]));
   // A job's work is done once the editor publishes its draft: it leaves the
   // queue. (The job record stays, so the research behind a look is kept.)
-  const published = new Set(outfits.filter((outfit) => outfit.status === "published").map((outfit) => outfit.id));
-  const jobs = allJobs.filter((job) => !(job.outfitId && published.has(job.outfitId)));
+  const isPublished = (job: LookJob) => job.outfitId !== undefined && byId.get(job.outfitId)?.status === "published";
+  const jobs = allJobs.filter((job) => !isPublished(job));
   const done = allJobs.length - jobs.length;
-  const waiting = jobs.filter((job) => job.status === "queued").length;
+
+  const review = jobs.filter((job) => job.status === "drafted");
+  // Oldest first: that is the order the runner takes them.
+  const inProgress = jobs.filter((job) => canCancel(job.status)).reverse();
+  const problems = jobs.filter((job) => job.status === "failed" || job.status === "cancelled");
+  const running = inProgress.some((job) => job.status === "running");
+
+  const summary = [
+    review.length ? { href: "#review", label: `${review.length} to review`, tone: local.sumWarn } : null,
+    suggestions.length ? { href: "#suggestions", label: `${suggestions.length} suggested`, tone: "" } : null,
+    inProgress.length ? { href: "#progress", label: running ? `${inProgress.length} researching` : `${inProgress.length} waiting`, tone: "" } : null,
+    problems.length ? { href: "#problems", label: `${problems.length} failed`, tone: local.sumBad } : null,
+  ].filter((item) => item !== null);
 
   return (
-    <>
+    <div className={local.page}>
+      {inProgress.length ? <AutoRefresh seconds={20} /> : null}
+
       {queued ? (
         <div className={styles.notice} role="status">
           <strong>Research queued.</strong>
           <p>
-            The runner on your computer picks it up and saves a draft outfit; you review it before anything is
-            published. Add the next look whenever you like.
+            The runner on your computer picks it up and saves a draft (usually 5–10 minutes). This page updates by itself, and
+            Slack tells you in #look-scout when it is ready.
           </p>
         </div>
+      ) : null}
+
+      <nav className={local.summary} aria-label="Queue summary">
+        {summary.length ? (
+          summary.map((item) => (
+            <a key={item.href} href={item.href} className={`${local.sum} ${item.tone}`}>
+              {item.label}
+            </a>
+          ))
+        ) : (
+          <span className={local.sumQuiet}>All clear: nothing to review or waiting.</span>
+        )}
+        <a href="#add" className={local.sumAdd}>
+          + Add a look
+        </a>
+      </nav>
+
+      {review.length ? (
+        <Section
+          id="review"
+          title="Ready to review"
+          count={review.length}
+          note="Open each draft, tick off the checks, add the real photo, then publish."
+        >
+          <ul className={local.list}>
+            {review.map((job) => (
+              <ReviewCard key={job.id} job={job} outfit={job.outfitId ? byId.get(job.outfitId) : undefined} />
+            ))}
+          </ul>
+        </Section>
       ) : null}
 
       {suggestions.length ? (
-        <section className={styles.section} id="suggestions">
-          <div className={styles.sectionHead}>
-            <h2>Suggested by the morning scout</h2>
-            <p className={local.jobMeta}>
-              Recent celebrity looks worth decoding, found by Claude each morning. Nothing is researched until you queue it.
-            </p>
-          </div>
-          <ul className={local.jobs}>
+        <Section
+          id="suggestions"
+          title="Suggested by the morning scout"
+          count={suggestions.length}
+          note="Fresh looks found by Claude this morning. Nothing is researched until you choose it."
+        >
+          <ul className={local.list}>
             {suggestions.map((suggestion) => (
-              <SuggestionRow suggestion={suggestion} key={suggestion.id} />
+              <SuggestionCard suggestion={suggestion} key={suggestion.id} />
             ))}
           </ul>
-        </section>
+        </Section>
       ) : null}
 
-      {/* Keyed by the job just queued, so the next look starts with an empty form. */}
-      <LookFromLinksForm key={queued ?? "new"} />
-
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2>Research queue</h2>
-          <p className={local.jobMeta}>
-            {waiting
-              ? `${waiting} waiting. Jobs run while the runner is on: npm run looks:runner`
-              : "Jobs run while the runner on your computer is on."}
-          </p>
-        </div>
-        {jobs.length ? (
-          <ul className={local.jobs}>
-            {jobs.map((job) => (
-              <JobRow job={job} key={job.id} />
+      {inProgress.length ? (
+        <Section
+          id="progress"
+          title="Being researched"
+          count={inProgress.length}
+          note="Runs while the runner on your computer is on (npm run looks:runner). This list updates by itself."
+        >
+          <ul className={local.list}>
+            {inProgress.map((job) => (
+              <ProgressCard key={job.id} job={job} />
             ))}
           </ul>
-        ) : (
-          <div className={styles.empty}>
-            {done ? "Nothing waiting or to review. Paste the next look above." : "No looks queued yet. Paste the first one above."}
-          </div>
-        )}
-        {done ? (
-          <p className={local.jobMeta} style={{ marginTop: 12 }}>
-            {done} researched look{done === 1 ? " is" : "s are"} published and no longer listed here.
-          </p>
-        ) : null}
-      </section>
-    </>
+        </Section>
+      ) : null}
+
+      <Section id="add" title="Add a look yourself" note="The Instagram post, and where the outfit can be bought.">
+        <div className={local.formBox}>
+          {/* Keyed by the job just queued, so the next look starts with an empty form. */}
+          <LookFromLinksForm key={queued ?? "new"} />
+        </div>
+      </Section>
+
+      {problems.length ? (
+        <Section id="problems" title="Didn't work" count={problems.length} note="Try again, or remove it.">
+          <ul className={local.list}>
+            {problems.map((job) => (
+              <ProblemCard key={job.id} job={job} />
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
+      {done ? (
+        <p className={local.footnote}>
+          {plural(done, "researched look")} {done === 1 ? "is" : "are"} published and no longer listed here.
+        </p>
+      ) : null}
+    </div>
   );
 }
