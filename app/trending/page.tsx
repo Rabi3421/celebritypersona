@@ -15,7 +15,7 @@ import { site } from "@/lib/site-config";
  */
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata({
-  title: "Trending Celebrity Outfit Questions & Latest Looks",
+  title: "Trending Celebrity Outfits & Questions",
   description:
     "The Indian celebrity outfit questions readers ask us most, each answered from the decoded archive — the pieces we identified, the prices we confirmed, and what a rebuild costs.",
   path: "/trending",

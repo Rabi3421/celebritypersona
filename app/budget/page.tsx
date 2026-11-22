@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Celebrity-Inspired Outfits by Budget",
       absoluteTitle: true,
       description:
-        "Start from what you can spend, not from the celebrity. Set a ceiling and see the complete celebrity looks the archive can rebuild inside it — every piece priced and linked.",
+        "Start from what you can spend, not the celebrity: the complete celebrity looks we can rebuild under your budget, every piece priced and linked.",
       path: "/budget",
       images: archiveCards(outfits),
     });

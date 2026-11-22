@@ -46,6 +46,9 @@ export function celebrityHeadline(celebrity: CelebrityView) {
 
 const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
+/** About what Google prints of a title before cutting it. */
+const TITLE_MAX = 60;
+
 /**
  * Occasion pages compete for "sangeet outfit ideas", "what to wear to a
  * mehendi", "Diwali outfit ideas" — a question, not a category. The title
@@ -58,9 +61,17 @@ export function occasionHeadline(occasion: OccasionView) {
   // Occasions that are places or events rather than ceremonies read wrong as
   // "Sangeet Outfit Ideas" would read right.
   const asPlace = ["Airport", "Red carpet", "Promo tour", "Casual"].includes(name);
-  return asPlace
-    ? `Celebrity ${lower} Looks — Outfits, Brands & Prices`
-    : `${name} Outfit Ideas — Celebrity Looks, Prices & Affordable Swaps`;
+  // The longest wording that fits in the ~60 characters Google shows; a long
+  // occasion name ("Photoshoot / Editorial") falls back to a shorter form
+  // rather than being cut off mid-phrase.
+  const options = asPlace
+    ? [`Celebrity ${lower} Looks — Outfits, Brands & Prices`, `Celebrity ${lower} Looks & Prices`]
+    : [
+        `${name} Outfit Ideas — Celebrity Looks, Prices & Swaps`,
+        `${name} Outfit Ideas: Celebrity Looks & Prices`,
+        `${name} Outfit Ideas from Celebrities`,
+      ];
+  return options.find((title) => title.length <= TITLE_MAX) ?? options[options.length - 1];
 }
 
 export function occasionDescription(occasion: OccasionView) {

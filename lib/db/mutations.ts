@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { revalidatePublicSite } from "@/lib/revalidation";
 import { deleteObject, ref } from "firebase/storage";
 import { uploaderStorage } from "@/lib/firebase";
@@ -58,7 +59,16 @@ import type {
 function revalidateSite(touched: string[] = []) {
   // The layout alone missed the sitemap, llms.txt and the search index.
   revalidatePublicSite();
-  void pingIndexNow([...ARCHIVE_HUBS, ...touched]).catch(() => {});
+  const ping = () => pingIndexNow([...ARCHIVE_HUBS, ...touched]).catch(() => {});
+  // after(): on Vercel the function may be frozen the moment the response is
+  // sent, and a fire-and-forget fetch can die with it. after() keeps it alive
+  // until the ping is out. Outside a request (a script), there is no request
+  // to outlive, so the ping simply runs.
+  try {
+    after(ping);
+  } catch {
+    void ping();
+  }
 }
 
 /** Totals are always the sum of the pieces, never typed in by hand. A piece
