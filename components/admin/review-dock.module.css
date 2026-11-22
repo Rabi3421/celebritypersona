@@ -1,0 +1,111 @@
+/* The review panel on a draft's preview. It sits outside the admin shell, on
+   the public page's styles, so it carries its own colours and type. */
+.shell{--bar-h:56px;--dock-w:400px;--rd-ink:#f4f2ee;--rd-muted:#a3a8b4;--rd-line:#343944;--rd-bg:#16181e;--rd-bg2:#1f232b;
+  --rd-rani:#e0006c;--rd-rani-soft:#ff89bb;--rd-jade:#7ee2b8;--rd-amber:#f0c674}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:0;z-index:95;height:var(--bar-h);display:flex;align-items:center;gap:12px;
+  padding:0 max(16px,env(safe-area-inset-left,0px));background:var(--rd-bg);color:var(--rd-ink);
+  border-bottom:2px solid var(--rd-rani);font:400 14px/1.3 system-ui,sans-serif}
+.back{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;color:var(--rd-ink);
+  text-decoration:none;font-size:18px;border:1px solid var(--rd-line);flex:none}
+.back:hover{border-color:var(--rd-rani)}
+.who{min-width:0;display:flex;align-items:baseline;gap:8px;overflow:hidden}
+.who strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.narrow{display:none}
+.who span{color:var(--rd-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.state{flex:none;font:600 11px/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;
+  padding:5px 9px;border-radius:99px;border:1px solid var(--rd-amber);color:var(--rd-amber)}
+.stateLive{border-color:var(--rd-jade);color:var(--rd-jade)}
+.barActions{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+
+.menu{position:relative}
+.menu summary,.edit,.panelToggle{display:inline-flex;align-items:center;height:36px;padding:0 12px;border-radius:8px;
+  border:1px solid var(--rd-line);background:transparent;color:var(--rd-ink);font:500 13px/1 system-ui,sans-serif;
+  cursor:pointer;text-decoration:none;white-space:nowrap;list-style:none}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary:hover,.edit:hover,.panelToggle:hover{border-color:var(--rd-rani-soft)}
+.menu[open] summary{border-color:var(--rd-rani-soft)}
+.menu > div{position:absolute;right:0;top:calc(100% + 6px);min-width:200px;display:grid;padding:6px;
+  background:var(--rd-bg2);border:1px solid var(--rd-line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:2}
+.menu > div a{padding:9px 10px;border-radius:6px;color:var(--rd-ink);text-decoration:none;font-size:13.5px}
+.menu > div a:hover{background:rgba(255,255,255,.06)}
+
+.publishForm{margin:0;display:flex}
+.publish,.liveLink{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;
+  border-radius:8px;border:0;background:var(--rd-rani);color:#fff;font:700 13.5px/1 system-ui,sans-serif;
+  cursor:pointer;white-space:nowrap;text-decoration:none}
+.publish:hover:not(:disabled){background:#b00055}
+.publish:disabled{background:#3a2a33;color:#c9a3b6;cursor:not-allowed}
+.liveLink{background:transparent;border:1px solid var(--rd-jade);color:var(--rd-jade)}
+.big{width:100%;height:46px;font-size:15px}
+.publish:focus-visible,.panelToggle:focus-visible,.edit:focus-visible,.menu summary:focus-visible,.tick:focus-visible,
+.back:focus-visible{outline:2px solid var(--rd-rani-soft);outline-offset:2px}
+
+/* ---------- the panel ---------- */
+.panel{background:var(--rd-bg);color:var(--rd-ink);font:400 14px/1.55 system-ui,sans-serif;
+  padding:18px max(16px,env(safe-area-inset-left,0px)) 20px;border-bottom:2px solid var(--rd-rani)}
+.panel[hidden]{display:none}
+.panel h2{font:700 18px/1.25 system-ui,sans-serif;margin:0}
+.summary p{margin:4px 0 0;color:var(--rd-muted);font-size:13px}
+.progress{height:6px;border-radius:3px;background:var(--rd-bg2);margin-top:10px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--rd-jade);border-radius:3px;transition:width 200ms}
+
+.notice{margin:0 0 14px;padding:10px 12px;border-radius:8px;font-size:13.5px}
+.notice a{color:inherit;font-weight:700}
+.noticeOk{background:rgba(126,226,184,.12);color:var(--rd-jade);border:1px solid rgba(126,226,184,.4)}
+.noticeBad{background:rgba(224,0,108,.12);color:var(--rd-rani-soft);border:1px solid rgba(224,0,108,.45)}
+
+.group{margin-top:18px}
+.group h3,.doneGroup summary{font:600 11.5px/1.3 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--rd-muted);margin:0 0 8px}
+.group ul,.doneGroup ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.item{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;
+  background:var(--rd-bg2);border:1px solid var(--rd-line);border-radius:10px}
+.item p{margin:0;font-size:13.5px;overflow-wrap:anywhere}
+.item small{display:block;color:var(--rd-muted);font-size:12px;margin-top:3px}
+.inline,.fix{color:var(--rd-rani-soft);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+.fix{font-weight:600}
+
+.tick{width:24px;height:24px;margin-top:1px;border-radius:50%;border:2px solid #6b7280;background:transparent;
+  cursor:pointer;padding:0;position:relative;transition:border-color 120ms,background 120ms}
+.tick:hover{border-color:var(--rd-jade)}
+.ticked{background:var(--rd-jade);border-color:var(--rd-jade)}
+.ticked::after{content:"";position:absolute;left:7px;top:3px;width:6px;height:11px;border:solid #10221a;
+  border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+
+.need{border-color:rgba(240,198,116,.4)}
+.need strong{font-weight:600}
+.need span{color:var(--rd-muted)}
+.needMark{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(240,198,116,.16);
+  color:var(--rd-amber);font:800 13px/1 system-ui,sans-serif}
+
+.doneGroup{margin-top:18px}
+.doneGroup summary{cursor:pointer;width:max-content}
+.doneGroup summary:hover{color:var(--rd-ink)}
+.itemDone p{color:var(--rd-muted)}
+.footer{margin-top:20px}
+.footLinks{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;margin-top:10px;font-size:12.5px}
+.footLinks a{color:var(--rd-muted);text-decoration:underline;text-underline-offset:2px}
+.footLinks a:hover{color:var(--rd-rani-soft)}
+
+/* ---------- wide screens: the panel beside the page ---------- */
+@media (min-width:1100px){
+  .panel{position:fixed;top:var(--bar-h);right:0;bottom:0;width:var(--dock-w);overflow-y:auto;z-index:90;
+    border-bottom:0;border-left:1px solid var(--rd-line);overscroll-behavior:contain}
+  .footer{position:sticky;bottom:-20px;margin:20px -16px -20px;padding:14px 16px 20px;background:var(--rd-bg);
+    border-top:1px solid var(--rd-line)}
+  .shellOpen .page{margin-right:var(--dock-w)}
+}
+
+/* The public page's own sticky nav sits under the bar, not behind it. */
+.page :global(.nav){top:var(--bar-h)}
+
+/* ---------- phones ---------- */
+@media (max-width:720px){
+  .who span,.menu,.edit,.state,.wide{display:none}
+  .narrow{display:inline}
+  .who{flex:1}
+  .bar{gap:8px}
+  .panelToggle{padding:0 10px}
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
+import { LinkedText } from "@/components/admin/LinkedText";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { LookFromLinksForm } from "@/components/admin/LookFromLinksForm";
 import { getAllOutfits } from "@/lib/db/content";
@@ -40,24 +41,6 @@ const host = (url: string) => {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 const byLabel = (by: string[]) => by.map((name) => name.charAt(0).toUpperCase() + name.slice(1)).join(" + ");
-
-/** Long addresses inside research text become short links named by their site. */
-function Linked({ text }: { text: string }) {
-  const parts = text.split(/(https?:\/\/[^\s)]+[^\s).,;:'"])/g);
-  return (
-    <>
-      {parts.map((part, index) =>
-        index % 2 ? (
-          <a key={index} href={part} target="_blank" rel="noreferrer" className={local.inlineLink}>
-            {host(part)} ↗
-          </a>
-        ) : (
-          part
-        ),
-      )}
-    </>
-  );
-}
 
 /** What a job is about, before and after research: the draft's names, else the scout's note, else the post. */
 function jobTitle(job: LookJob, outfit?: Outfit): { title: string; sub?: string } {
@@ -169,7 +152,7 @@ function ReviewCard({ job, outfit }: { job: LookJob; outfit?: Outfit }) {
             <ol className={local.checks}>
               {open.map((check) => (
                 <li key={check}>
-                  <Linked text={check} />
+                  <LinkedText className={local.inlineLink} text={check} />
                 </li>
               ))}
             </ol>
@@ -258,7 +241,7 @@ function ProblemCard({ job }: { job: LookJob }) {
           {sub ? <span> · {sub}</span> : null}
         </h3>
         <p className={job.status === "failed" ? local.error : local.meta}>
-          {job.status === "failed" ? <Linked text={job.error ?? "No reason recorded."} /> : "Cancelled"}
+          {job.status === "failed" ? <LinkedText className={local.inlineLink} text={job.error ?? "No reason recorded."} /> : "Cancelled"}
           {" · "}
           {when.format(new Date(job.finishedAt ?? job.updatedAt))}
         </p>
