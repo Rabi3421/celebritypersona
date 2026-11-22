@@ -27,6 +27,10 @@
  */
 export const MIN_LOOKS_FOR_STATS = 10;
 
+/** The archive's size ("16 looks · 19 pieces") is printed only from here on:
+ *  below it, the number tells a reader how small the archive is, not how useful. */
+export const MIN_LOOKS_TO_SHOW_COUNTS = 100;
+
 /**
  * Wedding looks needed before the homepage's wedding band and the occasions
  * hub's "wedding season" feature are allowed to run.

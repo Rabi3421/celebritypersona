@@ -106,7 +106,7 @@ button{font-family:inherit}
 .navfind button span{flex:1;min-width:0}
 .navfind button b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis}
-.navfind button small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:1px;
+.navfind button small{display:block;font-family:var(--mono);font-size:12px;color:var(--ash);margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .navfind button em{flex:none;font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ash);border:1px solid var(--line);border-radius:var(--r-pill);
@@ -133,7 +133,7 @@ button{font-family:inherit}
 @keyframes slide{to{transform:translateX(-50%)}}
 .tick-item{display:flex;align-items:center;gap:var(--s3);font-family:var(--mono);font-size:11.5px;letter-spacing:.05em}
 .tick-item em{font-style:normal;color:var(--rani);font-weight:600}
-.tick-item s{color:#6E727B}
+.tick-item s{color:#A3A8B4}
 .tick-item b{color:#5CCFA4;font-weight:600}
 
 /* ────────── HERO (brand overview) ────────── */
@@ -162,13 +162,27 @@ button{font-family:inherit}
 .hx-lede{max-width:58ch;font-size:clamp(16px,1.4vw,19px);line-height:1.62;
   color:rgba(251,249,245,.78);text-wrap:balance}
 .hx-cta{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center;margin-top:var(--s6)}
+/* "Just decoded": the newest real look and its two prices, inside the hero. */
+.hx-latest{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s5);max-width:440px;padding:10px 14px 10px 10px;
+  border:1px solid rgba(255,255,255,.18);border-radius:var(--r-lg);background:rgba(10,11,14,.55);backdrop-filter:blur(10px);color:var(--bone);
+  transition:border-color var(--fast) var(--ease)}
+.hx-latest:hover{border-color:var(--rani)}
+.hx-latest-img{position:relative;flex:none;width:52px;height:64px;border-radius:var(--r-md);overflow:hidden;background:#20242d}
+.hx-latest-img img{object-fit:cover}
+.hx-latest-text{display:grid;min-width:0;flex:1}
+.hx-latest-text em{font-style:normal;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#ff4e9f}
+.hx-latest-text b{font-size:15px;font-weight:600;line-height:1.3}
+.hx-latest-text small{font-size:13px;color:rgba(251,249,245,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hx-latest-price{display:grid;justify-items:end;font-family:var(--mono);flex:none}
+.hx-latest-price s{font-size:12.5px;color:#A3A8B4}
+.hx-latest-price b{font-size:17px;font-weight:600;color:#5CCFA4}
 .hx-cta .btn-ghost{color:#fff;border-color:rgba(255,255,255,.3);backdrop-filter:blur(8px)}
 .hx-cta .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.09)}
 .hx-discover{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;margin-top:var(--s7);
   padding-top:var(--s5);border-top:1px solid rgba(255,255,255,.16)}
-.hx-discover>span{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+.hx-discover>span{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
   color:rgba(251,249,245,.45)}
-.hx-discover a{font-size:13px;color:rgba(251,249,245,.78);transition:color var(--fast) var(--ease)}
+.hx-discover a{font-size:13.5px;padding:10px 0;color:rgba(251,249,245,.78);transition:color var(--fast) var(--ease)}
 .hx-discover a:hover{color:#fff}
 .hx-discover i{font-style:normal;color:var(--rani);margin-left:3px}
 .hx-credit{position:absolute;right:20px;bottom:16px;font-family:var(--mono);font-size:8.5px;
@@ -184,7 +198,9 @@ button{font-family:inherit}
   .hx-title{font-size:clamp(43px,9.2vw,68px)}
 }
 @media(max-width:620px){
-  .hx{min-height:max(680px,100svh);padding:180px 0 var(--s6)}
+  /* Phones: sized to its content rather than the whole screen, so the "Just
+     decoded" card and the start of the looks rail reach the first screen. */
+  .hx{min-height:0;padding:120px 0 var(--s6)}
   .hx-media img{object-position:82% center}
   .hx-title{font-size:clamp(37px,10vw,43px);margin:var(--s4) 0}
   .hx-lede{font-size:15.5px;line-height:1.55}
@@ -227,13 +243,13 @@ button{font-family:inherit}
 .sec{padding:var(--s9) 0}
 .sec.alt{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s5);margin-bottom:var(--s6);flex-wrap:wrap}
-.sec-h .eb{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+.sec-h .eb{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--rani);font-weight:600;margin-bottom:var(--s3)}
 .sec-h h2{font-family:var(--display);font-weight:800;font-size:clamp(27px,3.4vw,42px);letter-spacing:-.032em;line-height:1.02}
 .sec-h p{font-size:15px;color:var(--ash);margin-top:var(--s3);max-width:54ch}
 .sec-h .more{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ash);white-space:nowrap;display:inline-flex;gap:6px;align-items:center;
-  border-bottom:1px solid var(--line);padding-bottom:3px;transition:all var(--fast) var(--ease)}
+  border-bottom:1px solid var(--line);padding:12px 0 3px;transition:all var(--fast) var(--ease)}
 .sec-h .more:hover{color:var(--rani);border-bottom-color:var(--rani);gap:11px}
 
 /* ────────── CARDS ────────── */
@@ -258,18 +274,18 @@ button{font-family:inherit}
 .card .ph .inner{position:absolute;inset:0;transition:transform var(--vslow) var(--ease)}
 .card .ph .inner img{filter:saturate(.82) contrast(1.04)}
 .card:hover .ph .inner{transform:scale(1.06)}
-.card .when{position:absolute;left:10px;top:10px;z-index:3;font-family:var(--mono);font-size:9.5px;
+.card .when{position:absolute;left:10px;top:10px;z-index:3;font-family:var(--mono);font-size:11px;
   letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.88);
   background:rgba(0,0,0,.4);backdrop-filter:blur(6px);padding:4px 9px;border-radius:3px}
 .card .peek{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:var(--s4);
   transform:translateY(102%);transition:transform var(--slow) var(--ease)}
 .card:hover .peek{transform:translateY(0)}
-.card .peek li{list-style:none;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.9);
+.card .peek li{list-style:none;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.9);
   display:flex;justify-content:space-between;gap:var(--s3);padding:3px 0}
 .card .peek li b{color:#5CCFA4}
 .card .bd{padding:var(--s4)}
 .card h3{font-size:15px;font-weight:600;line-height:1.3}
-.card .dt{font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:3px}
+.card .dt{font-family:var(--mono);font-size:12.5px;color:var(--ash);margin-top:3px}
 .card .pr{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--line-soft);
   display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:12px}
 .card .was{text-decoration:line-through;color:var(--stone)}
@@ -295,7 +311,7 @@ button{font-family:inherit}
 .demo-art img{object-fit:cover;object-position:69% center;opacity:0;transform:scale(1.035);
   filter:saturate(.96) contrast(1.03);transition:opacity 420ms var(--ease),transform 760ms var(--ease)}
 .demo-art img.is-active{opacity:1;transform:scale(1)}
-.demo-art span{position:absolute;left:12px;bottom:10px;z-index:2;font-family:var(--mono);font-size:9px;
+.demo-art span{position:absolute;left:12px;bottom:10px;z-index:2;font-family:var(--mono);font-size:11px;
   letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.88)}
 .dtoggle{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:rgba(255,255,255,.08);
   padding:3px;border-radius:var(--r-md);position:relative;margin-bottom:var(--s5)}
@@ -386,8 +402,8 @@ button{font-family:inherit}
 .otile:hover::after{opacity:.86}
 .otile .lab{position:absolute;left:var(--s4);right:var(--s4);bottom:var(--s4);z-index:2}
 .otile .lab strong{display:block;font-family:var(--display);font-weight:700;font-size:18px;color:#fff;letter-spacing:-.018em}
-.otile .lab span{font-family:var(--mono);font-size:10.5px;color:rgba(255,255,255,.68);letter-spacing:.06em}
-.otile .lab .go{font-family:var(--mono);font-size:10px;color:var(--rani);letter-spacing:.1em;text-transform:uppercase;
+.otile .lab span{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.68);letter-spacing:.06em}
+.otile .lab .go{font-family:var(--mono);font-size:11.5px;color:var(--rani);letter-spacing:.1em;text-transform:uppercase;
   margin-top:var(--s2);opacity:0;transform:translateY(6px);transition:opacity var(--base) var(--ease),transform var(--base) var(--ease)}
 .otile:hover .lab .go{opacity:1;transform:none}
 
@@ -408,7 +424,7 @@ button{font-family:inherit}
 .ctile:nth-child(3n) .av{background:linear-gradient(150deg,#1F2C2B,#425C5B)}
 .ctile:hover .av{transform:scale(1.07) translateY(-4px);box-shadow:0 0 0 3px var(--rani-tint),var(--e2)}
 .ctile strong{display:block;font-size:14px;font-weight:600}
-.ctile span{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+.ctile span{font-family:var(--mono);font-size:12.5px;color:var(--ash)}
 
 /* ────────── CAMPAIGN ────────── */
 .camp{border-radius:var(--r-xl);overflow:hidden;position:relative;
@@ -495,9 +511,9 @@ button.reel{padding:0;border:0;font:inherit;color:inherit;text-align:left;cursor
   display:grid;place-items:center;color:#fff;transition:transform var(--base) var(--spring)}
 .reel .play svg{width:13px;height:13px}
 .reel:hover .play{transform:translate(-50%,-50%) scale(1.16)}
-.reel .cap{position:absolute;left:11px;right:11px;bottom:11px;z-index:2;font-family:var(--mono);font-size:10px;
+.reel .cap{position:absolute;left:11px;right:11px;bottom:11px;z-index:2;font-family:var(--mono);font-size:12px;
   color:rgba(255,255,255,.9);line-height:1.4}
-.reel .vw{position:absolute;top:10px;left:11px;z-index:2;font-family:var(--mono);font-size:9.5px;
+.reel .vw{position:absolute;top:10px;left:11px;z-index:2;font-family:var(--mono);font-size:11px;
   color:rgba(255,255,255,.82);background:rgba(0,0,0,.36);padding:3px 8px;border-radius:3px}
 
 /* ────────── SIGNUP ────────── */
@@ -513,15 +529,15 @@ button.reel{padding:0;border:0;font:inherit;color:inherit;text-align:left;cursor
 /* ────────── FOOTER ────────── */
 .foot{padding:var(--s9) 0 var(--s7);border-top:1px solid var(--line)}
 .fgrid{display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:var(--s6)}
-.fcol h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-bottom:var(--s4)}
-.fcol a{display:block;font-size:14px;color:var(--ink-80);padding:5px 0;transition:all var(--fast) var(--ease)}
+.fcol h2{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-bottom:var(--s4)}
+.fcol a{display:block;font-size:14px;color:var(--ink-80);padding:9px 0;transition:all var(--fast) var(--ease)}
 .fcol a:hover{color:var(--rani);transform:translateX(3px)}
 .fbrand .brand{margin-bottom:var(--s4)}
 .fbrand .brand-logo{width:220px}
 .fbrand p{font-size:14.5px;color:var(--ash);max-width:34ch;line-height:1.65}
 .fbot{margin-top:var(--s8);padding-top:var(--s5);border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;gap:var(--s4);flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ash)}
-.fchoices{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  display:flex;justify-content:space-between;gap:var(--s4);flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;color:var(--ash)}
+.fchoices{font:inherit;color:inherit;background:none;border:0;padding:10px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .fchoices:hover{color:var(--rani)}
 
 /* ────────── ANALYTICS CONSENT ────────── */
@@ -579,7 +595,7 @@ button.reel{padding:0;border:0;font:inherit;color:inherit;text-align:left;cursor
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:90;
     background:var(--paper);border-top:1px solid var(--line);height:64px;padding-bottom:env(safe-area-inset-bottom)}
   .tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ash)}
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ash)}
   .tabs a svg{width:18px;height:18px}
   .tabs a[aria-current="page"]{color:var(--rani)}
 }

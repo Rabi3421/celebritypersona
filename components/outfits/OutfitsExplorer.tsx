@@ -1,4 +1,5 @@
 "use client";
+import { MIN_LOOKS_TO_SHOW_COUNTS } from "@/lib/thresholds";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -151,6 +152,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
               alternative. Filter by occasion, person or budget.
             </p>
           </div>
+          {totals.looks < MIN_LOOKS_TO_SHOW_COUNTS ? null : (
           <div className={styles.bannerStats} aria-label="Outfit statistics">
             <div><span>{totals.looks.toLocaleString("en-IN")}</span><small>Looks</small></div>
             <div><span>{totals.pieces.toLocaleString("en-IN")}</span><small>Pieces</small></div>
@@ -162,6 +164,7 @@ export function OutfitsExplorer({ outfits }: { outfits: Outfit[] }) {
               <div><span>{publishableSaving}%</span><small>Avg saving</small></div>
             )}
           </div>
+          )}
         </div>
       </header>
 

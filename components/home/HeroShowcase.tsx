@@ -1,5 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
+import { inr } from "@/lib/format";
+
+/** The newest look with a swap, shown in the hero so the first screen holds a
+ *  real decoded look and its two prices, not only the artwork. */
+export type HeroLatest = {
+  href: string;
+  celebrity: string;
+  event: string;
+  photo: string;
+  worn: number | null;
+  swap: number;
+};
 
 const DISCOVERY_LINKS = [
   { label: "Celebrity looks", href: "/celebrities" },
@@ -7,7 +19,7 @@ const DISCOVERY_LINKS = [
   { label: "Trend radar", href: "/trending" },
 ];
 
-export function HeroShowcase() {
+export function HeroShowcase({ latest }: { latest?: HeroLatest | null }) {
   return (
     <section className="hx" aria-labelledby="home-hero-title">
       <div className="hx-media" aria-hidden="true">
@@ -50,6 +62,23 @@ export function HeroShowcase() {
             what it costs, and an affordable alternative you can order in India.
             From airport arrivals and red carpets to sangeet and Diwali season.
           </p>
+
+          {latest ? (
+            <Link className="hx-latest" href={latest.href}>
+              <span className="hx-latest-img">
+                <Image src={latest.photo} alt="" fill sizes="64px" />
+              </span>
+              <span className="hx-latest-text">
+                <em>Just decoded</em>
+                <b>{latest.celebrity}</b>
+                <small>{latest.event}</small>
+              </span>
+              <span className="hx-latest-price">
+                {latest.worn !== null ? <s>{inr(latest.worn)}</s> : null}
+                <b>{inr(latest.swap)}</b>
+              </span>
+            </Link>
+          ) : null}
 
           <div className="hx-cta">
             <Link className="btn btn-primary" href="/outfits">

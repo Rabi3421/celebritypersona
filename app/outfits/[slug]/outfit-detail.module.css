@@ -1,6 +1,6 @@
 .page { background: var(--bone); color: var(--ink); min-height: 100vh; }
 .shell { max-width: 1320px; margin: 0 auto; padding: 0 var(--s5); }
-.crumb { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; color: var(--ash); padding: var(--s4) 0; white-space: nowrap; overflow-x: auto; }
+.crumb { font-family: var(--mono); font-size: 12px; letter-spacing: .05em; color: var(--ash); padding: var(--s4) 0; white-space: nowrap; overflow-x: auto; }
 .crumb a:hover { color: var(--rani); }
 .crumb i { font-style: normal; margin: 0 6px; color: var(--line); }
 @media (max-width: 560px) { .crumbHere { display: none; } }
@@ -18,14 +18,14 @@
 .frame { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-lg); overflow: hidden; background: linear-gradient(158deg, #20242d, #343945 44%, #4c525f); box-shadow: var(--e2); }
 .frame > img { object-fit: cover; }
 .frame::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 18%, rgba(255, 255, 255, .08), transparent 62%), linear-gradient(to top, rgba(0, 0, 0, .45), transparent 46%); pointer-events: none; }
-.frame figcaption, .hint { position: absolute; z-index: 3; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .78); background: rgba(0, 0, 0, .38); backdrop-filter: blur(6px); padding: 5px 10px; border-radius: var(--r-sm); }
+.frame figcaption, .hint { position: absolute; z-index: 3; font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .78); background: rgba(0, 0, 0, .38); backdrop-filter: blur(6px); padding: 5px 10px; border-radius: var(--r-sm); }
 .frame figcaption { left: var(--s4); bottom: var(--s4); }
 .hint { right: var(--s4); top: var(--s4); }
 .keep { position: absolute; z-index: 4; right: var(--s4); bottom: var(--s4); width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; font-size: 17px; line-height: 1; color: var(--rani); background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); box-shadow: var(--e2); transition: transform var(--fast) var(--ease); }
 .keep:hover { transform: scale(1.1); }
 .keep[aria-pressed="false"] { color: var(--ink); }
 
-.hotspot { position: absolute; z-index: 4; width: 26px; height: 26px; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .9); background: rgba(255, 255, 255, .16); backdrop-filter: blur(4px); cursor: pointer; display: grid; place-items: center; font-family: var(--mono); font-size: 10px; font-weight: 600; color: white; transition: transform var(--base) var(--ease), background var(--base) var(--ease); }
+.hotspot { position: absolute; z-index: 4; width: 26px; height: 26px; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .9); background: rgba(255, 255, 255, .16); backdrop-filter: blur(4px); cursor: pointer; display: grid; place-items: center; font-family: var(--mono); font-size: 11.5px; font-weight: 600; color: white; transition: transform var(--base) var(--ease), background var(--base) var(--ease); }
 .hotspot::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .34); animation: pulse 2.6s var(--ease) infinite; }
 .thumbs { display: flex; gap: var(--s3); margin-top: var(--s3); overflow-x: auto; scrollbar-width: none; }
 .thumbs::-webkit-scrollbar { display: none; }
@@ -58,7 +58,7 @@
 .notesRail { grid-column: 2; display: grid; gap: var(--s5); align-content: start; }
 .lookSheet { padding-top: var(--s3); border-top: 1px solid var(--line); display: grid; gap: var(--s4); }
 .lookSheet > div { display: grid; gap: 4px; }
-.lookSheet dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+.lookSheet dt { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
 .lookSheet dd { font-size: 15px; line-height: 1.5; }
 .lookSheet dd a { border-bottom: 1px solid var(--line); }
 .lookSheet dd a:hover { color: var(--rani); border-bottom-color: var(--rani); }
@@ -69,23 +69,23 @@
 /* The photo held back from the gallery, run beside the write-up. */
 .asideShot { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-lg); overflow: hidden; background: var(--line-soft); }
 .asideShot > img { object-fit: cover; }
-.asideShot figcaption { position: absolute; left: var(--s3); bottom: var(--s3); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .82); background: rgba(0, 0, 0, .38); backdrop-filter: blur(6px); padding: 4px 9px; border-radius: var(--r-sm); max-width: calc(100% - var(--s5)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asideShot figcaption { position: absolute; left: var(--s3); bottom: var(--s3); font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .82); background: rgba(0, 0, 0, .38); backdrop-filter: blur(6px); padding: 4px 9px; border-radius: var(--r-sm); max-width: calc(100% - var(--s5)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lineNote { display: block; margin-top: 6px; font-style: normal; font-size: 13.5px; line-height: 1.6; color: var(--ash); }
 @keyframes pulse { 0% { transform: scale(.86); opacity: .9; } 70%, 100% { transform: scale(1.25); opacity: 0; } }
 .hotspot:hover, .hotspot:focus-visible { transform: translate(-50%, -50%) scale(1.18); background: var(--rani); border-color: var(--rani); outline: none; }
 
 .title { margin-bottom: var(--s5); }
-.title > p { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--rani); font-weight: 600; }
+.title > p { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--rani); font-weight: 600; }
 .title h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 4.4vw, 52px); line-height: .98; letter-spacing: -.032em; margin: var(--s3) 0 var(--s2); }
 .title > div { font-size: 15px; color: var(--ash); }
 .title > div a { border-bottom: 1px solid var(--line); }
 .title > div a:hover { color: var(--rani); border-bottom-color: var(--rani); }
 .quickPrice { display: none; }
 .swapHint { margin-top: var(--s3); font-size: 14px; line-height: 1.5; color: var(--ink-80); }
-.swapHint > span { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--rani); margin-right: 4px; }
+.swapHint > span { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--rani); margin-right: 4px; }
 .swapHint a { color: var(--rani); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--line-soft); padding: 3px; border-radius: var(--r-md); position: relative; margin-bottom: var(--s2); }
-.toggle button { font-family: var(--mono); font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 12px 0; border: 0; background: transparent; color: var(--ash); cursor: pointer; border-radius: 6px; position: relative; z-index: 2; }
+.toggle button { font-family: var(--mono); font-size: 12.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 12px 0; border: 0; background: transparent; color: var(--ash); cursor: pointer; border-radius: 6px; position: relative; z-index: 2; }
 .toggle button[aria-selected="true"] { color: var(--ink); }
 .toggle > i { position: absolute; top: 3px; left: 3px; height: calc(100% - 6px); width: calc(50% - 4px); background: var(--paper); border-radius: 6px; box-shadow: var(--e1); z-index: 1; transition: transform var(--slow) var(--ease); }
 .toggle.swapMode > i { transform: translateX(calc(100% + 2px)); }
@@ -94,7 +94,7 @@
    first Buy button rather than in the footer. Sized to be read, not to be
    technically present: same size as the piece notes, not fine print. */
 .disclosure { display: flex; gap: 8px; align-items: baseline; margin-top: var(--s5); padding: 11px var(--s3); border-radius: var(--r-sm); background: var(--line-soft); font-size: 13px; line-height: 1.55; color: var(--ash); }
-.disclosure > i { font-family: var(--mono); font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); flex: none; }
+.disclosure > i { font-family: var(--mono); font-style: normal; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); flex: none; }
 .disclosure a { color: var(--ink); border-bottom: 1px solid var(--line); }
 .disclosure a:hover { color: var(--rani); border-bottom-color: var(--rani); }
 .lines { margin-top: var(--s2); }
@@ -102,19 +102,19 @@
 .line.highlighted { background: var(--rani-tint); }
 .line h3 { font-size: 16px; font-weight: 600; line-height: 1.3; }
 .line > div:first-child > p { font-family: var(--mono); font-size: 12px; color: var(--ash); margin-top: 4px; }
-.stockTag { margin-top: var(--s3); font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 4px 9px; border-radius: var(--r-sm); display: inline-block; background: var(--jade-tint); color: var(--jade); }
+.stockTag { margin-top: var(--s3); font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 4px 9px; border-radius: var(--r-sm); display: inline-block; background: var(--jade-tint); color: var(--jade); }
 .stockTag.archived { background: #f1f0ed; color: var(--stone); }
 .linePrice { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: var(--s3); }
 .linePrice > b { font-family: var(--mono); font-weight: 600; font-size: 16px; white-space: nowrap; }
-.linePrice button, .linePrice a { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 15px; cursor: pointer; }
+.linePrice button, .linePrice a { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 15px; cursor: pointer; }
 .linePrice button:hover:not(:disabled), .linePrice a:hover { border-color: var(--rani); color: var(--rani); }
 .linePrice a { display: inline-block; text-decoration: none; }
 .linePrice button:disabled { opacity: .35; cursor: not-allowed; }
 .total { margin-top: var(--s5); background: var(--ink); color: var(--bone); border-radius: var(--r-lg) var(--r-lg) 0 0; padding: var(--s5) var(--s5) var(--s4); display: flex; justify-content: space-between; align-items: baseline; }
-.total span { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #8a8e97; }
+.total span { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: #8a8e97; }
 .total b { font-family: var(--mono); font-weight: 600; font-size: 30px; letter-spacing: -.025em; }
 .purchaseBox { background: var(--ink); border-radius: 0 0 var(--r-lg) var(--r-lg); padding: 0 var(--s5) var(--s5); }
-.purchaseBox > p { font-family: var(--mono); font-size: 10.5px; color: #8a8e97; margin-bottom: var(--s4); }
+.purchaseBox > p { font-family: var(--mono); font-size: 12px; color: #8a8e97; margin-bottom: var(--s4); }
 .purchaseBox > p.freshness { line-height: 1.55; }
 .freshness.current strong { color: var(--jade-light); }
 .freshness.aging strong { color: #f4c86a; }
@@ -126,12 +126,12 @@
 .pendingNote { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: var(--bone); font-size: 14.5px; line-height: 1.6; padding: 13px var(--s4); border-radius: var(--r-sm); margin-bottom: var(--s4); }
 .pendingAction { display: block; width: 100%; text-align: center; font-family: var(--body); font-weight: 600; font-size: 15px; background: rgba(255,255,255,.08); color: var(--bone); border: 1px solid rgba(255,255,255,.2); border-radius: var(--r-md); padding: 15px; text-decoration: none; transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease); }
 .pendingAction:hover { border-color: var(--rani); background: rgba(224,0,108,.14); }
-.purchaseBox > small { display: block; font-size: 11.5px; color: var(--ash); text-align: center; margin-top: var(--s3); line-height: 1.5; }
+.purchaseBox > small { display: block; font-size: 12.5px; color: var(--ash); text-align: center; margin-top: var(--s3); line-height: 1.5; }
 
 .related { margin-top: var(--s8); padding-top: var(--s7); border-top: 1px solid var(--line); }
 .relatedHeading { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4); margin-bottom: var(--s5); }
 .relatedHeading h2 { font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: -.02em; }
-.relatedHeading a { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+.relatedHeading a { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
 .relatedHeading a:hover { color: var(--rani); }
 .relatedRail { display: grid; grid-auto-flow: column; /* A rail holding one look used to stretch that card the width of the page. */
   grid-auto-columns: minmax(190px, 300px); gap: var(--s4); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: var(--s3); scrollbar-width: thin; }
@@ -142,15 +142,15 @@
 .relatedCard > div::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, .35), transparent 44%); }
 .relatedCard section { padding: var(--s3) var(--s4) var(--s4); }
 .relatedCard h3 { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
-.relatedCard p { font-family: var(--mono); font-size: 10.5px; color: var(--ash); margin-top: 3px; }
+.relatedCard p { font-family: var(--mono); font-size: 12px; color: var(--ash); margin-top: 3px; }
 .relatedCard section > span { margin-top: var(--s3); display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 12px; }
 .relatedCard s { color: var(--stone); }
 .relatedCard section > span b { color: var(--jade); font-weight: 600; }
 .byline { margin-top: var(--s8); padding: var(--s5) 0 var(--s8); border-top: 1px solid var(--line); display: flex; gap: var(--s4); align-items: center; flex-wrap: wrap; }
 .authorAvatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(140deg, var(--rani), #7b0040); color: white; display: grid; place-items: center; font-family: var(--display); font-weight: 800; }
 .byline p { font-size: 14px; font-weight: 600; }
-.byline span { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ash); margin-top: 2px; }
-.byline > button, .byline > a { margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); border: 0; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
+.byline span { display: block; font-family: var(--mono); font-size: 12.5px; color: var(--ash); margin-top: 2px; }
+.byline > button, .byline > a { margin-left: auto; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); border: 0; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
 .byline > button { margin-left: 0; }
 .byline > button:hover, .byline > a:hover { color: var(--rani); border-bottom-color: var(--rani); }
 .mobileBar { display: none; }

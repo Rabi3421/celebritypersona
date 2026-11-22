@@ -19,6 +19,9 @@ import { Nav } from "@/components/site/Nav";
 import { ScrollEffects } from "@/components/site/ScrollEffects";
 import { Ticker } from "@/components/site/Ticker";
 import { heroLook, homeStats, looksInGroup } from "@/lib/archive";
+import { outfitPhotos, pricing } from "@/lib/types";
+import { outfitSlug } from "@/lib/slugs";
+import type { HeroLatest } from "@/components/home/HeroShowcase";
 import { getHomeContent, getOccasions, getPublishedOutfits } from "@/lib/db/content";
 import { pageMetadata } from "@/lib/seo";
 
@@ -63,12 +66,27 @@ export default async function Home() {
   // is left out rather than animated against invented totals.
   const hero = heroLook(outfits);
 
+  // The newest look that has a swap and a photo, for the hero's "Just decoded" card.
+  const newest = [...outfits]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .find((outfit) => pricing(outfit).anySwapped && outfitPhotos(outfit).length > 0);
+  const latest: HeroLatest | null = newest
+    ? {
+        href: `/outfits/${outfitSlug(newest)}`,
+        celebrity: newest.celebrity,
+        event: newest.event,
+        photo: outfitPhotos(newest)[0].url,
+        worn: pricing(newest).allSwapped && pricing(newest).anyPriced ? pricing(newest).wornTotal : null,
+        swap: pricing(newest).swapTotal,
+      }
+    : null;
+
   return (
     <>
       <Nav />
       <Ticker />
 
-      <HeroShowcase />
+      <HeroShowcase latest={latest} />
 
       {/* Off until an editor turns it on in Admin → Homepage. */}
       {showStats ? <Stats stats={homeStats(outfits)} /> : null}
