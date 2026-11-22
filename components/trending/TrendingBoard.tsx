@@ -222,9 +222,7 @@ export async function TrendingBoard() {
                     <strong>{occasion.name}</strong>
                     <span>{plural(occasion.looks, "look")}</span>
                     <b>
-                      {occasion.cheapest === null
-                        ? "No swap yet"
-                        : `from ${inr.format(occasion.cheapest)}`}
+                      {occasion.cheapest === null ? null : `swaps from ${inr.format(occasion.cheapest)}`}
                     </b>
                   </Link>
                 ))}

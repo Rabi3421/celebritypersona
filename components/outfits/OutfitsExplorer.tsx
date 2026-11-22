@@ -349,11 +349,7 @@ function CardPrices({ outfit, tone }: { outfit: Outfit; tone: "featured" | "card
   return (
     <>
       <span>{worn}</span>
-      <Swap>
-        {money.anySwapped
-          ? `${inr.format(money.swapTotal)} · ${money.swapped} of ${money.pieces} swapped`
-          : "No swap yet"}
-      </Swap>
+      {money.anySwapped ? <Swap>{`${inr.format(money.swapTotal)} · ${money.swapped} of ${money.pieces} swapped`}</Swap> : null}
     </>
   );
 }
@@ -416,9 +412,7 @@ function OutfitCard({ outfit, featured, saved, onSave, onQuickView }: { outfit: 
             */}
             {percentage !== null && money.allSwapped ? (
               <span className={styles.saving}>−{percentage}%</span>
-            ) : money.anySwapped ? null : (
-              <span className={styles.saving}>No swap yet</span>
-            )}
+            ) : null}
             <div className={styles.peek}>
               {/* The peek printed "—" for every piece on a look with no
                   swaps, which is nine of the ten looks in the archive. The

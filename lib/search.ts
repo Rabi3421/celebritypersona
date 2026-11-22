@@ -55,7 +55,9 @@ export function buildSearchIndex({
       title: `${outfit.celebrity} at ${outfit.event}`,
       subtitle: money.anySwapped
         ? `${outfit.occasion} · rebuild for ${inr.format(money.swapTotal)}`
-        : `${outfit.occasion} · no swap yet`,
+        : money.anyPriced
+          ? `${outfit.occasion} · ${inr.format(money.wornTotal)} as worn`
+          : outfit.occasion,
       href: `/outfits/${outfitSlug(outfit)}`,
       image: outfitPhoto(outfit)?.url,
       terms: [
@@ -69,9 +71,12 @@ export function buildSearchIndex({
     };
   });
 
-  const celebrityEntries: SearchEntry[] = celebrities.map((celebrity) => {
+  // A person or occasion with nothing decoded is not an answer: it led to an
+  // empty page ("Red carpet · 0 looks decoded"), so it is left out.
+  const celebrityEntries: SearchEntry[] = celebrities.flatMap((celebrity) => {
     const hers = outfits.filter((outfit) => sameName(outfit.celebrity, celebrity.name));
-    return {
+    if (!hers.length) return [];
+    return [{
       kind: "Celebrity",
       title: celebrity.name,
       subtitle: hers.length
@@ -81,16 +86,17 @@ export function buildSearchIndex({
       image: hers.map((outfit) => outfitPhoto(outfit)?.url).find(Boolean),
       terms: hers.flatMap((outfit) => [outfit.occasion, outfit.event]).join(" "),
       weight: 4,
-    };
+    } satisfies SearchEntry];
   });
 
-  const occasionEntries: SearchEntry[] = occasions.map((occasion) => {
+  const occasionEntries: SearchEntry[] = occasions.flatMap((occasion) => {
     const theirs = outfits.filter((outfit) => hasOccasion(outfit, occasion.name));
+    if (!theirs.length) return [];
     const cheapest = theirs
       .filter((outfit) => outfit.items.length > 0 && outfit.items.every(hasSwap))
       .map((outfit) => pricing(outfit).swapTotal)
       .sort((a, b) => a - b)[0];
-    return {
+    return [{
       kind: "Occasion",
       title: occasion.name,
       subtitle: cheapest
@@ -100,7 +106,7 @@ export function buildSearchIndex({
       image: theirs.map((outfit) => outfitPhoto(outfit)?.url).find(Boolean),
       terms: [occasion.group, occasion.peak].filter(Boolean).join(" "),
       weight: 4,
-    };
+    } satisfies SearchEntry];
   });
 
   return [...celebrityEntries, ...occasionEntries, ...lookEntries];

@@ -61,11 +61,7 @@ export async function DecodedThisWeek() {
                   <span className={look.swap === null ? "" : "was"}>
                     {look.worn === null ? "Price unconfirmed" : inr(look.worn)}
                   </span>
-                  {look.swap === null ? (
-                    <span className="soon">No swap yet</span>
-                  ) : (
-                    <span className="now">{inr(look.swap)}</span>
-                  )}
+                  {look.swap === null ? null : <span className="now">{inr(look.swap)}</span>}
                 </p>
               </div>
             </Link>

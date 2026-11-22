@@ -12,6 +12,7 @@ import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import {
   effectiveCredit,
+  hasSwap,
   isBuyable,
   isMonetised,
   leadPiece,
@@ -378,6 +379,16 @@ export function OutfitDetail({
                 <Link href={`/occasions/${nameSlug(outfit.occasion)}`}>{outfit.occasion} looks</Link> ·{" "}
                 <Link href={`/celebrities/${nameSlug(outfit.celebrity)}`}>{outfit.celebrity} archive</Link>
               </div>
+              {/* Phones: the answer the reader searched for, right under the
+                  heading, before the pieces list. Hidden on wide screens, where
+                  the list sits beside the photo anyway. */}
+              {money.anyPriced || money.anySwapped ? (
+                <a className={styles.quickPrice} href="#outfit-item-0">
+                  {money.anyPriced ? <span>As worn <b>{inr.format(money.wornTotal)}</b></span> : null}
+                  {money.anySwapped ? <span>Swap <b className={styles.quickSwap}>{inr.format(money.swapTotal)}</b>{money.savingPct !== null && money.savingPct > 0 ? ` · ${money.savingPct}% less` : ""}</span> : null}
+                  <i aria-hidden="true">↓</i>
+                </a>
+              ) : null}
             </header>
 
             {money.anySwapped ? (
@@ -448,6 +459,26 @@ export function OutfitDetail({
                       {tagFor(item, pane).text}
                     </span>
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
+                    {/* The cheaper version, shown on the original's own row so
+                        nobody has to find the tab to learn it exists. */}
+                    {pane === "worn" && hasSwap(item) ? (
+                      <p className={styles.swapHint}>
+                        <span>Cheaper swap</span> {item.swapBrand} · <b>{inr.format(item.swap)}</b>
+                        {isBuyable(pieceLink(item, sideOf("swap"))) ? (
+                          <>
+                            {" "}
+                            <a
+                              href={`/go/${item.id}?side=${sideOf("swap")}&from=${encodeURIComponent(`/outfits/${slug}`)}`}
+                              target="_blank"
+                              rel="sponsored nofollow noopener"
+                              onClick={() => trackEvent("swap_click", { outfit: slug, piece: item.name, place: "worn_row" })}
+                            >
+                              Shop the swap
+                            </a>
+                          </>
+                        ) : null}
+                      </p>
+                    ) : null}
                   </div>
                   <div className={styles.linePrice}>
                     <b>{piecePrice(item, pane)}</b>

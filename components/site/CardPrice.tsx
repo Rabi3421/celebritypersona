@@ -46,7 +46,9 @@ export function CardPrice({ worn, swap, complete, swapped, pieces }: CardPriceVa
   return (
     <>
       {worn === null ? <em>Price unconfirmed</em> : <span>{inr.format(worn)} as worn</span>}
-      {swap === null ? <em>No swap yet</em> : <b>{inr.format(swap)}{partial}</b>}
+      {/* No swap: the card says nothing rather than "No swap yet" on most of
+          the archive — the as-worn price stands on its own. */}
+      {swap === null ? null : <b>{inr.format(swap)}{partial}</b>}
     </>
   );
 }

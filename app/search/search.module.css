@@ -39,8 +39,8 @@
    sits left-aligned above the groups rather than centred in an empty page. */
 .partial { font-size: 15px; color: var(--ash); line-height: 1.66; max-width: 62ch; margin-bottom: var(--s5); }
 
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
-.hit { display: flex; align-items: center; gap: var(--s4); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s4) var(--s3) var(--s3); transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.hit { min-width: 0; display: flex; align-items: center; gap: var(--s4); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s3) var(--s4) var(--s3) var(--s3); transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
 .hit:hover { border-color: var(--rani); transform: translateY(-2px); }
 .hitImage { flex: none; width: 56px; height: 56px; border-radius: var(--r-md); overflow: hidden; background: var(--line-soft); position: relative; }
 .hitImage img { object-fit: cover; }
@@ -56,10 +56,10 @@
 .suggestions a { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: var(--r-pill); padding: 8px 16px; background: var(--bone); }
 .suggestions a:hover { border-color: var(--rani); color: var(--rani); }
 
-@media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) {
   .shell { padding: 0 var(--s5); }
-  .grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
   .form input { padding-right: var(--s5); }
   /* The button drops below the box here, so centre the icon on the box (about 58px tall), not the form. */
   .form span { top: 29px; }
