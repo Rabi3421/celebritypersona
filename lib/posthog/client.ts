@@ -20,6 +20,7 @@ import type { PostHog, CaptureResult } from "posthog-js";
 import { clearAnalyticsStorage, readConsent, subscribeConsent } from "@/lib/consent";
 import { DEPLOY_ENV, POSTHOG_ENABLED, POSTHOG_KEY, POSTHOG_LOCAL_TEST } from "./client-env";
 import { isExcludedPath, isExtensionNoise, pathOf, sanitizeProperties } from "./privacy";
+import { isStaffBrowser } from "@/lib/staff";
 
 export { POSTHOG_ENABLED };
 
@@ -50,7 +51,7 @@ const consented = () => readConsent() === "accepted";
 
 /** Drops anything without consent or on an excluded path; strips sensitive URL parts and emails. */
 function beforeSend(event: CaptureResult | null): CaptureResult | null {
-  if (!event || !consented()) return null;
+  if (!event || !consented() || isStaffBrowser()) return null;
   const properties = event.properties ?? {};
   const where = pathOf(String(properties.$current_url ?? "")) || window.location.pathname;
   if (isExcludedPath(where) || isExcludedPath(window.location.pathname)) return null;
@@ -177,8 +178,9 @@ function sync() {
 export function startPostHog() {
   if (started || typeof window === "undefined") return;
   started = true;
-  // A page load inside the panel never starts PostHog at all.
-  if (state === "disabled" || isExcludedPath(window.location.pathname)) {
+  // A page load inside the panel, or any page in a team browser (lib/staff.ts),
+  // never starts PostHog at all.
+  if (state === "disabled" || isExcludedPath(window.location.pathname) || isStaffBrowser()) {
     state = "disabled";
     return;
   }

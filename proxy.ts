@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { renewedCookie, SESSION_COOKIE, shouldRenew, verifySession } from "@/lib/auth/token";
+import { STAFF_COOKIE, staffCookie } from "@/lib/staff";
 
 /**
  * Gate for everything under /admin and /api/admin.
@@ -39,6 +40,15 @@ export async function proxy(request: NextRequest) {
   const response = pathname === "/admin/login" || session ? NextResponse.next() : deny();
 
   if (session && shouldRenew(session)) response.cookies.set(await renewedCookie(session));
+
+  // A browser signed in to the admin is the team's: its own visits to the
+  // public site are kept out of analytics (lib/staff.ts). Renewed on each
+  // visit; left alone when the editor switched it off in Settings.
+  // Not on a form post: Settings' own switch sets this cookie, and would be
+  // overwritten here by the value the request still carries.
+  if (session && !isServerAction && request.cookies.get(STAFF_COOKIE)?.value !== "off") {
+    response.cookies.set(staffCookie("1", request.nextUrl.protocol === "https:"));
+  }
 
   // Never let any part of the panel reach an index, even by accident.
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");

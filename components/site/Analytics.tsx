@@ -6,6 +6,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { flushPendingEvents, stopGaEvents } from "@/lib/analytics";
 import { readConsent, subscribeConsent, type ConsentState } from "@/lib/consent";
 import { sanitizeUrl } from "@/lib/posthog/privacy";
+import { isStaffBrowser } from "@/lib/staff";
 
 /** gtag() as Google defines it: gtag.js reads `arguments` objects, not arrays. */
 function gtag(...args: unknown[]) {
@@ -164,7 +165,9 @@ export function Analytics({ gaId }: { gaId: string }) {
    * than the LCP of every session that stays.
    */
   const ready = useSyncExternalStore(subscribeToLoad, loadedNow, loadedOnServer);
-  const active = ready && !pathname.startsWith("/admin") && consent === "accepted";
+  // `ready` is false on the server and through hydration, so the cookie is
+  // only ever read in the browser: a team browser (lib/staff.ts) loads no tag.
+  const active = ready && !pathname.startsWith("/admin") && consent === "accepted" && !isStaffBrowser();
 
   /**
    * The view events of the landing page fired before `load` and are waiting

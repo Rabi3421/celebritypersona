@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { clickEnvironment } from "@/lib/click-environment";
 import { getAllOutfits } from "@/lib/db/content";
 import { recordLinkClick } from "@/lib/db/mutations";
+import { isStaffRequest } from "@/lib/staff";
 import { outfitSlug } from "@/lib/slugs";
 import { isBuyable, isMonetised, linkTarget, pieceLink, type PieceSide } from "@/lib/types";
 
@@ -80,7 +81,8 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const agent = request.headers.get("user-agent") ?? "";
-  if (!BOT.test(agent)) {
+  // A team browser (lib/staff.ts) still goes to the shop, but is not counted.
+  if (!BOT.test(agent) && !isStaffRequest(request.headers.get("cookie"))) {
     await recordLinkClick({
       at: new Date().toISOString(),
       outfitId: outfit.id,

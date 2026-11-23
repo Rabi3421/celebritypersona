@@ -1,5 +1,7 @@
 import { readSession } from "@/lib/auth/session";
-import { signOutAllSessions } from "@/app/admin/actions";
+import { cookies } from "next/headers";
+import { setStaffBrowser, signOutAllSessions } from "@/app/admin/actions";
+import { STAFF_COOKIE } from "@/lib/staff";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import {
   contacts,
@@ -93,6 +95,8 @@ const legalRows = [
 
 export default async function AdminSettings() {
   const session = await readSession();
+  // The proxy marks every signed-in browser unless it was switched off here.
+  const excluded = (await cookies()).get(STAFF_COOKIE)?.value !== "off";
   const env = envRows();
   const unfilled = legalRows.filter((row) => !("optional" in row) && pending(row.value)).length;
 
@@ -184,6 +188,24 @@ export default async function AdminSettings() {
             <strong>Change password</strong>
             <span>npm run seed:admin — reads the new password on stdin, and signs every session out</span>
             <span className={styles.status}>cli</span>
+          </div>
+          <div className={styles.row} id="this-browser">
+            <strong>This browser in analytics</strong>
+            <span>
+              {excluded
+                ? "Not counted: your visits and shop clicks from this browser stay out of PostHog, Google Analytics and the daily report. Set automatically on every browser you sign in from, and kept after you sign out."
+                : "Counted like a reader. Switch back to keep your own visits out of the numbers."}
+            </span>
+            <form action={setStaffBrowser}>
+              <input type="hidden" name="exclude" value={excluded ? "0" : "1"} />
+              <button
+                type="submit"
+                className={styles.ghost}
+                aria-label={excluded ? "Count this browser in analytics" : "Exclude this browser from analytics"}
+              >
+                {excluded ? "Count it" : "Exclude it"}
+              </button>
+            </form>
           </div>
           <div className={styles.row}>
             <strong>Sign out everywhere</strong>
