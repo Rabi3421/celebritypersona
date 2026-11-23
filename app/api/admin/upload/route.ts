@@ -4,6 +4,7 @@ import { readSession } from "@/lib/auth/session";
 import { nameSlug } from "@/lib/slugs";
 import { uploaderStorage } from "@/lib/firebase";
 import { storageDeleteAllowed, storagePrefix } from "@/lib/db-guard";
+import { compressForStorage } from "@/lib/photo-compress";
 
 /** Images only, and small enough that a stray upload cannot fill the bucket. */
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -90,12 +91,21 @@ export async function POST(request: Request) {
     );
   }
 
+  // Whatever arrives is stored as WebP, at most 50KB and 1200px wide where
+  // that fits (see compressForStorage), so the bucket never fills with originals.
+  let stored;
   try {
-    const path = named(actual);
+    stored = await compressForStorage(Buffer.from(bytes));
+  } catch {
+    return NextResponse.json({ error: "That image could not be read. Try exporting it again as JPEG." }, { status: 415 });
+  }
+
+  try {
+    const path = named("image/webp");
     const handle = ref(await uploaderStorage(), path);
-    await uploadBytes(handle, bytes, { contentType: actual });
+    await uploadBytes(handle, new Uint8Array(stored.bytes), { contentType: "image/webp" });
     const url = await getDownloadURL(handle);
-    return NextResponse.json({ url, path });
+    return NextResponse.json({ url, path, bytes: stored.bytes.length, width: stored.width, height: stored.height });
   } catch (error) {
     console.error("Admin image upload failed", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json(

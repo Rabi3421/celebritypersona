@@ -1,5 +1,6 @@
 /**
- * Shrinks a photo in the browser before it is uploaded.
+ * Shrinks a photo in the browser before it is uploaded; the server then makes
+ * the stored 50KB WebP from it.
  *
  * Storage is the reason: a bucket filled with 1MB originals runs out fast, and
  * every one of them has to be fetched before it can be served. Compressing here
@@ -13,27 +14,23 @@
 import { safeFileName } from "@/lib/file-names";
 
 /**
- * Roughly 180KB. The old 50KB target pushed most photos down to a 1024px or
- * 800px edge to fit, and Google Discover and large image previews want the
- * cover at least 1200px wide. The page never serves this file directly — the
- * image optimiser resizes it per device — so this is the ceiling, not what a
- * phone downloads.
+ * Only the first, light shrink. The server makes the stored file (WebP, at
+ * most 50KB, 1200px wide; see lib/photo-compress.ts), with an encoder that
+ * fits far more into those bytes than the browser's. This step just keeps a
+ * phone photo well under the platform's 4.5MB request limit, and leaves the
+ * server a clean, high-quality source to work from.
  */
-export const TARGET_BYTES = 180 * 1024;
+export const TARGET_BYTES = 1200 * 1024;
 
-/** A 3:4 portrait at this long edge is 1500px wide. */
-const MAX_EDGE = 2000;
+/** Comfortably above the 1200px width the server keeps. */
+const MAX_EDGE = 2400;
 
-/**
- * Tried in turn when the target cannot be met at the size above. Stops at
- * 1600, where a 3:4 portrait is still 1200px wide; below that the file is
- * allowed to run over the target rather than lose the width.
- */
-const NARROWER = [1800, 1600];
+/** Tried in turn when the target cannot be met at the size above. */
+const NARROWER = [2000, 1600];
 
-/** Below this, a photo of fabric starts to look like a photo of a JPEG. */
-const MIN_QUALITY = 0.4;
-const MAX_QUALITY = 0.82;
+/** High on purpose: the server compresses again, and artefacts would compound. */
+const MIN_QUALITY = 0.6;
+const MAX_QUALITY = 0.92;
 
 export type Compressed = {
   file: File;

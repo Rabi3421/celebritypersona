@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OutfitImage, OutfitItem } from "@/lib/types";
 import { nameSlug } from "@/lib/slugs";
-import { compressImage, formatBytes, TARGET_BYTES } from "@/lib/image-compress";
+import { compressImage, formatBytes } from "@/lib/image-compress";
 import styles from "@/app/admin/panel.module.css";
 import { suggestPhotoAlt } from "@/lib/photo-alt";
 import { safeFileName } from "@/lib/file-names";
@@ -118,6 +118,7 @@ export function OutfitImageEditor({
     setSaved(null);
     let from = 0;
     let to = 0;
+    let narrow = 0;
 
     // Sequential on purpose: a look has a handful of photos, and one failure
     // should not leave the others in limbo.
@@ -129,7 +130,6 @@ export function OutfitImageEditor({
         setBusy(`Optimising${label}…`);
         const shrunk = await compressImage(file);
         from += shrunk.from;
-        to += shrunk.to;
 
         setBusy(`Uploading${label}…`);
         const body = new FormData();
@@ -144,6 +144,9 @@ export function OutfitImageEditor({
         const response = await adminFetch("/api/admin/upload", { method: "POST", body });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Upload failed.");
+        // What was actually stored: the server's final WebP.
+        to += typeof data.bytes === "number" ? data.bytes : shrunk.to;
+        if (typeof data.width === "number" && data.width < 1200) narrow += 1;
         freshRef.current.add(data.path);
         // Starts with a suggested alt rather than none, so no photo reaches
         // the page undescribed; the editor refines it below.
@@ -160,7 +163,10 @@ export function OutfitImageEditor({
     setBusy(null);
     if (to > 0) {
       setSaved(
-        `${formatBytes(from)} → ${formatBytes(to)}${to > TARGET_BYTES * files.length ? " — as small as this photo goes without visible damage" : ""}`,
+        `${formatBytes(from)} → ${formatBytes(to)} stored as WebP` +
+          (narrow
+            ? ` — ${narrow === 1 ? "one photo was" : `${narrow} photos were`} too detailed for 1200px within 50KB, so stored narrower (fine on the page, but too small for Google Discover's large cards). A less busy photo avoids this.`
+            : ""),
       );
     }
   }
