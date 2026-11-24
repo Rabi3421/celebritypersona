@@ -6,7 +6,8 @@ import { finishedLookJobs } from "@/lib/db/look-jobs";
 import { latestLinkCheck } from "@/lib/db/link-checks";
 import { suggestionsSince } from "@/lib/db/look-suggestions";
 import { reportTokenValid } from "@/lib/report/report-auth";
-import { EVENTS_WINDOW_HOURS, latestBackup, summariseLookJobs, type SiteEvents } from "@/lib/report/site-events";
+import { EVENTS_WINDOW_HOURS, latestBackup, summariseLookJobs, summarisePublished, type SiteEvents } from "@/lib/report/site-events";
+import { site } from "@/lib/site-config";
 
 /**
  * Events for the monitoring Worker's Slack alerts.
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
       generatedAt: new Date().toISOString(),
       lookJobs: summariseLookJobs(jobs, outfits),
       suggestions: scouted.map(({ id, batch, celebrity, event, why, score, status }) => ({ id, batch, celebrity, event, why, score, status })),
+      published: summarisePublished(outfits, since, site.url),
       linkCheck: links
         ? {
             id: links.id,

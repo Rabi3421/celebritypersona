@@ -1,4 +1,7 @@
 import type { LookJob } from "@/lib/look-jobs";
+import { shareVersion } from "@/lib/share-text";
+import { outfitSlug } from "@/lib/slugs";
+import { isPublished, type Outfit } from "@/lib/types";
 
 /**
  * What the monitoring Worker needs to post "draft ready" and "backup missed"
@@ -26,6 +29,8 @@ export type SiteEvents = {
   }[];
   /** The scout's suggestions from the last 72 hours, still waiting or already decided. */
   suggestions?: { id: string; batch: string; celebrity: string; event: string; why: string; score: number; status: string }[];
+  /** Looks published in the window, with what a Pinterest pin needs. */
+  published?: { id: number; celebrity: string; event: string; publishedAt: string; url: string; pinImage: string; pinDescription: string }[];
   /** The newest weekly link check in the window: what changed, for a Slack to-do. */
   linkCheck?: {
     id: string;
@@ -68,4 +73,31 @@ export function latestBackup(blobs: { pathname: string; uploadedAt: Date | strin
     .map((blob) => new Date(blob.uploadedAt).getTime())
     .filter(Number.isFinite);
   return { latestAt: times.length ? new Date(Math.max(...times)).toISOString() : null, count: times.length };
+}
+
+/**
+ * Looks published since `since`: the Slack "published" post carries the page,
+ * its 1000×1500 pin image and a description, so pinning it is one tap.
+ */
+export function summarisePublished(
+  outfits: (Pick<Outfit, "id" | "celebrity" | "event" | "date" | "items"> & Partial<Outfit>)[],
+  since: Date,
+  site: string,
+): NonNullable<SiteEvents["published"]> {
+  const base = site.replace(/\/+$/, "");
+  return outfits
+    .filter((outfit) => isPublished(outfit as Outfit) && outfit.publishedAt && Date.parse(outfit.publishedAt) >= since.getTime())
+    .map((outfit) => {
+      const path = `/outfits/${outfitSlug(outfit)}`;
+      return {
+        id: outfit.id,
+        celebrity: outfit.celebrity,
+        event: outfit.event,
+        publishedAt: outfit.publishedAt!,
+        url: `${base}${path}`,
+        pinImage: `${base}${path}/pin.png?v=${shareVersion(outfit)}`,
+        pinDescription: (outfit.seoDescription || `${outfit.celebrity}'s ${outfit.event} outfit, decoded: every piece, the price and a cheaper swap.`).slice(0, 480),
+      };
+    })
+    .sort((a, b) => a.publishedAt.localeCompare(b.publishedAt));
 }

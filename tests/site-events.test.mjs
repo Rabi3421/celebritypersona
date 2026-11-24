@@ -45,3 +45,23 @@ test("the newest backup is found; an empty store says so", () => {
   );
   assert.deepEqual(latestBackup([]), { latestAt: null, count: 0 });
 });
+
+test("published looks in the window carry their page, pin image and description", async () => {
+  const { summarisePublished } = await import("@/lib/report/site-events");
+  const piece = { name: "Saree", worn: 12000, wornLink: { retailer: "Shop", url: "https://shop.test/a", network: "none", status: "ok" } };
+  const look = (over) => ({ id: 1, celebrity: "Kiara Advani", event: "Promo Tour", date: "2026-11-20", items: [piece], status: "published", publishedAt: "2026-11-23", ...over });
+  const out = summarisePublished(
+    [
+      look({ seoDescription: "Kiara's red saree, priced." }),
+      look({ id: 2, publishedAt: "2026-10-01" }),
+      look({ id: 3, status: "draft", publishedAt: undefined }),
+    ],
+    new Date("2026-11-21T00:00:00Z"),
+    "https://www.celebritypersona.com/",
+  );
+  assert.equal(out.length, 1);
+  assert.equal(out[0].id, 1);
+  assert.match(out[0].url, /^https:\/\/www\.celebritypersona\.com\/outfits\/[a-z0-9-]+$/);
+  assert.ok(out[0].pinImage.startsWith(`${out[0].url}/pin.png?v=`), out[0].pinImage);
+  assert.equal(out[0].pinDescription, "Kiara's red saree, priced.");
+});
