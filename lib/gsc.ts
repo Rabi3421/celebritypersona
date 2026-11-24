@@ -64,6 +64,21 @@ export async function inspectUrl(token: string, url: string): Promise<Inspection
   };
 }
 
+/** Search Analytics rows split by the given dimensions ("query", "page"). Web search only. */
+export async function searchRows(token: string, startDate: string, endDate: string, dimensions: ("query" | "page")[], rowLimit = 1000) {
+  const response = await fetch(
+    `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_PROPERTY)}/searchAnalytics/query`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ startDate, endDate, dimensions, rowLimit, type: "web" }),
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (!response.ok) throw new Error(`search analytics failed (${response.status})`);
+  return ((await response.json()) as { rows?: { keys: string[]; clicks: number; impressions: number; position: number }[] }).rows ?? [];
+}
+
 export async function searchTotals(token: string, startDate: string, endDate: string) {
   const response = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_PROPERTY)}/searchAnalytics/query`,

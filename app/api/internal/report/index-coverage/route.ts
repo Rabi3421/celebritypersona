@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { accessToken, inspectUrl, searchTotals, serviceAccount, type Inspection } from "@/lib/gsc";
+import { accessToken, inspectUrl, searchRows, searchTotals, serviceAccount, type Inspection } from "@/lib/gsc";
 import { reportTokenValid } from "@/lib/report/report-auth";
 import { summariseCoverage } from "@/lib/report/index-coverage";
+import { summariseQueries } from "@/lib/report/search-queries";
 import { sitemapEntries } from "@/lib/sitemap";
 
 /**
@@ -12,7 +13,7 @@ import { sitemapEntries } from "@/lib/sitemap";
  *   Authorization: Bearer <REPORT_API_TOKEN>
  *
  * Read only: one URL Inspection call per sitemap URL (Google allows 2,000 a
- * day) and two Search Analytics totals, with the read-only service account in
+ * day), two Search Analytics totals and five query/page breakdowns, with the read-only service account in
  * GSC_SERVICE_ACCOUNT_JSON. Without a valid token it is the same plain 404 as
  * any unknown path; without the service account it answers 503.
  */
@@ -51,7 +52,21 @@ export async function GET(request: Request) {
       .then(([last7, prev7]) => ({ last7, prev7 }))
       .catch(() => null);
 
-    return NextResponse.json(summariseCoverage(rows, search, errors), { headers: HEADERS });
+    // What Google shows the site for: near misses, new queries, drops. Optional:
+    // a failure here leaves the coverage part of the message intact.
+    const queries = await Promise.all([
+      searchRows(token, day(30), day(3), ["query", "page"]),
+      searchRows(token, day(9), day(3), ["query"]),
+      searchRows(token, day(37), day(10), ["query"]),
+      searchRows(token, day(9), day(3), ["page"]),
+      searchRows(token, day(16), day(10), ["page"]),
+    ])
+      .then(([queryPages28, queries7, queriesBefore, pages7, pagesPrev7]) =>
+        summariseQueries({ queryPages28, queries7, queriesBefore, pages7, pagesPrev7 }),
+      )
+      .catch(() => null);
+
+    return NextResponse.json({ ...summariseCoverage(rows, search, errors), queries }, { headers: HEADERS });
   } catch (error) {
     console.error("Index coverage failed", error instanceof Error ? error.message : "Unknown");
     return NextResponse.json({ error: "index coverage unavailable" }, { status: 503, headers: HEADERS });
