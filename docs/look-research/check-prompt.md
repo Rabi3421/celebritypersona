@@ -22,7 +22,7 @@ Copy each `claim` **exactly** as written in `research.json`, character for chara
 Then, in `problems`, list anything else an editor must know that the evidence list does not cover (at most 10, one sentence each), for example:
 
 - a price in `items` that does not match `products.json` or the product page;
-- a swap that is out of stock, not sold in India, more expensive than the original, or not the same look;
+- a swap (the main one or any in `budgetSwaps`) that is out of stock, not sold in India, more expensive than the original, priced differently from its page, or not the same look;
 - a link that is a search or category page rather than one product;
 - a date, event or celebrity name that is wrong;
 - the post being labelled as AI-generated or edited, or a paid partnership not mentioned;

@@ -58,6 +58,7 @@ export const ITEM_FIELDS = [
   "swapNetwork",
   "swapStatus",
   "note",
+  "budgetSwaps",
   "soldOut",
   "hotspotX",
   "hotspotY",

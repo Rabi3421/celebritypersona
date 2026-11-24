@@ -9,6 +9,7 @@ import { getDb } from "@/lib/mongodb";
 import { storageDeleteAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
+import { keepBudgetSwapStatus } from "@/lib/budget-swaps";
 import { sameName } from "@/lib/archive";
 import { budgetBucket, budgetSlug } from "@/lib/budget";
 import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
@@ -321,6 +322,7 @@ export async function updateOutfit(
   const db = await getDb();
   const collection = db.collection<Outfit>("outfits");
   const previous = await collection.findOne({ id });
+  input = { ...input, items: keepBudgetSwapStatus(input.items, previous?.items ?? []) };
 
   /**
    * A slug only moves when an editor types a different one.
@@ -971,3 +973,4 @@ export async function setOutfitStatus(id: number, status: "draft" | "published")
   await updateOutfit(id, { ...rest, status });
   return stored;
 }
+

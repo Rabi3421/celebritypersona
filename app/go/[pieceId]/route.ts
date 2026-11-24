@@ -4,7 +4,7 @@ import { getAllOutfits } from "@/lib/db/content";
 import { recordLinkClick } from "@/lib/db/mutations";
 import { isStaffRequest } from "@/lib/staff";
 import { outfitSlug } from "@/lib/slugs";
-import { isBuyable, isMonetised, linkTarget, pieceLink, type PieceSide } from "@/lib/types";
+import { budgetSwapsOf, budgetTier, isBuyable, isMonetised, linkTarget, pieceLink, type PieceSide } from "@/lib/types";
 
 /**
  * Every outbound click on a retailer link.
@@ -56,7 +56,11 @@ export async function GET(request: Request, { params }: Params) {
 
   const slug = outfitSlug(outfit);
   const look = new URL(`/outfits/${slug}`, url).toString();
-  const link = pieceLink(piece, side);
+  // ?budget=<n>: the nth swap at another budget, in the order the page lists them.
+  const budgetIndex = url.searchParams.has("budget") ? Number(url.searchParams.get("budget")) : null;
+  const budgetSwap = budgetIndex !== null && Number.isInteger(budgetIndex) ? budgetSwapsOf(piece)[budgetIndex] : undefined;
+  if (budgetIndex !== null && !budgetSwap) return NextResponse.redirect(look, 302);
+  const link = budgetSwap ? budgetSwap.link : pieceLink(piece, side);
 
   // Not buyable covers pending, sold out and dead. The page should not have
   // drawn a button at all, so this is a stale tab or a guessed URL: send the
@@ -89,7 +93,8 @@ export async function GET(request: Request, { params }: Params) {
       outfitSlug: slug,
       pieceId,
       piece: piece.name,
-      side,
+      side: budgetSwap ? "swap" : side,
+      ...(budgetSwap ? { budget: budgetTier(budgetSwap.price) ?? undefined } : {}),
       retailer: link.retailer,
       network: link.network,
       sourcePage:

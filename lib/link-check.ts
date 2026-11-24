@@ -169,7 +169,8 @@ export async function runLinkCheck(outfits: CheckableOutfit[], options: Options 
   const today = options.today ?? new Date().toISOString().slice(0, 10);
   const deadline = options.budgetMs ? now() + options.budgetMs : Infinity;
 
-  type Slot = { outfit: CheckableOutfit; index: number; field: "wornLink" | "swapLink"; side: "original" | "swap"; checkedAt: string };
+  /** `budget` set: the piece's nth swap at another budget rather than its main link. */
+  type Slot = { outfit: CheckableOutfit; index: number; field: "wornLink" | "swapLink"; side: "original" | "swap"; budget?: number; checkedAt: string };
   const slots: Slot[] = [];
   for (const outfit of outfits) {
     outfit.items.forEach((item, index) => {
@@ -177,6 +178,9 @@ export async function runLinkCheck(outfits: CheckableOutfit[], options: Options 
         const link = item[field];
         if (link?.url) slots.push({ outfit, index, field, side, checkedAt: link.checkedAt ?? "" });
       }
+      (item.budgetSwaps ?? []).forEach((swap, budget) => {
+        if (swap.link?.url) slots.push({ outfit, index, field: "swapLink", side: "swap", budget, checkedAt: swap.link.checkedAt ?? "" });
+      });
     });
   }
   slots.sort((a, b) => a.checkedAt.localeCompare(b.checkedAt));
@@ -195,7 +199,7 @@ export async function runLinkCheck(outfits: CheckableOutfit[], options: Options 
     }
     const entry = edited.get(slot.outfit.id) ?? { items: slot.outfit.items.map((item) => ({ ...item })), moved: false };
     const item = entry.items[slot.index];
-    const link = item[slot.field]!;
+    const link = slot.budget === undefined ? item[slot.field]! : item.budgetSwaps![slot.budget].link;
 
     const host = hostOf(link.url);
     const since = now() - (lastHit.get(host) ?? 0);
@@ -214,7 +218,7 @@ export async function runLinkCheck(outfits: CheckableOutfit[], options: Options 
         outfitId: slot.outfit.id,
         celebrity: slot.outfit.celebrity,
         event: slot.outfit.event,
-        piece: item.name,
+        piece: slot.budget === undefined ? item.name : `${item.name} (₹${item.budgetSwaps![slot.budget].price} swap)`,
         side: slot.side,
         from: link.status,
         to: status,
@@ -222,7 +226,13 @@ export async function runLinkCheck(outfits: CheckableOutfit[], options: Options 
         url: link.url,
       });
     }
-    item[slot.field] = { ...link, status, ...(learned ? { checkedAt: today } : {}) };
+    const checkedLink = { ...link, status, ...(learned ? { checkedAt: today } : {}) };
+    if (slot.budget === undefined) item[slot.field] = checkedLink;
+    else {
+      const budgetSwaps = [...item.budgetSwaps!];
+      budgetSwaps[slot.budget] = { ...budgetSwaps[slot.budget], link: checkedLink };
+      entry.items[slot.index] = { ...item, budgetSwaps };
+    }
     edited.set(slot.outfit.id, entry);
   }
 

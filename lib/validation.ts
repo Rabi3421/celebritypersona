@@ -5,6 +5,8 @@ import {
   LINK_NETWORKS,
   LINK_STATUSES,
   retailerFromUrl,
+  budgetTier,
+  type BudgetSwap,
   type LinkNetwork,
   type LinkStatus,
   type PieceLink,
@@ -81,6 +83,36 @@ function buildLink(side: PieceSide, item: Record<string, unknown>) {
   return { [side === "original" ? "wornLink" : "swapLink"]: link };
 }
 
+/**
+ * The editor's "Swaps at other budgets" box: one swap per line,
+ * `Brand | price | link`, e.g. `Libas | 1,299 | https://…`. A price may carry
+ * ₹ or commas. Links start unverified; the weekly check sets their status.
+ */
+export function parseBudgetSwaps(text: string | undefined): { swaps: BudgetSwap[]; errors: string[] } {
+  const swaps: BudgetSwap[] = [];
+  const errors: string[] = [];
+  for (const [index, raw] of (text ?? "").split(/\r?\n/).entries()) {
+    const line = raw.trim();
+    if (!line) continue;
+    const parts = line.split("|").map((part) => part.trim());
+    const [brand, priceText, url] = parts;
+    const price = Number((priceText ?? "").replace(/[₹,\s]|rs\.?/gi, ""));
+    if (parts.length !== 3 || !brand || !url) {
+      errors.push(`Line ${index + 1}: write it as Brand | price | link`);
+    } else if (!Number.isInteger(price) || price < 1) {
+      errors.push(`Line ${index + 1}: the price must be a whole number of rupees`);
+    } else if (budgetTier(price) === null) {
+      errors.push(`Line ${index + 1}: ₹${price} is above ₹5,000; the main swap covers that`);
+    } else if (!/^https?:\/\/\S+$/i.test(url)) {
+      errors.push(`Line ${index + 1}: the link must start with http:// or https://`);
+    } else {
+      swaps.push({ brand, price, link: { retailer: retailerFromUrl(url) || brand, url, network: "none", status: "unverified" } });
+    }
+  }
+  if (swaps.length > 3) errors.push("At most 3 swaps at other budgets, one per band");
+  return { swaps, errors };
+}
+
 /** Only the piece's own name is asked for. Everything else — the label she
  *  wore, either price, the swap — is filled in as it is confirmed, so a piece
  *  we have only found the high-street version of can still be published. */
@@ -105,6 +137,7 @@ export const outfitItemSchema = z
     swapNetwork: z.string().trim().optional(),
     swapStatus: z.string().trim().optional(),
     note: z.string().trim().optional(),
+    budgetSwaps: z.string().trim().optional(),
     soldOut: z.string().trim().optional(),
     hotspotX: z.string().trim().optional(),
     hotspotY: z.string().trim().optional(),
@@ -161,6 +194,9 @@ export const outfitItemSchema = z
         ctx.addIssue({ code: "custom", path: [key], message: `${label} must start with http:// or https://` });
       }
     }
+    for (const message of parseBudgetSwaps(item.budgetSwaps).errors) {
+      ctx.addIssue({ code: "custom", path: ["budgetSwaps"], message });
+    }
     if (item.category && !isPieceCategory(item.category)) {
       ctx.addIssue({ code: "custom", path: ["category"], message: `"${item.category}" is not a category on the list` });
     }
@@ -200,6 +236,7 @@ export const outfitItemSchema = z
     ...(item.swapBrand ? { swapBrand: item.swapBrand } : {}),
     ...(item.swap ? { swap: Number(item.swap) } : {}),
     ...(item.swapUrl ? { swapUrl: item.swapUrl } : {}),
+    ...(parseBudgetSwaps(item.budgetSwaps).swaps.length ? { budgetSwaps: parseBudgetSwaps(item.budgetSwaps).swaps } : {}),
     ...(item.category && isPieceCategory(item.category) ? { category: item.category } : {}),
     ...(item.colours.length ? { colours: item.colours.filter(isPieceColour) } : {}),
   }));

@@ -44,6 +44,11 @@ export const researchPieceSchema = z.object({
   swapBrand: z.string().trim().max(80).nullable(),
   swap: rupees,
   swapUrl: https.nullable(),
+  /** More swaps at other budgets (under ₹1,000 / ₹2,500 / ₹5,000), each on a page the runner opened. */
+  budgetSwaps: z
+    .array(z.object({ brand: z.string().trim().min(1).max(80), price: z.number().int().positive().max(5000), url: https }))
+    .max(3)
+    .default([]),
   /** One or two sentences for the reader: fabric, fit, how to wear it. */
   note: z.string().trim().max(400).nullable(),
 });
@@ -136,6 +141,7 @@ export function researchToOutfitInput(
       swapBrand: str(item.swapBrand),
       swap: str(item.swap),
       swapUrl: str(item.swapUrl),
+      budgetSwaps: item.budgetSwaps.map((swap) => `${swap.brand.replace(/\|/g, "/")} | ${swap.price} | ${swap.url}`).join("\n"),
       note: str(item.note),
     })),
   };

@@ -58,6 +58,25 @@ export type PieceLink = {
   checkedAt?: string;
 };
 
+/** A swap at another budget than the piece's main swap. */
+export type BudgetSwap = { brand: string; price: number; link: PieceLink };
+
+/** The budget bands readers search by ("under ₹1,000"…), cheapest first. */
+export const BUDGET_TIERS = [1000, 2500, 5000] as const;
+
+/** The band a price falls in: the smallest limit it is under or at, or null above ₹5,000. */
+export const budgetTier = (price: number) => BUDGET_TIERS.find((limit) => price <= limit) ?? null;
+
+/** A piece's extra swaps worth showing: priced, in a band, buyable or not yet checked, cheapest first. */
+export const budgetSwapsOf = (item: Pick<OutfitItem, "budgetSwaps">) =>
+  (item.budgetSwaps ?? [])
+    .filter((swap) => swap.price > 0 && budgetTier(swap.price) !== null && swap.link?.url)
+    .sort((a, b) => a.price - b.price);
+
+/** The editor box's text for a stored piece (`Brand | price | link` per line), so a save writes back what it read. */
+export const budgetSwapsText = (swaps: BudgetSwap[] | undefined) =>
+  (swaps ?? []).map((swap) => `${swap.brand} | ${swap.price} | ${swap.link.url}`).join("\n");
+
 export type OutfitItem = {
   /**
    * Stable per piece, so an outbound click can name what was clicked without
@@ -94,6 +113,9 @@ export type OutfitItem = {
    */
   wornLink?: PieceLink;
   swapLink?: PieceLink;
+  /** More swaps at other price points (under ₹1,000 / ₹2,500 / ₹5,000), beside
+   *  the main swap above. Each has a confirmed price and its own checked link. */
+  budgetSwaps?: BudgetSwap[];
   /** One line the merchant cannot supply: fabric, fit, why it works. This is
    *  the difference between a listing and a decoded piece. */
   note?: string;
@@ -592,6 +614,8 @@ export type LinkClick = {
   /** The piece's name, copied so a renamed or deleted piece keeps its history. */
   piece: string;
   side: PieceSide;
+  /** Set when the click was on a swap at another budget: its price band, e.g. 1000. */
+  budget?: number;
   retailer: string;
   network: LinkNetwork;
   /** The page the click came from, always a path on this site. */

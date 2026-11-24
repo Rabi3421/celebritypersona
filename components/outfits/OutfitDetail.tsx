@@ -11,6 +11,8 @@ import { BlankFrame, OutfitThumb, outfitAlt } from "@/components/site/Thumb";
 import { nameSlug, outfitSlug } from "@/lib/slugs";
 import { useSavedList } from "@/lib/saved";
 import {
+  budgetSwapsOf,
+  budgetTier,
   effectiveCredit,
   hasSwap,
   isBuyable,
@@ -459,11 +461,36 @@ export function OutfitDetail({
                       {tagFor(item, pane).text}
                     </span>
                     {item.note ? <em className={styles.lineNote}>{item.note}</em> : null}
+                    {/* Swaps at other budgets, on the swap list only, so each
+                        appears once in the HTML. Cheapest first. */}
+                    {pane === "swap" && budgetSwapsOf(item).length ? (
+                      <ul className={styles.budgetSwaps} aria-label={`Swaps for the ${item.name} at other budgets`}>
+                        {budgetSwapsOf(item).map((swap, i) => (
+                          <li key={swap.link.url}>
+                            <span>Under {inr.format(budgetTier(swap.price)!)}</span> {swap.brand} · <b>{inr.format(swap.price)}</b>
+                            {isBuyable(swap.link) ? (
+                              <>
+                                {" "}
+                                <a
+                                  href={`/go/${item.id}?side=swap&budget=${i}&from=${encodeURIComponent(`/outfits/${slug}`)}`}
+                                  target="_blank"
+                                  rel="sponsored nofollow noopener"
+                                  onClick={() => trackEvent("swap_click", { outfit: slug, piece: item.name, place: `budget_${budgetTier(swap.price)}` })}
+                                >
+                                  Shop
+                                </a>
+                              </>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                     {/* The cheaper version, shown on the original's own row so
                         nobody has to find the tab to learn it exists. */}
                     {pane === "worn" && hasSwap(item) ? (
                       <p className={styles.swapHint}>
                         <span>Cheaper swap</span> {item.swapBrand} · <b>{inr.format(item.swap)}</b>
+                        {budgetSwapsOf(item).length ? ` (+${budgetSwapsOf(item).length} at other budgets on The swap)` : null}
                         {isBuyable(pieceLink(item, sideOf("swap"))) ? (
                           <>
                             {" "}

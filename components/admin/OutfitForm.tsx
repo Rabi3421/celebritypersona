@@ -12,7 +12,7 @@ import {
 import { RepeatableRows } from "@/components/admin/form/RepeatableRows";
 import { OutfitImageEditor } from "@/components/admin/OutfitImageEditor";
 import { removeOutfit, saveOutfit, type OutfitFormState } from "@/app/admin/(panel)/outfits/actions";
-import { LINK_STATUSES, leadPiece, outfitOccasions, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
+import { budgetSwapsText, LINK_STATUSES, leadPiece, outfitOccasions, outfitPhotos, pieceLink, type Outfit, type OutfitItem } from "@/lib/types";
 import { networkOptions } from "@/lib/affiliate/networks";
 import { isNewLook, NEW_LOOK_DAYS, publishedDay } from "@/lib/archive";
 import { outfitSlug } from "@/lib/slugs";
@@ -68,6 +68,7 @@ function flattenItem(item: OutfitItem, leadId: string | undefined) {
     swapNetwork: swap?.network,
     swapStatus: swap?.status,
     colours: item.colours?.join(","),
+    budgetSwaps: budgetSwapsText(item.budgetSwaps),
     leadPiece: leadId && item.id === leadId ? "on" : "",
   };
 }
@@ -382,6 +383,19 @@ export function OutfitForm({
                   },
                   { key: "swapNetwork", label: "Swap network", options: networkOptions },
                   { key: "swapStatus", label: "Swap link status", options: statusOptions },
+                  {
+                    key: "budgetSwaps",
+                    label: "Swaps at other budgets (optional)",
+                    render: ({ id, name, value }) => (
+                      <textarea
+                        id={id}
+                        name={name}
+                        defaultValue={value}
+                        rows={3}
+                        placeholder={"One per line: Brand | price | link\nLibas | 999 | https://…\nW | 2,299 | https://…"}
+                      />
+                    ),
+                  },
                 ]}
               />
 
