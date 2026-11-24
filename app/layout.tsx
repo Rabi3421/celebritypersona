@@ -4,7 +4,7 @@ import "./globals.css";
 import { Analytics } from "@/components/site/Analytics";
 import { ConsentBanner } from "@/components/site/ConsentBanner";
 import { NavProgress } from "@/components/site/NavProgress";
-import { DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { DEFAULT_OG_IMAGE, scriptJson } from "@/lib/seo";
 import { author, site, social } from "@/lib/site-config";
 
 const archivo = Archivo({
@@ -163,7 +163,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteGraph) }}
+          dangerouslySetInnerHTML={{ __html: scriptJson(siteGraph) }}
         />
         {gaId ? <Analytics gaId={gaId} /> : null}
       </body>

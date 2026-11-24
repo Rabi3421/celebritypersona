@@ -211,6 +211,23 @@ export function breadcrumbs(id: string, trail: { name: string; path: string }[])
   };
 }
 
+/**
+ * JSON for the inside of a <script> element (the usual safe-JSON-in-HTML
+ * encoding). The value is unchanged: `<`, `>`, `&`, U+2028 and U+2029 are
+ * written as \u escapes, which JSON parsers read back as the same characters.
+ * Every <script> with data in it on this site goes through here.
+ */
+const LINE_SEPARATOR = String.fromCharCode(0x2028);
+const PARAGRAPH_SEPARATOR = String.fromCharCode(0x2029);
+
+export function scriptJson(value: unknown): string {
+  return (JSON.stringify(value) ?? "null")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .split(LINE_SEPARATOR).join("\\u2028")
+    .split(PARAGRAPH_SEPARATOR).join("\\u2029");
+}
+
 /** Serialises a graph for a single <script type="application/ld+json">. */
-export const jsonLd = (graph: object[]) =>
-  JSON.stringify({ "@context": "https://schema.org", "@graph": graph });
+export const jsonLd = (graph: object[]) => scriptJson({ "@context": "https://schema.org", "@graph": graph });
