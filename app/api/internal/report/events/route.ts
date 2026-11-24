@@ -3,6 +3,7 @@ import { list } from "@vercel/blob";
 import { PREFIX } from "@/lib/backup/core";
 import { getAllOutfits } from "@/lib/db/content";
 import { finishedLookJobs } from "@/lib/db/look-jobs";
+import { latestLinkCheck } from "@/lib/db/link-checks";
 import { suggestionsSince } from "@/lib/db/look-suggestions";
 import { reportTokenValid } from "@/lib/report/report-auth";
 import { EVENTS_WINDOW_HOURS, latestBackup, summariseLookJobs, type SiteEvents } from "@/lib/report/site-events";
@@ -49,12 +50,28 @@ export async function GET(request: Request) {
   }
   try {
     const since = new Date(Date.now() - EVENTS_WINDOW_HOURS * 3_600_000);
-    const [jobs, outfits, backup, scouted] = await Promise.all([finishedLookJobs(since), getAllOutfits(), backupState(), suggestionsSince(since)]);
+    const [jobs, outfits, backup, scouted, links] = await Promise.all([
+      finishedLookJobs(since),
+      getAllOutfits(),
+      backupState(),
+      suggestionsSince(since),
+      latestLinkCheck(since).catch(() => null),
+    ]);
     const body: SiteEvents = {
       version: 1,
       generatedAt: new Date().toISOString(),
       lookJobs: summariseLookJobs(jobs, outfits),
       suggestions: scouted.map(({ id, batch, celebrity, event, why, score, status }) => ({ id, batch, celebrity, event, why, score, status })),
+      linkCheck: links
+        ? {
+            id: links.id,
+            runAt: links.runAt,
+            checked: links.checked,
+            skipped: links.skipped,
+            // No product URLs: Slack links to the editor instead.
+            changes: links.changes.map(({ outfitId, celebrity, event, piece, side, from, to, reason }) => ({ outfitId, celebrity, event, piece, side, from, to, reason })),
+          }
+        : null,
       backup,
     };
     return NextResponse.json(body, { headers: HEADERS });

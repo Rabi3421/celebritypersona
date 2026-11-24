@@ -39,83 +39,12 @@ import { MongoClient } from "mongodb";
 import { assertWritable } from "@/lib/prod-guard";
 import { backupDocuments } from "./backup";
 import { revalidateSite } from "./revalidate";
+import { checkLink, HOST_DELAY_MS } from "@/lib/link-check";
 import type { LinkStatus, OutfitItem } from "@/lib/types";
 
 const apply = process.argv.includes("--apply");
 
-/** Long enough for a slow retailer, short enough to finish a run. */
-const TIMEOUT_MS = 15_000;
-
-/** Between requests to the same host, so a check is never a small flood. */
-const HOST_DELAY_MS = 1_500;
-
-/**
- * A browser's own header set. Not an attempt to defeat a bot wall — the ones
- * that matter here are not fooled by a header — but many retailers reject a
- * request with no Accept or no UA outright, and being rejected for looking
- * like a script tells us nothing about the link.
- */
-const HEADERS = {
-  "user-agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "accept-language": "en-IN,en;q=0.9",
-};
-
-/**
- * Whether a product page says, in so many words, that the item is unavailable.
- *
- * The first version of this searched the page text for "sold out" and "out of
- * stock". Run against the real archive it marked eleven of twelve links sold
- * out — and every one was wrong. Most of these shops are Shopify, and a
- * Shopify theme ships its button labels in a JS config on every page:
- *
- *   productFormSoldOut: "Sold Out", ButtonTextOutOfStock: "OUT OF STOCK"
- *
- * The words are on the page whether or not the product is available, so the
- * test had no relationship to the thing it claimed to measure. It would have
- * taken the Buy button off nine looks that are in stock today.
- *
- * So only an explicit machine-readable signal counts: schema.org availability
- * in the page's JSON-LD, which is what the retailer states to Google and is
- * the same claim they make in their own rich results. No structured data means
- * no signal, which means no demotion — a 200 with nothing to contradict it is
- * `ok`.
- */
-const UNAVAILABLE = /outofstock|soldout|discontinued|instoreonly|backorder|preorder/;
-const AVAILABLE = /(^|\/)instock$/;
-
-/** Every `availability` value anywhere in the page's JSON-LD. */
-function availabilityFrom(html: string): string[] {
-  const found: string[] = [];
-  for (const block of html.matchAll(
-    /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi,
-  )) {
-    try {
-      const walk = (node: unknown): void => {
-        if (Array.isArray(node)) return node.forEach(walk);
-        if (node && typeof node === "object") {
-          const record = node as Record<string, unknown>;
-          if (typeof record.availability === "string") found.push(record.availability);
-          Object.values(record).forEach(walk);
-        }
-      };
-      walk(JSON.parse(block[1].trim()));
-    } catch {
-      // A malformed or templated block is not a signal either way.
-    }
-  }
-  return found;
-}
-
 type StoredOutfit = { id: number; celebrity: string; event: string; items: OutfitItem[] };
-
-type Result = {
-  status: LinkStatus;
-  /** What the run actually saw, printed so a demotion can be argued with. */
-  reason: string;
-};
 
 function requireUri(): string {
   const uri = process.env.MONGODB_URI;
@@ -129,63 +58,6 @@ function requireUri(): string {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const today = () => new Date().toISOString().slice(0, 10);
-
-async function request(url: string, method: "HEAD" | "GET") {
-  return fetch(url, {
-    method,
-    headers: HEADERS,
-    redirect: "follow",
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-}
-
-async function check(url: string): Promise<Result> {
-  let response: Response;
-  try {
-    // HEAD first: most retailers answer it and it avoids pulling a megabyte of
-    // product page to learn a status code.
-    response = await request(url, "HEAD");
-    // Plenty of shops do not implement HEAD and answer 405, or answer 404 to
-    // HEAD while serving the page perfectly well on GET. Neither is evidence.
-    if (response.status === 405 || response.status === 501 || response.status === 404) {
-      response = await request(url, "GET");
-    }
-  } catch (error) {
-    const name = error instanceof Error ? error.name : "Error";
-    return { status: "unverified", reason: `request failed (${name})` };
-  }
-
-  if (response.status === 404 || response.status === 410) {
-    return { status: "dead", reason: `HTTP ${response.status}` };
-  }
-
-  if (!response.ok) {
-    // 403 and 429 are the bot wall; 5xx is the retailer having a bad day.
-    return { status: "unverified", reason: `HTTP ${response.status}, not checkable` };
-  }
-
-  // A HEAD has no body, so reading the availability needs a GET.
-  let html = "";
-  try {
-    const full = response.bodyUsed || !response.body ? await request(url, "GET") : response;
-    html = await full.text();
-  } catch {
-    return { status: "ok", reason: "HTTP 200, body not readable" };
-  }
-
-  const states = availabilityFrom(html).map((value) => value.toLowerCase().replace(/\s/g, ""));
-  if (states.length === 0) return { status: "ok", reason: "HTTP 200, no availability stated" };
-
-  // One variant in stock is enough to keep the page buyable; a shop only
-  // reports every offer as unavailable when the product really is gone.
-  if (states.some((state) => AVAILABLE.test(state))) {
-    return { status: "ok", reason: "HTTP 200, schema.org InStock" };
-  }
-  if (states.every((state) => UNAVAILABLE.test(state))) {
-    return { status: "sold_out", reason: `HTTP 200, schema.org ${states[0].split("/").pop()}` };
-  }
-  return { status: "ok", reason: "HTTP 200" };
-}
 
 async function main() {
   if (apply) assertWritable("rewrite every link's status and checked date");
@@ -233,7 +105,7 @@ async function main() {
         if (since < HOST_DELAY_MS) await sleep(HOST_DELAY_MS - since);
         lastHit.set(host, Date.now());
 
-        const result = await check(link.url);
+        const result = await checkLink(link.url);
         tally[result.status] += 1;
 
         const changed = link.status !== result.status;

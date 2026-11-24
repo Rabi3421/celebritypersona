@@ -26,6 +26,14 @@ export type SiteEvents = {
   }[];
   /** The scout's suggestions from the last 72 hours, still waiting or already decided. */
   suggestions?: { id: string; batch: string; celebrity: string; event: string; why: string; score: number; status: string }[];
+  /** The newest weekly link check in the window: what changed, for a Slack to-do. */
+  linkCheck?: {
+    id: string;
+    runAt: string;
+    checked: number;
+    skipped: number;
+    changes: { outfitId: number; celebrity: string; event: string; piece: string; side: "original" | "swap"; from: string; to: string; reason: string }[];
+  } | null;
   /** `latestAt` null means no backup exists at all; `error` means the store could not be read. */
   backup: { latestAt: string | null; count: number } | { error: string };
 };
