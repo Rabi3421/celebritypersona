@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Footer } from "@/components/site/Footer";
 import { MobileTabs } from "@/components/site/MobileTabs";
 import { Nav } from "@/components/site/Nav";
+import { TrackNotFound } from "@/components/site/TrackNotFound";
 import styles from "@/components/editorial/editorial.module.css";
 
 /**
@@ -84,6 +85,7 @@ const ROUTES = [
 export default function NotFound() {
   return (
     <>
+      <TrackNotFound />
       <Nav />
       <main className={styles.page}>
         <header className={styles.band}>
