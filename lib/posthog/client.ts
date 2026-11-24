@@ -111,7 +111,15 @@ function load() {
         rageclick: false,
         capture_dead_clicks: false,
         capture_heatmaps: false,
-        capture_performance: false,
+        // Core Web Vitals only (load, layout shift, responsiveness): the speed
+        // Google ranks on. Numbers only: no attribution (it names page
+        // elements), no network timing.
+        capture_performance: {
+          web_vitals: true,
+          web_vitals_allowed_metrics: ["LCP", "CLS", "INP"],
+          web_vitals_attribution: false,
+          network_timing: false,
+        },
         capture_exceptions: true,
         // Off: replay, surveys, tours, experiments, feature flags.
         disable_session_recording: true,
