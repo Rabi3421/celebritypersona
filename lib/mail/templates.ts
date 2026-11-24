@@ -139,3 +139,51 @@ export const lookSubject = (celebrity: string, event: string) => {
   const noun = /\blooks?\b/i.test(event) ? "" : " look";
   return `${celebrity}'s ${event}${noun}, decoded`;
 };
+
+/* --------------------------------------------------------- the weekly digest */
+
+/** Every look published this week, one row each, in the same shell as a single announcement. */
+export function digestEmail(job: MailJob, unsubscribeUrl: string) {
+  const looks = job.digest?.looks ?? [job.look];
+  const rows = looks
+    .map((look) => {
+      const price = look.worn ? `${inr(look.worn)} as worn` : "Priced piece by piece";
+      const image = look.image
+        ? `<a href="${look.url}"><img src="${esc(look.image)}" width="120" alt="${esc(look.celebrity)} at ${esc(look.event)}"
+            style="display:block;width:120px;height:auto;border:0;border-radius:6px;"></a>`
+        : "";
+      return `<tr><td style="padding:14px 34px;border-top:1px solid #ECEDEF;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+    ${image ? `<td width="120" valign="top" style="padding-right:16px;">${image}</td>` : ""}
+    <td valign="top">
+      <p style="margin:0 0 4px;font-size:18px;line-height:1.25;font-weight:600;color:#16181D;">${esc(look.celebrity)}</p>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#71757E;">${esc(look.event)}</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.5;color:#3A3D45;">${look.pieces} ${look.pieces === 1 ? "piece" : "pieces"} · ${esc(price)}</p>
+      <a href="${look.url}" style="font-size:14px;font-weight:600;color:#E0006C;">See the decode →</a>
+    </td>
+  </tr></table>
+</td></tr>`;
+    })
+    .join("\n");
+
+  const body = `<tr><td style="padding:30px 34px 14px;">
+  <p style="margin:0 0 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E0006C;font-weight:600;">This week</p>
+  <h1 style="margin:0 0 8px;font-size:24px;line-height:1.2;color:#16181D;">${esc(job.subject)}</h1>
+  <p style="margin:0;font-size:15px;line-height:1.6;color:#3A3D45;">Every piece identified, what it costs, and what it would cost you instead.</p>
+</td></tr>
+${rows}
+<tr><td style="padding:10px 34px 26px;"></td></tr>`;
+
+  const footer = `You asked for these at ${esc(site.domain)}.
+    <a href="${unsubscribeUrl}" style="color:#8A8E97;">Unsubscribe</a> — one tap, no questions, and it takes effect immediately.`;
+
+  const text = `${job.subject}
+
+${looks.map((look) => `${look.celebrity} — ${look.event}\n${look.url}`).join("\n\n")}
+
+---
+You asked for these at ${site.domain}.
+Unsubscribe: ${unsubscribeUrl}`;
+
+  return { html: SHELL(body, footer), text };
+}

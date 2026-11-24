@@ -780,6 +780,12 @@ export type MailJob = {
     pieces: number;
     worn?: number;
   };
+  /**
+   * Set on a weekly digest: every look published that week, in one mail.
+   * `outfitId` is 0 and `look` is the first of them, so lists that show a job
+   * by its look still have something to show. One digest per `week`.
+   */
+  digest?: { week: string; looks: MailJob["look"][] };
   createdAt: string;
   startedAt?: string;
   finishedAt?: string;

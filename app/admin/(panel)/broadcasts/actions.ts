@@ -5,7 +5,8 @@ import { after } from "next/server";
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getAllOutfits, getSubscribers } from "@/lib/db/content";
-import { cancelMailJob, queueLookAnnouncement } from "@/lib/db/mutations";
+import { cancelMailJob, queueDigest, queueLookAnnouncement } from "@/lib/db/mutations";
+import { digestLooks, digestSubject, digestWeek, mailLook } from "@/lib/digest";
 import { drainQueue } from "@/lib/mail/drain";
 import { lookSubject } from "@/lib/mail/templates";
 import { outfitSlug } from "@/lib/slugs";
@@ -108,4 +109,45 @@ export async function stopBroadcast(form: FormData) {
   await requireAdmin();
   await cancelMailJob(String(form.get("id")));
   revalidatePath("/admin/broadcasts");
+}
+
+/**
+ * Sends this week's digest: every look published in the last 7 days, in one
+ * mail. Same guards as an announcement: typed SEND, never on a preview, one
+ * per week, and it goes through the queue so Stop still works.
+ */
+export async function sendDigest(_previous: AnnounceState, form: FormData): Promise<AnnounceState> {
+  await requireAdmin();
+  if (isSandbox()) return { error: "Broadcasts are off on previews and in development. Nothing was queued." };
+  if (String(form.get("confirm") ?? "").trim().toUpperCase() !== "SEND") {
+    return { error: "Type SEND in the box to confirm. Nothing was sent." };
+  }
+
+  const now = new Date();
+  const [outfits, subscribers] = await Promise.all([getAllOutfits(), getSubscribers()]);
+  const looks = digestLooks(outfits, now).map((outfit) => mailLook(outfit, site.url));
+  if (!looks.length) return { error: "No look was published in the last 7 days, so there is nothing to send." };
+  const audience = subscribers.filter(isMailable).length;
+  if (audience === 0) return { error: "Nobody has confirmed their address yet, so there is nobody to write to." };
+
+  const week = digestWeek(now);
+  const result = await queueDigest({
+    id: randomUUID(),
+    outfitId: 0,
+    subject: digestSubject(looks.length),
+    audience,
+    look: looks[0],
+    digest: { week, looks },
+  });
+  if (!result.queued) return { error: `This week's digest (${week}) has already been sent. One per week.` };
+
+  after(async () => {
+    try {
+      await drainQueue(25_000);
+    } catch (error) {
+      console.error("Digest send failed; the scheduled run will retry", error);
+    }
+  });
+  revalidatePath("/admin/broadcasts");
+  return { queued: `Sending this week's ${looks.length === 1 ? "look" : `${looks.length} looks`} to ${audience} ${audience === 1 ? "reader" : "readers"} now.` };
 }

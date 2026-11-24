@@ -7,7 +7,7 @@ import {
   stopSubscriber,
 } from "@/lib/db/mutations";
 import { getSubscriberByEmail } from "@/lib/db/content";
-import { lookEmail } from "@/lib/mail/templates";
+import { digestEmail, lookEmail } from "@/lib/mail/templates";
 import { mailConfigured, sendMail } from "@/lib/mail/transport";
 import { site } from "@/lib/site-config";
 
@@ -79,7 +79,7 @@ export async function drainQueue(budgetMs: number): Promise<DrainSummary> {
       }
 
       const unsubscribeUrl = `${site.url}/api/unsubscribe?token=${subscriber.unsubscribeToken}`;
-      const mail = lookEmail(job, unsubscribeUrl);
+      const mail = job.digest ? digestEmail(job, unsubscribeUrl) : lookEmail(job, unsubscribeUrl);
       const outcome = await sendMail({
         to: email,
         subject: job.subject,

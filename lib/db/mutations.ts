@@ -839,6 +839,18 @@ export async function queueLookAnnouncement(job: Omit<MailJob, "sent" | "failed"
   return { queued: true as const, job: record };
 }
 
+/** Queues a weekly digest. One per week, for the same reason as one announcement per look. */
+export async function queueDigest(job: Omit<MailJob, "sent" | "failed" | "status" | "createdAt"> & { digest: NonNullable<MailJob["digest"]> }) {
+  const db = await getDb();
+  const jobs = db.collection<MailJob>("mailJobs");
+  const existing = await jobs.findOne({ "digest.week": job.digest.week });
+  if (existing) return { queued: false as const, reason: "already" as const, job: existing };
+  const record: MailJob = { ...job, status: "Queued", createdAt: new Date().toISOString(), sent: 0, failed: 0 };
+  await jobs.insertOne({ ...record });
+  revalidatePath("/admin/broadcasts");
+  return { queued: true as const, job: record };
+}
+
 /** Stops a job that has not finished. Anything already delivered is gone —
  *  this only prevents the rest. */
 export async function cancelMailJob(id: string) {

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AnnounceForm } from "@/components/admin/AnnounceForm";
+import { DigestForm } from "@/components/admin/DigestForm";
+import { digestLooks, digestWeek } from "@/lib/digest";
 import { stopBroadcast } from "./actions";
 import { getMailJobs, getAllOutfits, getSubscribers } from "@/lib/db/content";
 import { mailConfigured } from "@/lib/mail/transport";
@@ -23,6 +25,8 @@ export default async function AdminBroadcasts() {
   ]);
 
   const audience = subscribers.filter(isMailable).length;
+  const now = new Date();
+  const week = digestWeek(now);
   const pending = subscribers.filter((one) => one.status === "Pending").length;
   const announced = new Set(jobs.map((job) => job.outfitId));
   // Newest first, only what is live, and only what has not already gone out.
@@ -69,6 +73,13 @@ export default async function AdminBroadcasts() {
         </div>
       </div>
 
+      <DigestForm
+        looks={digestLooks(outfits, now).map((outfit) => ({ label: `${outfit.celebrity} — ${outfit.event}`, url: `/outfits/${outfitSlug(outfit)}` }))}
+        week={week}
+        sent={jobs.some((job) => job.digest?.week === week)}
+        audience={audience}
+      />
+
       <AnnounceForm outfits={candidates} audience={audience} />
 
       {jobs.length === 0 ? (
@@ -96,9 +107,16 @@ export default async function AdminBroadcasts() {
                 {jobs.map((job) => (
                   <tr key={job.id}>
                     <td>
-                      <Link href={`/outfits/${job.look.slug}`} target="_blank">
-                        {job.look.celebrity} — {job.look.event} ↗
-                      </Link>
+                      {job.digest ? (
+                        <span>
+                          Weekly digest {job.digest.week} · {job.digest.looks.length}{" "}
+                          {job.digest.looks.length === 1 ? "look" : "looks"}
+                        </span>
+                      ) : (
+                        <Link href={`/outfits/${job.look.slug}`} target="_blank">
+                          {job.look.celebrity} — {job.look.event} ↗
+                        </Link>
+                      )}
                       {job.error ? (
                         <small className={styles.muted}> · {job.error}</small>
                       ) : null}
