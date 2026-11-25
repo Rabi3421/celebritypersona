@@ -3,8 +3,8 @@ import { z } from "zod";
 /**
  * A "look from links" job: the editor hands over the Instagram post a
  * celebrity wore something in, the link(s) to buy it, and the real photo. The
- * research runner on the editor's own computer (Claude Code + Codex, on their
- * subscriptions) picks the job up and turns it into a DRAFT outfit, which the
+ * research runner on the editor's own computer (Claude Code, on their
+ * subscription) picks the job up and turns it into a DRAFT outfit, which the
  * editor reviews before anything is published.
  *
  * No imports beyond zod, so the runner and the tests can load it too.
@@ -22,6 +22,14 @@ export type LookJob = {
   id: string;
   instagramUrl: string;
   buyUrls: string[];
+  /** Who wore it, as the editor named them (the sheet's NAME column). */
+  celebrity?: string;
+  /** The celebrity's own Instagram profile, for the credit and to confirm the appearance. */
+  celebrityInstagram?: string;
+  /** The label's own website (the brand that made the outfit). */
+  labelUrl?: string;
+  /** Other links the editor found: the same piece at another shop, or a look-alike. */
+  alternateUrls?: string[];
   /** Anything the editor already knows: the event, the date, a hunch. */
   note?: string;
   photo?: LookJobPhoto;
@@ -50,7 +58,7 @@ export type LookJob = {
  * The research checks still waiting for the editor. A look made from research
  * cannot go live while any is open: Google expects a person to fact-check
  * AI-assisted pages before they are published, and these are exactly the
- * points the research could not settle or Codex disputed.
+ * points the research could not settle.
  */
 export function openChecks(job: Pick<LookJob, "findings"> | null | undefined): string[] {
   if (!job?.findings) return [];
@@ -106,6 +114,64 @@ export function instagramPostUrl(raw: string): string | null {
 }
 
 /** Splits the buying-links box: one per line (commas and spaces tolerated). */
+/** At most this many alternate links per look. */
+export const MAX_ALTERNATE_URLS = 3;
+
+/** A celebrity's Instagram profile (not a post), normalised; null when it is not one. */
+export function instagramProfileUrl(raw: string): string | null {
+  if (!isHttps(raw)) return null;
+  const url = new URL(raw.trim());
+  if (!/^(www\.)?instagram\.com$/i.test(url.hostname)) return null;
+  const match = url.pathname.match(/^\/([A-Za-z0-9._]{1,30})\/?$/);
+  if (!match || ["p", "reel", "reels", "tv", "explore", "stories", "accounts"].includes(match[1].toLowerCase())) return null;
+  return `https://www.instagram.com/${match[1]}/`;
+}
+
+/** The label's site: an https address, tracking tags removed. */
+const labelSite = (raw: string) => cleanUrl(raw);
+
+/**
+ * One row copied from the editor's Google Sheet (cells separated by tabs), sorted
+ * into the form's fields by what each cell is rather than by column position, so
+ * a moved or added column does not put a link in the wrong box:
+ *   an Instagram post → the post; an Instagram profile → the celebrity's Instagram;
+ *   a site's home page → the label's website; other links → the original first,
+ *   then alternates; the first plain text → the celebrity. Status words are ignored.
+ */
+export function parseSheetRow(row: string): {
+  celebrity: string;
+  celebrityInstagram: string;
+  labelUrl: string;
+  buyUrls: string;
+  instagramUrl: string;
+  alternateUrls: string;
+} {
+  const out = { celebrity: "", celebrityInstagram: "", labelUrl: "", buyUrls: "", instagramUrl: "", alternateUrls: "" };
+  const products: string[] = [];
+  const cells = row.split(/\t|\r?\n/).map((cell) => cell.trim()).filter(Boolean);
+  for (const cell of cells) {
+    const urls = cell.split(/\s+/).filter((part) => /^https?:\/\//i.test(part));
+    if (!urls.length) {
+      if (!out.celebrity && !/^(pending|done|published|drafted|draft|queued|skip|skipped|in progress|researching)$/i.test(cell)) out.celebrity = cell;
+      continue;
+    }
+    for (const url of urls) {
+      if (instagramPostUrl(url)) {
+        if (!out.instagramUrl) out.instagramUrl = instagramPostUrl(url)!;
+      } else if (instagramProfileUrl(url)) {
+        if (!out.celebrityInstagram) out.celebrityInstagram = instagramProfileUrl(url)!;
+      } else if (isHttps(url) && new URL(url).pathname.replace(/\/+$/, "") === "" && !out.labelUrl) {
+        out.labelUrl = url;
+      } else if (isHttps(url)) {
+        products.push(url);
+      }
+    }
+  }
+  out.buyUrls = products[0] ?? "";
+  out.alternateUrls = products.slice(1, 1 + MAX_ALTERNATE_URLS).join("\n");
+  return out;
+}
+
 export const splitUrls = (raw: string) =>
   raw
     .split(/[\s,]+/)
@@ -137,6 +203,37 @@ export const newLookJobSchema = z
           .max(MAX_BUY_URLS, `At most ${MAX_BUY_URLS} buying links, one per piece.`),
       )
       .transform((urls) => [...new Set(urls.map(cleanUrl))]),
+    celebrity: z
+      .string()
+      .trim()
+      .max(80, "Keep the name under 80 characters.")
+      .optional()
+      .transform((value) => value || undefined),
+    celebrityInstagram: z
+      .string()
+      .trim()
+      .optional()
+      .refine((value) => !value || instagramProfileUrl(value) !== null, "Use the celebrity's profile link, e.g. https://www.instagram.com/handle/ (not a post).")
+      .transform((value) => (value ? (instagramProfileUrl(value) as string) : undefined)),
+    labelUrl: z
+      .string()
+      .trim()
+      .optional()
+      .refine((value) => !value || isHttps(value), "The label's website must be a full https:// address.")
+      .transform((value) => (value ? labelSite(value) : undefined)),
+    alternateUrls: z
+      .string()
+      .optional()
+      .transform((value) => splitUrls(value ?? ""))
+      .pipe(
+        z
+          .array(z.string().refine(isHttps, "Each alternate link must be a full https:// address."))
+          .max(MAX_ALTERNATE_URLS, `At most ${MAX_ALTERNATE_URLS} alternate links.`),
+      )
+      .transform((urls) => {
+        const unique = [...new Set(urls.map(cleanUrl))];
+        return unique.length ? unique : undefined;
+      }),
     note: z
       .string()
       .trim()

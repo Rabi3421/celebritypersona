@@ -48,6 +48,7 @@ function jobTitle(job: LookJob, outfit?: Outfit): { title: string; sub?: string 
   const scout = job.note?.match(/^Scout: (.+?), (.+?)(?: \(\d{4}-\d{2}-\d{2}\))?\.?$/);
   if (scout) return { title: scout[1], sub: scout[2] };
   const post = job.instagramUrl.match(/instagram\.com\/(?:[^/]+\/)?(p|reel)\/([^/?#]+)/);
+  if (job.celebrity) return { title: job.celebrity, sub: post ? `Instagram ${post[1] === "reel" ? "reel" : "post"}` : job.note };
   return { title: post ? `Instagram ${post[1] === "reel" ? "reel" : "post"} ${post[2]}` : "Instagram post", sub: job.note };
 }
 
@@ -67,7 +68,7 @@ function Thumb({ src, label }: { src?: string; label: string }) {
   );
 }
 
-function Links({ job }: { job: Pick<LookJob, "instagramUrl" | "buyUrls"> }) {
+function Links({ job }: { job: Pick<LookJob, "instagramUrl" | "buyUrls" | "celebrityInstagram" | "labelUrl" | "alternateUrls"> }) {
   return (
     <div className={local.links}>
       <a href={job.instagramUrl} target="_blank" rel="noreferrer">
@@ -76,6 +77,21 @@ function Links({ job }: { job: Pick<LookJob, "instagramUrl" | "buyUrls"> }) {
       {job.buyUrls.map((url) => (
         <a key={url} href={url} target="_blank" rel="noreferrer">
           {host(url)} ↗
+        </a>
+      ))}
+      {job.celebrityInstagram ? (
+        <a href={job.celebrityInstagram} target="_blank" rel="noreferrer">
+          @{job.celebrityInstagram.replace(/^https:\/\/www\.instagram\.com\/|\/$/g, "")} ↗
+        </a>
+      ) : null}
+      {job.labelUrl && !job.buyUrls.some((url) => host(url) === host(job.labelUrl!)) ? (
+        <a href={job.labelUrl} target="_blank" rel="noreferrer">
+          {host(job.labelUrl)} ↗
+        </a>
+      ) : null}
+      {(job.alternateUrls ?? []).map((url) => (
+        <a key={url} href={url} target="_blank" rel="noreferrer">
+          alt: {host(url)} ↗
         </a>
       ))}
     </div>
@@ -427,7 +443,7 @@ export default async function LookFromLinksPage({
         </Section>
       ) : null}
 
-      <Section id="add" title="Add a look yourself" note="The Instagram post, and where the outfit can be bought.">
+      <Section id="add" title="Add a look yourself" note="The same fields as your sheet. Paste a whole row to fill them in one go.">
         <div className={local.formBox}>
           {/* Keyed by the job just queued, so the next look starts with an empty form. */}
           <LookFromLinksForm key={queued ?? "new"} />

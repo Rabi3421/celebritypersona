@@ -12,18 +12,35 @@ import { fieldErrors, type FieldErrors } from "@/lib/validation";
 
 const PAGE = "/admin/outfits/from-links";
 
-export type LookJobDraft = { instagramUrl: string; buyUrls: string };
+export type LookJobDraft = {
+  celebrity: string;
+  celebrityInstagram: string;
+  labelUrl: string;
+  buyUrls: string;
+  instagramUrl: string;
+  alternateUrls: string;
+};
 export type LookJobFormState = { errors?: FieldErrors; values?: LookJobDraft };
 
-/** The form is just the two links; the photo is added in the draft's editor. */
+/** The same fields as the editor's sheet; the photo is added in the draft's editor. */
 export async function queueLookJob(_previous: LookJobFormState, form: FormData): Promise<LookJobFormState> {
   const session = await requireAdmin();
   const values: LookJobDraft = {
-    instagramUrl: text(form, "instagramUrl"),
+    celebrity: text(form, "celebrity"),
+    celebrityInstagram: text(form, "celebrityInstagram"),
+    labelUrl: text(form, "labelUrl"),
     buyUrls: text(form, "buyUrls"),
+    instagramUrl: text(form, "instagramUrl"),
+    alternateUrls: text(form, "alternateUrls"),
   };
   const parsed = newLookJobSchema.safeParse({ ...values, note: "", photoPath: "", photoUrl: "" });
-  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  // A hand-added look always names who wore it; the scout's jobs carry it in their note.
+  const nameMissing = !values.celebrity.trim();
+  if (!parsed.success || nameMissing) {
+    const errors = parsed.success ? {} : fieldErrors(parsed.error);
+    if (nameMissing) errors.celebrity = "Who wore it? Type the celebrity's name.";
+    return { errors, values };
+  }
 
   const id = newLookJobId((size) => randomBytes(size));
   await createLookJob({ ...parsed.data, id }, session.email);
@@ -40,6 +57,7 @@ export async function queueSuggestionAction(form: FormData) {
   const parsed = newLookJobSchema.safeParse({
     instagramUrl: suggestion.instagramUrl,
     buyUrls: suggestion.buyUrls.join("\n"),
+    celebrity: suggestion.celebrity,
     note: `Scout: ${suggestion.celebrity}, ${suggestion.event} (${suggestion.date}).`.slice(0, 500),
     photoPath: "",
     photoUrl: "",
@@ -77,6 +95,10 @@ export async function retryLookJobAction(form: FormData) {
   const parsed = newLookJobSchema.safeParse({
     instagramUrl: job.instagramUrl,
     buyUrls: job.buyUrls.join("\n"),
+    celebrity: job.celebrity ?? "",
+    celebrityInstagram: job.celebrityInstagram ?? "",
+    labelUrl: job.labelUrl ?? "",
+    alternateUrls: (job.alternateUrls ?? []).join("\n"),
     note: job.note ?? "",
     photoPath: job.photo?.path ?? "",
     photoUrl: job.photo?.url ?? "",
