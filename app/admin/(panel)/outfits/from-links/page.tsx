@@ -443,7 +443,7 @@ export default async function LookFromLinksPage({
         </Section>
       ) : null}
 
-      <Section id="add" title="Add a look yourself" note="The same fields as your sheet. Paste a whole row to fill them in one go.">
+      <Section id="add" title="Add a look yourself" note="The same fields as your sheet.">
         <div className={local.formBox}>
           {/* Keyed by the job just queued, so the next look starts with an empty form. */}
           <LookFromLinksForm key={queued ?? "new"} />

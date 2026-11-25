@@ -130,48 +130,6 @@ export function instagramProfileUrl(raw: string): string | null {
 /** The label's site: an https address, tracking tags removed. */
 const labelSite = (raw: string) => cleanUrl(raw);
 
-/**
- * One row copied from the editor's Google Sheet (cells separated by tabs), sorted
- * into the form's fields by what each cell is rather than by column position, so
- * a moved or added column does not put a link in the wrong box:
- *   an Instagram post → the post; an Instagram profile → the celebrity's Instagram;
- *   a site's home page → the label's website; other links → the original first,
- *   then alternates; the first plain text → the celebrity. Status words are ignored.
- */
-export function parseSheetRow(row: string): {
-  celebrity: string;
-  celebrityInstagram: string;
-  labelUrl: string;
-  buyUrls: string;
-  instagramUrl: string;
-  alternateUrls: string;
-} {
-  const out = { celebrity: "", celebrityInstagram: "", labelUrl: "", buyUrls: "", instagramUrl: "", alternateUrls: "" };
-  const products: string[] = [];
-  const cells = row.split(/\t|\r?\n/).map((cell) => cell.trim()).filter(Boolean);
-  for (const cell of cells) {
-    const urls = cell.split(/\s+/).filter((part) => /^https?:\/\//i.test(part));
-    if (!urls.length) {
-      if (!out.celebrity && !/^(pending|done|published|drafted|draft|queued|skip|skipped|in progress|researching)$/i.test(cell)) out.celebrity = cell;
-      continue;
-    }
-    for (const url of urls) {
-      if (instagramPostUrl(url)) {
-        if (!out.instagramUrl) out.instagramUrl = instagramPostUrl(url)!;
-      } else if (instagramProfileUrl(url)) {
-        if (!out.celebrityInstagram) out.celebrityInstagram = instagramProfileUrl(url)!;
-      } else if (isHttps(url) && new URL(url).pathname.replace(/\/+$/, "") === "" && !out.labelUrl) {
-        out.labelUrl = url;
-      } else if (isHttps(url)) {
-        products.push(url);
-      }
-    }
-  }
-  out.buyUrls = products[0] ?? "";
-  out.alternateUrls = products.slice(1, 1 + MAX_ALTERNATE_URLS).join("\n");
-  return out;
-}
-
 export const splitUrls = (raw: string) =>
   raw
     .split(/[\s,]+/)
