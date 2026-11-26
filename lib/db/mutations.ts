@@ -10,6 +10,19 @@ import { storageDeleteAllowed } from "@/lib/db-guard";
 import { ARCHIVE_HUBS, pingIndexNow } from "@/lib/indexnow";
 import { hasSwap, hasWornPrice, isPublished, MAILABLE, outfitOccasions, outfitPhotos } from "@/lib/types";
 import { keepBudgetSwapStatus } from "@/lib/budget-swaps";
+import { withUniquePieceIds } from "@/lib/piece-ids";
+
+/** Piece ids already used by other looks: all of them, or only older looks' (id below `olderThan`). */
+async function pieceIdsElsewhere(ids: string[], exceptOutfit: number | null, olderThan?: number): Promise<Set<string>> {
+  const wanted = ids.filter(Boolean);
+  if (!wanted.length) return new Set();
+  const filter = {
+    "items.id": { $in: wanted },
+    ...(exceptOutfit !== null ? { id: olderThan !== undefined ? { $ne: exceptOutfit, $lt: olderThan } : { $ne: exceptOutfit } } : {}),
+  };
+  const others = await (await getDb()).collection<Outfit>("outfits").find(filter, { projection: { _id: 0, items: 1 } }).toArray();
+  return new Set(others.flatMap((o) => (o.items ?? []).map((item) => item.id).filter((id): id is string => Boolean(id) && wanted.includes(id!))));
+}
 import { sameName } from "@/lib/archive";
 import { budgetBucket, budgetSlug } from "@/lib/budget";
 import { blankBrand, blankCelebrity, blankOccasion, missingRecords } from "@/lib/archive-records";
@@ -188,6 +201,9 @@ async function ensureArchiveRecords(outfit: Pick<Outfit, "celebrity" | "occasion
 
 export async function createOutfit(input: Omit<Outfit, "id" | "worn" | "swap">) {
   const db = await getDb();
+  // A new look never reuses a piece id another look already has.
+  const taken = await pieceIdsElsewhere(input.items.map((item) => item.id ?? ""), null);
+  input = withUniquePieceIds(input, taken, randomUUID).look;
   const id = await nextId("outfits");
   await db.collection<Outfit>("outfits").insertOne({
     ...input,
@@ -323,6 +339,9 @@ export async function updateOutfit(
   const collection = db.collection<Outfit>("outfits");
   const previous = await collection.findOne({ id });
   input = { ...input, items: keepBudgetSwapStatus(input.items, previous?.items ?? []) };
+  // An id shared with an OLDER look is given up here (the older look keeps it and its clicks).
+  const takenByOlder = await pieceIdsElsewhere(input.items.map((item) => item.id ?? ""), id, id);
+  input = withUniquePieceIds(input, takenByOlder, randomUUID).look;
 
   /**
    * A slug only moves when an editor types a different one.

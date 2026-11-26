@@ -130,8 +130,11 @@ export function researchToOutfitInput(
     primaryKeyword: research.primaryKeyword,
     secondaryKeywords: research.secondaryKeywords,
     faqs: research.faqs,
-    items: research.items.map((item, index) => ({
-      id: `p${index + 1}`,
+    items: research.items.map((item) => ({
+      // No id: the save assigns each piece a unique one. A fixed "p1" here gave
+      // every researched look the same piece id, so /go/p1 sent all of their
+      // Buy buttons to whichever look had it first.
+      id: "",
       name: item.name,
       category: item.category,
       colours: item.colours.join(", "),
