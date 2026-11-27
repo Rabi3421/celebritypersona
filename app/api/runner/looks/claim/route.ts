@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAllOutfits, getCelebrityViews, getOccasionViews } from "@/lib/db/content";
-import { claimLookJob } from "@/lib/db/look-jobs";
+import { claimLookJob, noteRunnerSeen } from "@/lib/db/look-jobs";
 import { reportTokenValid } from "@/lib/report/report-auth";
 import { outfitSlug } from "@/lib/slugs";
 
@@ -26,6 +26,8 @@ export async function POST(request: Request) {
   if (!reportTokenValid(request.headers.get("authorization"), process.env.LOOKS_RUNNER_TOKEN)) {
     return new NextResponse("Not found", { status: 404, headers: HEADERS });
   }
+  // The runner is on: the queue page shows that waiting looks will start soon.
+  await noteRunnerSeen().catch(() => {});
   const job = await claimLookJob();
   if (!job) return new NextResponse(null, { status: 204, headers: HEADERS });
 

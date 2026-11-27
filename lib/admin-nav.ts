@@ -144,7 +144,7 @@ export const adminRoutes: AdminRoute[] = [
 
 /** Screens reachable from a list rather than the sidebar. */
 export const adminDetailRoutes: { href: string; group: AdminGroup; label: string; description: string; exact?: boolean }[] = [
-  { href: "/admin/outfits/from-links", group: "Content", label: "New look from links", description: "Paste the post and the buying link; research makes the draft", exact: true },
+  { href: "/admin/outfits/from-links", group: "Content", label: "New look from links", description: "Add a look, Claude researches it, you review and publish", exact: true },
   { href: "/admin/outfits/new", group: "Content", label: "New outfit", description: "Add a decoded look" },
   { href: "/admin/outfits", group: "Content", label: "Edit outfit", description: "Totals are calculated from the pieces" },
   { href: "/admin/celebrities/new", group: "Content", label: "New celebrity", description: "Add a style archive" },

@@ -139,3 +139,19 @@ export async function setCheckCleared(jobId: string, check: string, cleared: boo
 export async function queuedPosts(): Promise<string[]> {
   return (await jobs()).distinct("instagramUrl");
 }
+
+/**
+ * The research runner checks in every time it asks for work (about once a
+ * minute while it is on). The queue page uses this to say plainly when a look
+ * is waiting only because the runner on the editor's computer is off.
+ */
+export async function noteRunnerSeen(now = new Date()) {
+  await (await getDb())
+    .collection<{ id: string; lastSeenAt: string }>("runnerStatus")
+    .updateOne({ id: "looks" }, { $set: { lastSeenAt: now.toISOString() } }, { upsert: true });
+}
+
+export async function runnerLastSeen(): Promise<Date | null> {
+  const row = await (await getDb()).collection<{ id: string; lastSeenAt: string }>("runnerStatus").findOne({ id: "looks" });
+  return row ? new Date(row.lastSeenAt) : null;
+}

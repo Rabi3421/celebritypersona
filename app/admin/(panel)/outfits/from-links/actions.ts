@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { cancelLookJob, createLookJob, forgetLookJob, getLookJob, removeLookJob } from "@/lib/db/look-jobs";
-import { getSuggestion, setSuggestionStatus } from "@/lib/db/look-suggestions";
 import { text } from "@/lib/form-data";
 import { newLookJobId, newLookJobSchema } from "@/lib/look-jobs";
 import { fieldErrors, type FieldErrors } from "@/lib/validation";
@@ -34,7 +33,7 @@ export async function queueLookJob(_previous: LookJobFormState, form: FormData):
     alternateUrls: text(form, "alternateUrls"),
   };
   const parsed = newLookJobSchema.safeParse({ ...values, note: "", photoPath: "", photoUrl: "" });
-  // A hand-added look always names who wore it; the scout's jobs carry it in their note.
+  // A look added here always names who wore it.
   const nameMissing = !values.celebrity.trim();
   if (!parsed.success || nameMissing) {
     const errors = parsed.success ? {} : fieldErrors(parsed.error);
@@ -47,34 +46,6 @@ export async function queueLookJob(_previous: LookJobFormState, form: FormData):
   revalidatePath(PAGE);
   // The id in the address gives the next form a fresh start (see the page).
   redirect(`${PAGE}?queued=${id}`);
-}
-
-/** Turns one of the scout's suggestions into a research job: the editor's tap. */
-export async function queueSuggestionAction(form: FormData) {
-  const session = await requireAdmin();
-  const suggestion = await getSuggestion(text(form, "id"));
-  if (!suggestion || suggestion.status !== "suggested") redirect(PAGE);
-  const parsed = newLookJobSchema.safeParse({
-    instagramUrl: suggestion.instagramUrl,
-    buyUrls: suggestion.buyUrls.join("\n"),
-    celebrity: suggestion.celebrity,
-    note: `Scout: ${suggestion.celebrity}, ${suggestion.event} (${suggestion.date}).`.slice(0, 500),
-    photoPath: "",
-    photoUrl: "",
-  });
-  if (!parsed.success) redirect(PAGE);
-  const id = newLookJobId((size) => randomBytes(size));
-  await createLookJob({ ...parsed.data, id }, session.email);
-  await setSuggestionStatus(suggestion.id, "queued", id);
-  revalidatePath(PAGE);
-  redirect(`${PAGE}?queued=${id}`);
-}
-
-export async function dismissSuggestionAction(form: FormData) {
-  await requireAdmin();
-  await setSuggestionStatus(text(form, "id"), "dismissed");
-  revalidatePath(PAGE);
-  redirect(PAGE);
 }
 
 export async function cancelLookJobAction(form: FormData) {

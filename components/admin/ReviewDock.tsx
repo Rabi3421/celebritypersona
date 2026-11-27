@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useOptimistic, useSyncExternalStore, useTransition, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
+import jobStyles from "@/components/admin/look-jobs.module.css";
 import { publishFromPreview, toggleResearchCheck } from "@/app/admin/preview/[id]/actions";
 import { LinkedText } from "@/components/admin/LinkedText";
 import styles from "./review-dock.module.css";
@@ -94,14 +96,13 @@ export function ReviewDock(props: Props) {
     ) : (
       <form action={publishFromPreview} className={styles.publishForm}>
         <input type="hidden" name="id" value={outfitId} />
-        <button
-          type="submit"
+        <PublishSubmit
           className={`${styles.publish} ${big ? styles.big : ""}`}
           disabled={!ready || pending}
           title={ready ? "Publish this look on the site" : `${left} thing${left === 1 ? "" : "s"} left before it can go live`}
         >
           {ready ? "Publish" : `Publish · ${left} left`}
-        </button>
+        </PublishSubmit>
       </form>
     );
 
@@ -259,5 +260,22 @@ export function ReviewDock(props: Props) {
 
       <div className={styles.page}>{children}</div>
     </div>
+  );
+}
+
+/** The Publish button, with a visible "Publishing…" while the look goes live (no double clicks). */
+function PublishSubmit({ className, disabled, title, children }: { className: string; disabled: boolean; title: string; children: ReactNode }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className={className} disabled={disabled || pending} title={title} aria-busy={pending || undefined}>
+      {pending ? (
+        <>
+          <span className={jobStyles.spinner} aria-hidden="true" />
+          Publishing…
+        </>
+      ) : (
+        children
+      )}
+    </button>
   );
 }

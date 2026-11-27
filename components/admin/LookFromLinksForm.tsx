@@ -1,10 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { ErrorSummary, FormError, SaveButton, TextAreaField, TextField } from "@/components/admin/form/Fields";
+import { ErrorSummary, FormError, TextAreaField, TextField } from "@/components/admin/form/Fields";
+import { PendingButton } from "@/components/admin/PendingButton";
 import { queueLookJob, type LookJobFormState } from "@/app/admin/(panel)/outfits/from-links/actions";
 import { MAX_ALTERNATE_URLS, MAX_BUY_URLS } from "@/lib/look-jobs";
 import styles from "@/app/admin/panel.module.css";
+import local from "@/components/admin/look-jobs.module.css";
 
 /**
  * The same fields as the editor's Google Sheet, in the same order. Research,
@@ -79,7 +81,10 @@ export function LookFromLinksForm() {
           />
         </div>
         <div className={styles.formBar}>
-          <SaveButton>Start research</SaveButton>
+          <PendingButton className={styles.saveButton} pendingLabel="Starting research…">
+            Start research
+          </PendingButton>
+          <span className={local.formHint}>Claude takes about 5–10 minutes. You can leave this page.</span>
         </div>
       </form>
     </>
