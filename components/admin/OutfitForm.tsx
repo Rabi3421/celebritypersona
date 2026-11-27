@@ -184,6 +184,7 @@ export function OutfitForm({
             <input type="hidden" name="draftKey" value={draftKey} />
 
             <div className={styles.formGrid} key={`fields-${restoreCount}`}>
+              <span id="keyword" className={styles.anchor} aria-hidden="true" />
               <KeywordSection
                 primary={draft?.primaryKeyword ?? outfit?.primaryKeyword}
                 secondary={
@@ -283,12 +284,14 @@ export function OutfitForm({
                 required
               />
 
+              <span id="photos" className={styles.anchor} aria-hidden="true" />
               <OutfitImageEditor
                 key={`photo-${state.attempt ?? 0}`}
                 initialImages={draft?.images ?? (outfit ? outfitPhotos(outfit) : [])}
                 initialItems={outfit?.items ?? []}
               />
 
+              <span id="notes" className={styles.anchor} aria-hidden="true" />
               <TextAreaField
                 name="notes"
                 label="About this look"
@@ -316,6 +319,7 @@ export function OutfitForm({
                 error={errors?.seoDescription}
               />
 
+              <span id="pieces" className={styles.anchor} aria-hidden="true" />
               <RepeatableRows
                 key={`items-${state.attempt ?? 0}`}
                 name="items"

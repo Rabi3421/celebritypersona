@@ -251,12 +251,13 @@ export async function changeOutfitStatus(form: FormData) {
     const problem = reviewProblem(await lookJobForOutfit(id));
     if (problem) {
       back.searchParams.set("statusProblem", `${id}|${problem}`);
-      redirect(back.pathname + back.search);
+      // Back to the row it is about, where the reason is shown.
+      redirect(`${back.pathname}${back.search}#outfit-${id}`);
     }
     if (blocking.length) {
       const reasons = blocking.map((check) => `${check.label}${check.detail ? ` — ${check.detail}` : ""}`).join(" · ");
       back.searchParams.set("statusProblem", `${id}|${reasons}`.slice(0, 600));
-      redirect(back.pathname + back.search);
+      redirect(`${back.pathname}${back.search}#outfit-${id}`);
     }
   }
   await setOutfitStatus(id, status);

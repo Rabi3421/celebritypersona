@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OutfitForm } from "@/components/admin/OutfitForm";
 import { getCelebrityViews, getOccasionViews, getAllOutfits } from "@/lib/db/content";
 import { keywordOwners } from "@/lib/keyword-owners";
 import { outfitSlug } from "@/lib/slugs";
 import { buildSiteContext } from "@/lib/seo-review/site-context";
+import styles from "@/app/admin/panel.module.css";
 
 export default async function EditOutfitPage({
   params,
@@ -18,6 +20,17 @@ export default async function EditOutfitPage({
   if (!outfit) notFound();
 
   return (
+    <>
+      {/* A draft is finished on its review page; say so here, so nobody is left in the long form. */}
+      {outfit.status === "draft" ? (
+        <div className={styles.notice} role="status">
+          <strong>This look is a draft.</strong>
+          <p>
+            Fix what you need here and press Save, then{" "}
+            <Link href={`/admin/preview/${outfit.id}`}>go back to Review &amp; publish →</Link>
+          </p>
+        </div>
+      ) : null}
     <OutfitForm
       outfit={outfit}
       occasions={occasions.map((occasion) => occasion.name)}
@@ -25,5 +38,6 @@ export default async function EditOutfitPage({
       owners={keywordOwners(outfits)}
       seoContext={buildSiteContext({ outfits, celebrities, occasions, self: outfit })}
     />
+    </>
   );
 }

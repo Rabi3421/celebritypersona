@@ -18,7 +18,7 @@ type Props = {
   live: boolean;
   checks: DockCheck[];
   /** Critical publishing rules that still fail, with what to do. */
-  blocking: { label: string; detail?: string }[];
+  blocking: { label: string; detail?: string; href?: string }[];
   editHref: string;
   publicHref: string;
   share: { label: string; href: string; download?: boolean }[];
@@ -207,7 +207,7 @@ export function ReviewDock(props: Props) {
                   <p>
                     <strong>{item.label}</strong>
                     {item.detail ? <span> — {item.detail}</span> : null}{" "}
-                    <a href={editHref} className={styles.fix}>
+                    <a href={item.href ?? editHref} className={styles.fix}>
                       Fix in the editor →
                     </a>
                   </p>

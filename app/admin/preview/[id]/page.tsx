@@ -50,7 +50,7 @@ export default async function OutfitPreview({
       event={outfit.event}
       live={live}
       checks={checks}
-      blocking={blocking.map((check) => ({ label: check.label, detail: check.detail }))}
+      blocking={blocking.map((check) => ({ label: check.label, detail: check.detail, href: `/admin/outfits/${outfit.id}#${editorSection(check.id)}` }))}
       by={job?.findings?.by ?? []}
       editHref={`/admin/outfits/${outfit.id}`}
       publicHref={`/outfits/${outfitSlug(outfit)}`}
@@ -66,4 +66,13 @@ export default async function OutfitPreview({
       <Footer />
     </ReviewDock>
   );
+}
+
+/** The part of the editor that fixes a failing check, so "Fix" opens it rather than the top of a long form. */
+function editorSection(checkId: string): string {
+  if (["photos", "alt", "credit"].includes(checkId)) return "photos";
+  if (checkId === "keyword-slug") return "slug";
+  if (["about", "keyword-intro"].includes(checkId)) return "notes";
+  if (["lead", "categories", "price", "decoded", "accessories", "rupees"].includes(checkId)) return "pieces";
+  return "keyword";
 }

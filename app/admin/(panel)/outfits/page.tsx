@@ -12,6 +12,7 @@ import { changeOutfitStatus, removeOutfit } from "./actions";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { celebrityNames, isNewLook, occasionNames } from "@/lib/archive";
 import { isPublished, outfitPhotos, pricing, type Outfit } from "@/lib/types";
+import { PendingButton } from "@/components/admin/PendingButton";
 import { needsPriceReview, priceFreshness } from "@/lib/freshness";
 import { ClearSavedDraft } from "@/components/admin/session/ClearSavedDraft";
 
@@ -233,7 +234,7 @@ export default async function AdminOutfits({
                   const photos = outfitPhotos(outfit).length;
                   const freshness = priceFreshness(outfit.pricesCheckedAt);
                   return (
-                    <tr key={outfit.id}>
+                    <tr key={outfit.id} id={`outfit-${outfit.id}`}>
                       <td>
                         {outfit.celebrity}
                         {isNewLook(outfit) ? (
@@ -297,9 +298,7 @@ export default async function AdminOutfits({
                             {outfit.status === "draft" ? (
                               <>
                                 <input type="hidden" name="status" value="published" />
-                                <button type="submit" title="Runs the SEO checks first; nothing changes if one fails">
-                                  Publish
-                                </button>
+                                <PendingButton pendingLabel="Checking…">Publish</PendingButton>
                               </>
                             ) : (
                               <>
@@ -315,9 +314,14 @@ export default async function AdminOutfits({
                               </>
                             )}
                           </form>
-                          <Link href={`/outfits/${outfitSlug(outfit)}`} target="_blank">
-                            View ↗
-                          </Link>
+                          {outfit.status === "draft" ? (
+                            // A draft has no public page yet: its review page is where it is checked and published.
+                            <Link href={`/admin/preview/${outfit.id}`}>Review →</Link>
+                          ) : (
+                            <Link href={`/outfits/${outfitSlug(outfit)}`} target="_blank">
+                              View ↗
+                            </Link>
+                          )}
                           <DeleteRowButton
                             id={outfit.id}
                             action={removeOutfit}
@@ -327,6 +331,12 @@ export default async function AdminOutfits({
                             confirm={`${outfit.celebrity} — ${outfit.event} is removed from the site, along with its photos. This cannot be undone.`}
                           />
                         </span>
+                        {query.statusProblem?.split("|")[0] === String(outfit.id) ? (
+                          <p className={styles.rowProblem} role="alert">
+                            Not published: {query.statusProblem.split("|").slice(1).join("|")}.{" "}
+                            <Link href={`/admin/preview/${outfit.id}`}>Review &amp; fix →</Link>
+                          </p>
+                        ) : null}
                       </td>
                     </tr>
                   );

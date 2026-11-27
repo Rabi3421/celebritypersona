@@ -80,6 +80,9 @@ const MENTIONS: [RegExp, PieceCategory][] = [
 const hasDollars = (text: string) => /\$\s?\d/.test(text);
 const hasRupees = (text: string) => /₹|\bRs\.?\s?\d|\bINR\b/i.test(text);
 
+/** Words a keyword may carry that an address does not need. */
+const SLUG_FILLER = new Set(["outfit", "outfits", "look", "looks", "style", "styles", "wear", "worn", "fashion"]);
+
 export function seoChecks(
   draft: SeoDraft,
   context: { id?: number; owners: KeywordOwner[] },
@@ -96,7 +99,9 @@ export function seoChecks(
   const list = (items: string[]) => items.join(", ");
 
   const titleGap = missing(title);
-  const slugGap = missing(draft.slug.replace(/-/g, " "));
+  // An address needs the words that name the look, not filler: "outfit" or
+  // "look" in a keyword does not have to be in the slug.
+  const slugGap = missing(draft.slug.replace(/-/g, " ")).filter((word) => !SLUG_FILLER.has(word.toLowerCase()));
   const introGap = missing(notes[0] ?? "");
   const descriptionGap = missing(description);
   const noAlt = draft.images.filter((image) => !image.alt?.trim()).length;
