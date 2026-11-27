@@ -17,7 +17,9 @@ import { hasSubstance, pricing } from "@/lib/types";
  * describe looks that are no longer published.
  */
 
-export const revalidate = 3600;
+// Built on request and cached by the CDN for 10 minutes, like the sitemap:
+// Vercel's route cache held an 18-hour-old copy of both in Nov 2026.
+export const dynamic = "force-dynamic";
 
 const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -100,7 +102,7 @@ ${published.map(lookLine).join("\n")}
   return new Response(body, {
     headers: {
       "content-type": "text/plain; charset=utf-8",
-      "cache-control": "public, max-age=0, must-revalidate",
+      "cache-control": "public, max-age=0, s-maxage=600, stale-while-revalidate=600",
     },
   });
 }
